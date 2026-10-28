@@ -195,6 +195,12 @@ const RAYNEN = (function () {
     return out;
   }
   const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo));
+  // ultima carreira do corpo (1-base) com diminuicao de cava ou decote; 0 se nao houver
+  function fimForma(f) {
+    let fim = 0;
+    [f.cava, f.decote].forEach(x => { if (!x || !x.ativo) return; const ev = agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)); if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
+    return fim;
+  }
   // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
   function agenda(inicio, passos) {
     const ev = []; let c = inicio;
@@ -212,7 +218,12 @@ const RAYNEN = (function () {
   function checkForma(s, erros, avisos) {
     if (!formaAtiva(s)) return;
     const p = s.ponto, W = s.largura, N = s.carreiras, cv = s.forma.cava, dc = s.forma.decote;
-    if (p.tipo === 'jacquard') { erros.push('Cava/decote com jacquard ainda não são suportados. Use a ficha de processo do Raynen para dar forma ao jacquard.'); return; }
+    if (p.tipo === 'jacquard') {
+      if (p.metodo !== 'compacto') { erros.push('Cava/decote no jacquard: use o formato Compacto (camada INA). No módulo 120/121 e no expandido as transferências das diminuições não entram na mesma carreira do desenho.'); return; }
+      if (dc.ativo && p.cores > 2) { erros.push('Decote no jacquard: até 2 cores. Depois da divisão o lado direito tece com os guia-fios C e D (cor 1 e cor 2), então não sobram guia-fios para 3 ou 4 cores.'); return; }
+      if (dc.ativo && (new Set([s.guiaFio, s.fios[0], s.fios[1], s.fios[2]])).size < 4) erros.push('Decote no jacquard: os guia-fios A, B, C e D precisam ser diferentes (A/B no lado esquerdo, C/D no direito).');
+      if (dc.ativo) avisos.push({ tipo: 'nota', txt: `Decote no jacquard: lado esquerdo com A/B (${s.guiaFio}/${s.fios[0]}), lado direito com C/D (${s.fios[1]}/${s.fios[2]}) para não passar fio pelo decote. Use no C e no D os mesmos fios/cores do A e do B. Confira os grupos de guia-fio (216, 3ª coluna) no Raynen.` });
+    }
     let tot = 0;
     [['Cava', cv], ['Decote', dc]].forEach(([nm, f]) => {
       if (!f.ativo) return;
@@ -228,14 +239,14 @@ const RAYNEN = (function () {
     if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
-      if (s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
+      if (p.tipo !== 'jacquard' && s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
       if (dc.tipo === 'redondo' && !(dc.meio >= 2 && dc.meio < W / 2)) erros.push('Decote redondo: agulhas do meio entre 2 e metade da largura.');
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
-  function shapeRows(s, bG, bO, nb, W) {
+  function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     const evD = dc.ativo ? new Map(agenda(dc.inicio - 1, parsePassos(dc.passos).filter(x => !x.erro))) : new Map();
@@ -256,7 +267,8 @@ const RAYNEN = (function () {
       if (c < split) {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
         if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
-        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO) }); c++;
+        const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
+        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
         continue;
       }
       if (info.divisao == null) {
@@ -276,8 +288,13 @@ const RAYNEN = (function () {
         if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
         if (lado === 'E' && evC.has(cc)) info.cava.push(cc + 1);
         if (lado === 'E' && evD.has(cc)) info.decote.push(cc + 1);
-        const o = bO.slice(cc * WO, (cc + 1) * WO); o[COL_YARN] = yarn;
-        out.push({ c: cc, g: row, o });
+        const o = bO.slice(cc * WO, (cc + 1) * WO);
+        let ina = null;
+        if (jq[cc]) {   // jacquard: o lado direito troca A->C e B->D (sem fio passando pelo decote)
+          const mp = lado === 'D' ? new Map([[s.guiaFio, s.fios[1]], [s.fios[0], s.fios[2]]]) : null;
+          ina = bI.slice(cc * W, cc * W + W).map((v, i) => row[i] ? (mp && mp.has(v) ? mp.get(v) : v) : 0);
+        } else o[COL_YARN] = yarn;
+        out.push({ c: cc, g: row, o, ina, lado });
       }
       c += 2;
     }
@@ -360,19 +377,19 @@ const RAYNEN = (function () {
       const o = tmpl.slice();
       if (br.jq) {
         o[COL_YARN] = 0; o[COL_216] = s.ponto.cores; o[COL_216 + 1] = s.ponto.avesso;
-        for (let k = 1; k <= s.ponto.cores; k++) { const g = yarnOf(s, k); passes[g] = (passes[g] || 0) + 1; }
       } else o[COL_YARN] = yarnOf(s, br.f);
       bO.set(o, k0 * WO);
     });
     // cava / decote (formas) ou o corpo como esta
-    const fr = formaAtiva(s) ? shapeRows(s, bG, bO, nb, W) : { rows: Array.from({ length: nb }, (_, k) => ({ c: k, g: bG.subarray(k * W, k * W + W), o: bO.subarray(k * WO, (k + 1) * WO) })), info: null };
+    const fr = formaAtiva(s) ? shapeRows(s, bG, bO, nb, W, bI, body.map(b => !!b.jq)) : { rows: Array.from({ length: nb }, (_, k) => ({ c: k, g: bG.subarray(k * W, k * W + W), o: bO.subarray(k * WO, (k + 1) * WO) })), info: null };
     bodyOut = fr.rows;
     bodyOut.forEach((rw, k) => {
       const y = S0 + k;
       grid.set(rw.g, y * WB + X0);
       const o = rw.o.slice(); o[COL_END] = k === bodyOut.length - 1 ? 1 : 0;
       opt.set(o, y * WO);
-      if (hasIna) ina.set(bI.subarray(rw.c * W, rw.c * W + W), y * WB + X0);
+      if (hasIna) ina.set(rw.ina || bI.subarray(rw.c * W, rw.c * W + W), y * WB + X0);
+      if (body[rw.c] && body[rw.c].jq) for (let k = 1; k <= s.ponto.cores; k++) { const gy = rw.lado === 'D' ? yarnOf(s, k + 2) : yarnOf(s, k); passes[gy] = (passes[gy] || 0) + 1; }
       if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
     });
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
@@ -390,7 +407,7 @@ const RAYNEN = (function () {
     bodyOut.forEach((rw, k) => {
       const br = body[rw.c], key = br && br.course != null ? 'c' + br.course : 'b' + rw.c;
       let cor = null;
-      if (br && br.jq) { const ii = bI.subarray(rw.c * W, rw.c * W + W); cor = i => { const y = ii[i]; return y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 1; }; }
+      if (br && br.jq) { const ii = rw.ina || bI.subarray(rw.c * W, rw.c * W + W), dir = rw.lado === 'D'; cor = i => { const y = ii[i]; const c = y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 1; return dir && c > 2 ? c - 2 : c; }; }
       else if (br && br.mod) cor = (i, v) => v === 121 ? 2 : 1;
       else if (pj.tipo === 'jacquard' && pj.metodo === 'expandido' && br && br.course != null) { const f = br.f; cor = (i, v) => v === 8 ? f : 0; }
       else { const f = (br && br.f) || 1; cor = () => f; }   // cor pelo fio do ponto (no decote o lado direito usa outro guia-fio, mas e o mesmo fio)
@@ -477,6 +494,6 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;
