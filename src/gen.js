@@ -116,6 +116,12 @@ const RAYNEN = (function () {
     if (!int(s.guiaFio) || s.guiaFio < 1 || s.guiaFio > 16) erros.push('Guia-fio entre 1 e 16.');
     s.fios.forEach((f, i) => { if (!int(f) || f < 1 || f > 16) erros.push(`Guia-fio ${'BCD'[i]} entre 1 e 16.`); });
     const p = s.ponto;
+    if (p.tipo === 'base') {
+      if (!s.base || !s.base.h) erros.push('Escolha no item 4 uma base salva com o programa inteiro para usar o ponto da base.');
+      else if (s.base.h <= s.base.rows) erros.push('A base não tem carreiras de corpo acima do corte.');
+      if (s.trancas.length) erros.push('Com o ponto da base não dá para adicionar tranças. Remova as tranças.');
+      return { spec: s, erros, avisos };
+    }
     if (p.tipo === 'quadriculado' && (!(p.bx >= 1) || !(p.by >= 1))) erros.push('Quadriculado: blocos de pelo menos 1 agulha × 1 carreira.');
     if (p.tipo === 'motivo') {
       const m = p.motivo;
@@ -176,6 +182,7 @@ const RAYNEN = (function () {
     if (!T) throw new Error('modelo não carregado');
     const { spec: s0, erros } = check(spec);
     if (erros.length) throw new Error(erros.join('\n'));
+    if (s0.ponto.tipo === 'base') return buildBase(s0);
     const { N } = planRows(s0);
     const s = Object.assign({}, s0, { carreiras: N });
     const body = bodyRows(s, N);
@@ -253,6 +260,20 @@ const RAYNEN = (function () {
     if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
     else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
     return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length, start: S0 };
+  }
+
+  // programa inteiro da base, como o programador salvou (largura e carreiras da base)
+  function buildBase(s0) {
+    const B = s0.base, W = B.w, rows = B.h, s = Object.assign({}, s0, { largura: W, carreiras: B.h - B.rows });
+    const grid = new Uint8Array(rows * WB), opt = new Uint8Array(rows * WO), passes = {};
+    for (let y = 0; y < rows; y++) {
+      grid.set(B.grid.subarray(y * W, y * W + W), y * WB + X0);
+      opt.set(B.opt.subarray(y * WO, (y + 1) * WO), y * WO);
+      const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1);
+    }
+    const bmp = new Uint8Array(OFF + WB * H); bmp.set(T.bmpHeader); bmp.set(grid, OFF);
+    const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt, OFF);
+    return { spec: s, modDef: null, bmp, opt: optf, ina: null, jqd: null, inaGrid: null, grid, rows, width: W, crosses: [], passes, passadas: passes[s.guiaFio] || 0, bodyRows: rows - B.rows, start: B.rows };
   }
 
   // zip simples (sem compressao) para BMP + opt + ficha

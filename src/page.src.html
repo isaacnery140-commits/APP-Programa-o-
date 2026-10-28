@@ -139,10 +139,12 @@ details.more>*:not(summary){margin-bottom:10px}
           <option value="biblioteca">Módulo de ponto pronto</option>
           <option value="ia">Ponto novo (criar com IA)</option>
           <option value="jacquard">Jacquard</option>
+          <option value="base" id="opt-tbase" hidden>Ponto da base (programa como está)</option>
         </select></label>
 
         <div class="opts">
           <div class="opts-head"><span class="lt"><span class="n">6</span>Opções do ponto</span></div>
+          <p class="hint" id="opt-base" hidden>A base escolhida no item 4 é o programa principal: largura, carreiras, barra, ponto e linhas de função vêm dela, sem mudar nada. Para trocar só o ponto do corpo, escolha outro tipo no item 5: o início/barra da base fica e o corpo é refeito.</p>
           <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, adicione tranças abaixo.</p>
           <div class="row q">
             <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
@@ -256,7 +258,7 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="cable">
           <div class="cable-head"><span>Bases de programas</span><span class="hint" id="bs-count"></span></div>
-          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa, diga até qual carreira vai a base (início + barra) e salve. A base aparece no item 4, "Tipo da barra", e o corpo do ponto começa logo acima dela.</p>
+          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa e salve: o app guarda o programa inteiro. No item 4, "Tipo da barra", ao escolher a base ela vira o programa principal (nome, largura, carreiras e ponto vêm dela). A linha clara marca até onde vai o início + barra, que é o que fica se você trocar o ponto do corpo no item 5.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="bs-dir" type="file" webkitdirectory multiple hidden></label>
             <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
@@ -264,7 +266,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <div id="bs-edit" hidden>
             <div class="row">
               <label for="bs-prog">Programa<select id="bs-prog"></select></label>
-              <label for="bs-rows">Base até a carreira<input id="bs-rows" type="number" min="1" max="600" value="25"></label>
+              <label for="bs-rows">Início + barra até a carreira<input id="bs-rows" type="number" min="1" max="600" value="25"></label>
             </div>
             <label for="bs-nome">Nome da base<input id="bs-nome" autocomplete="off"></label>
             <p class="hint" id="bs-info"></p>
@@ -335,10 +337,11 @@ let motivo = [[1,5],[1,1]], motivoFios = [1,1], motivoReal = false;   // rapport
 let motifNome = '';
 let desenho = JQ_EX.rows.map(r=>[...r].map(Number)), jqFonte = JQ_EX.fonte;
 const BUILTIN = {'meia malha':'meia','jersey':'meia','malha tras':'links','avesso':'links','links':'links','links quadriculado':'quadriculado','quadriculado':'quadriculado','xadrez':'quadriculado','jacquard':'jacquard'};
-const LABEL = {meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
+const LABEL = {base:'Ponto da base',meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
 const norm = t => (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
 const libByName = n => LIB.find(e=>norm(e.nome)===norm(n));
 const tipoAtual = () => { const t=$('f-tipo').value; return (t==='biblioteca'||t==='ia')?'motivo':t; };
+const baseInfo = () => { const v=$('f-barra').value; if(!v.startsWith('base:')) return null; const b=BASES.find(x=>'base:'+x.id===v); return b?{doc:b,data:BASECACHE[b.id]}:null; };
 
 // modulos de ponto (cartoes com miniatura do rapport)
 let libSel=-1;
@@ -422,7 +425,7 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
-    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
+    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:(tipo==='jacquard'||tipo==='base')?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
 function writeSpec(s){
   $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
@@ -582,7 +585,20 @@ $('btn-addc').addEventListener('click',()=>{
   const W=parseInt($('f-larg').value,10)||50;
   cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
 });
-['f-nome','f-larg','f-carr','f-rib','f-barra','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
+$('f-barra').addEventListener('change',aplicaBase);
+function aplicaBase(){
+  const bi=baseInfo(), ob=$('opt-tbase');
+  ob.hidden=!bi;
+  if(bi && bi.data){
+    const full=(bi.data.h||bi.data.rows)>bi.data.rows;
+    $('f-nome').value=String(bi.doc.nome).replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,40);
+    $('f-larg').value=bi.data.w;
+    if(full){ $('f-carr').value=bi.data.h-bi.data.rows; ob.disabled=false; $('f-tipo').value='base'; }
+    else { ob.disabled=true; if($('f-tipo').value==='base') $('f-tipo').value='meia'; }
+  } else if($('f-tipo').value==='base') $('f-tipo').value='meia';
+  update();
+}
+['f-nome','f-larg','f-carr','f-rib','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
 $('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } update(); });
 $('f-tipo').addEventListener('change',()=>{
   const t=$('f-tipo').value;
@@ -595,7 +611,9 @@ $('f-tipo').addEventListener('change',()=>{
 $('f-zoom').addEventListener('input',draw);
 
 function update(){
-  const tp=tipoAtual();
+  const tp=tipoAtual(), ehBase=tp==='base';
+  $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
+  $('btn-addc').disabled=ehBase;
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -603,6 +621,7 @@ function update(){
   document.querySelectorAll('.b').forEach(el=>el.hidden=t5!=='biblioteca');
   document.querySelectorAll('.ai').forEach(el=>el.hidden=t5!=='ia');
   $('opt-none').hidden = !(tp==='meia'||tp==='links');
+  if(ehBase){ $('btn-addc').hidden=true; $('cables').hidden=true; }
   $('f-rib').disabled = $('f-barra').value.startsWith('base:');
   document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
   $('btn-addc').hidden = tp==='jacquard'; $('cables').hidden = tp==='jacquard';
@@ -657,7 +676,7 @@ function renderFacts(){
   if(!last) return;
   const s=last.spec, pt={meia:()=>'Meia malha',links:()=>'Malha trás',quadriculado:()=>`Links ${s.ponto.bx}×${s.ponto.by}`,
     motivo:()=>`${s.ponto.nome||'Personalizado'} (${s.ponto.motivo[0].length}×${s.ponto.motivo.length})`,
-    jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`}[s.ponto.tipo]();
+    jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`, base:()=>'Programa da base'}[s.ponto.tipo]();
   const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
   const items=[['Largura',`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (${last.start} ${s.base?'da base':'início/ribana'} + ${last.bodyRows}${last.rows-last.start-last.bodyRows?` + ${last.rows-last.start-last.bodyRows} do módulo`:''})`],
     ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],
@@ -670,7 +689,7 @@ function ficha(){
     `Largura: ${s.largura} agulhas (colunas 1-${s.largura})`,`Carreiras no desenho: ${last.rows}`,
     ...(s.base?[`  1-${last.start}  base do programador: ${$('f-barra').selectedOptions[0].textContent}`]:[`  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 barra: ribana ${s.barra||'2x2'}, laço de ${s.ribanaRep} voltas`]),
     `  ${last.start+1}-${last.rows} corpo, densidade segmento 8`,
-    `Ponto: ${s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
+    `Ponto: ${s.ponto.tipo==='base'?`programa da base "${$('f-barra').selectedOptions[0].textContent}" como está (corpo das carreiras ${last.start+1} a ${last.rows})`:s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
   if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
   s.trancas.forEach((t,k)=>l.push(`Trança ${k+1}: agulhas ${t.agulha}-${t.agulha+2*t.grupo-1} (${t.grupo}+${t.grupo}), cruza a cada ${t.intervalo} carreiras, ${t.lateral} agulha(s) de malha trás de cada lado, códigos ${k%2?'48/49':'28/29'}${t.sentido==='dir'?' invertidos':''}`));
@@ -907,11 +926,11 @@ async function ungz(b64){ const b=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
 function setMeus(list){ MEUS=list.map(d=>({id:d.id,nome:d.nome,motivo:dec(d.motivo),fios:d.fios||[],arquivo:d.arquivo||''})).sort((a,b)=>a.nome.localeCompare(b.nome)); renderPasta(); if(libTab==='meus') renderMods(); }
 async function setBases(list){
   BASES=list.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
-  for(const b of BASES) if(!BASECACHE[b.id]){ try{ BASECACHE[b.id]={rows:b.rows,w:b.w,periodo:b.periodo||4,grid:await ungz(b.grid),opt:await ungz(b.opt)}; }catch(e){} }
+  for(const b of BASES) if(!BASECACHE[b.id]){ try{ BASECACHE[b.id]={rows:b.rows,h:b.h||b.rows,w:b.w,periodo:b.periodo||4,grid:await ungz(b.grid),opt:await ungz(b.opt)}; }catch(e){} }
   const og=$('og-bases'), cur=$('f-barra').value; og.textContent='';
-  BASES.forEach(b=>{ const o=document.createElement('option'); o.value='base:'+b.id; o.textContent=`${b.nome} (${b.rows} carr.)`; og.appendChild(o); });
+  BASES.forEach(b=>{ const o=document.createElement('option'); o.value='base:'+b.id; o.textContent=`Base: ${b.nome} (${b.w} ag. × ${b.h||b.rows} carr.)`; og.appendChild(o); });
   if(cur.startsWith('base:') && !BASES.some(b=>'base:'+b.id===cur)) $('f-barra').value='2x2'; else $('f-barra').value=cur;
-  renderPasta(); update();
+  renderPasta(); aplicaBase();
 }
 function baseAtual(){ const v=$('f-barra').value; if(!v.startsWith('base:')) return null; return BASECACHE[v.slice(5)]||null; }
 function renderPasta(){
@@ -1002,12 +1021,13 @@ $('bs-prog').addEventListener('change',escolheBase); $('bs-rows').addEventListen
 $('bs-save').addEventListener('click',async()=>{
   const st=$('bs-status'); if(!bsAtual) return;
   const {b,o,used,h}=bsAtual, n=Math.max(1,Math.min(+$('bs-rows').value||1,h,600)), w=Math.max(1,used-1);
-  const grid=new Uint8Array(n*w); for(let y=0;y<n;y++) grid.set(b.px.subarray(y*b.w+1,y*b.w+1+w),y*w);
-  const opt=new Uint8Array(n*512); if(o) for(let y=0;y<n;y++) opt.set(o.px.subarray(y*o.w,y*o.w+Math.min(512,o.w)),y*512);
+  const grid=new Uint8Array(h*w); for(let y=0;y<h;y++) grid.set(b.px.subarray(y*b.w+1,y*b.w+1+w),y*w);
+  const opt=new Uint8Array(h*512); if(o) for(let y=0;y<Math.min(h,o.h);y++) opt.set(o.px.subarray(y*o.w,y*o.w+Math.min(512,o.w)),y*512);
   try{
     const nome=$('bs-nome').value.trim()||$('bs-prog').value;
-    await salvar('bases',{nome,rows:n,w,periodo:4,grid:await gz(grid),opt:await gz(opt),arquivo:$('bs-prog').value,criado:Date.now()});
-    st.textContent=`Base "${nome}" salva. Escolha em 4 ▸ Tipo da barra.`;
+    const g64=await gz(grid), o64=await gz(opt); if(g64.length+o64.length>240000) throw new Error('programa grande demais para salvar no app (tente um programa menor)');
+    await salvar('bases',{nome,rows:n,h,w,periodo:4,grid:g64,opt:o64,arquivo:$('bs-prog').value,criado:Date.now()});
+    st.textContent=`Base "${nome}" salva com o programa inteiro (${w} agulhas × ${h} carreiras). Escolha em 4 ▸ Tipo da barra: ela vira o programa principal.`;
   }catch(e){ st.textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
 });
 async function iniciaPasta(){
