@@ -13,6 +13,8 @@ const RAYNEN = (function () {
     T = { bmpHeader: b64(t.bmpHeader), optHeader: b64(t.optHeader), start: b64(t.startRows), startW: t.startW, opt: b64(t.optRows), palette: t.palette };
   }
   // posicao de origem no inicio/ribana do 25009F (padroes com periodo <= 4); larguras > 575 repetem o padrao
+  // tipos de barra (ribana): codigo por agulha nas carreiras 16-24; '2x2' = original do 25009F
+  const BARRAS = { '2x2': null, '1x1': [1, 2], '2x1': [1, 1, 2], '3x1': [1, 1, 1, 2], '3x3': [1, 1, 1, 2, 2, 2] };
   function srcX(x) { return x <= 575 ? x : x - 4 * Math.ceil((x - 575) / 4); }
 
   // codigos aceitos num ponto personalizado (tabela do manual, cap. 15)
@@ -34,7 +36,7 @@ const RAYNEN = (function () {
     return out;
   }
   function normalize(s) {
-    const n = Object.assign({ nome: 'NOVO', largura: 50, carreiras: 60, ribanaRep: 12, guiaFio: 3, fios: [5, 4, 6], ponto: { tipo: 'meia' }, trancas: [] }, s || {});
+    const n = Object.assign({ nome: 'NOVO', largura: 50, carreiras: 60, ribanaRep: 12, barra: '2x2', guiaFio: 3, fios: [5, 4, 6], ponto: { tipo: 'meia' }, trancas: [] }, s || {});
     n.ponto = Object.assign({ tipo: 'meia', bx: 5, by: 5 }, n.ponto || {});
     if (!Array.isArray(n.fios)) n.fios = [5, 4, 6];
     n.trancas = (n.trancas || []).map(t => {
@@ -110,6 +112,7 @@ const RAYNEN = (function () {
     if (!int(s.largura) || s.largura < 10 || s.largura > 1000) erros.push('Largura deve ser entre 10 e 1000 agulhas.');
     if (!int(s.carreiras) || s.carreiras < 2) erros.push('O corpo precisa de pelo menos 2 carreiras.');
     if (!int(s.ribanaRep) || s.ribanaRep < 1 || s.ribanaRep > 99) erros.push('Repetições da ribana: entre 1 e 99.');
+    if (!(s.barra in BARRAS)) erros.push('Tipo de barra desconhecido.');
     if (!int(s.guiaFio) || s.guiaFio < 1 || s.guiaFio > 16) erros.push('Guia-fio entre 1 e 16.');
     s.fios.forEach((f, i) => { if (!int(f) || f < 1 || f > 16) erros.push(`Guia-fio ${'BCD'[i]} entre 1 e 16.`); });
     const p = s.ponto;
@@ -185,6 +188,8 @@ const RAYNEN = (function () {
       opt.set(T.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       if (opt[y * WO + COL_LOOP]) opt[y * WO + COL_LOOP] = s.ribanaRep;   // laco da ribana (201)
     }
+    const bp = BARRAS[s.barra];
+    if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
     const ina = new Uint8Array(rows * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
@@ -265,6 +270,6 @@ const RAYNEN = (function () {
     const all = [...parts, ...central, new Uint8Array(e.buffer)], out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
     let p = 0; all.forEach(a => { out.set(a, p); p += a.length; }); return out;
   }
-  return { load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;

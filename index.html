@@ -67,6 +67,25 @@ button:disabled{opacity:.5;cursor:default}
 .steps{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
 .dl{font-size:15px;padding:11px 18px}
 .status{font-size:13px}
+.n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-weight:800;font-size:12px;}
+.lt{display:flex;align-items:center;gap:6px}
+#h-novo{font-size:15px;color:var(--ink)}
+section label{font-size:14px}
+.r21{grid-template-columns:2fr 1fr}
+.opts{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.opts-head{font-size:14px;color:var(--muted);display:flex;align-items:center}
+.lib{display:flex;flex-direction:column;gap:8px}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
+.mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
+.mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
+.mod[aria-selected="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.mod small{color:var(--muted)}
+.modgrp{grid-column:1/-1;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+details.more{border-top:1px solid var(--line);padding-top:10px}
+details.more summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--accent)}
+details.more[open] summary{margin-bottom:10px}
+details.more>*:not(summary){margin-bottom:10px}
+
 @media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not(:disabled){filter:brightness(1.08)}}
 </style>
 
@@ -78,8 +97,113 @@ button:disabled{opacity:.5;cursor:default}
 
   <div class="grid">
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      <section aria-labelledby="h-pedido">
-        <h2 id="h-pedido">1 · Descreva a peça</h2>
+      <section aria-labelledby="h-novo">
+        <h2 id="h-novo">Novo programa</h2>
+        <label for="f-nome"><span class="lt"><span class="n">1</span>Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
+        <div class="row">
+          <label for="f-larg"><span class="lt"><span class="n">2</span>Agulhas de largura</span><input id="f-larg" type="number" min="10" max="1000" value="51"></label>
+          <label for="f-carr"><span class="lt"><span class="n">3</span>Carreiras</span><input id="f-carr" type="number" min="4" value="80"></label>
+        </div>
+        <div class="row r21">
+          <label for="f-barra"><span class="lt"><span class="n">4</span>Tipo da barra</span><select id="f-barra">
+            <option value="2x2">Ribana 2x2 (testada)</option>
+            <option value="1x1">Ribana 1x1</option>
+            <option value="2x1">Ribana 2x1</option>
+            <option value="3x1">Ribana 3x1</option>
+            <option value="3x3">Ribana 3x3</option>
+          </select></label>
+          <label for="f-rib">Voltas da barra<input id="f-rib" type="number" min="1" max="99" value="12"></label>
+        </div>
+        <label for="f-tipo"><span class="lt"><span class="n">5</span>Tipo do ponto</span><select id="f-tipo">
+          <option value="meia">Meia malha</option>
+          <option value="links">Malha trás (avesso)</option>
+          <option value="quadriculado">Links quadriculado</option>
+          <option value="biblioteca">Módulo de ponto pronto</option>
+          <option value="ia">Ponto novo (criar com IA)</option>
+          <option value="jacquard">Jacquard</option>
+        </select></label>
+
+        <div class="opts">
+          <div class="opts-head"><span class="lt"><span class="n">6</span>Opções do ponto</span></div>
+          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, adicione tranças abaixo.</p>
+          <div class="row q">
+            <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
+            <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
+          </div>
+          <div class="lib b" id="lib-box">
+            <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
+            <div class="mods" id="mods" role="listbox" aria-label="Módulos de ponto"></div>
+          </div>
+          <label for="f-ponto" class="ai">Qual ponto você quer?<input id="f-ponto" value="Meia malha" autocomplete="off" placeholder="Ex.: piquet duplo, canelado 2x1, favo"></label>
+        <div class="cable m" id="motif-box">
+            <div class="cable-head"><span>Rapport do ponto</span><span class="hint" id="motif-size"></span></div>
+            <p class="hint" id="motif-src" hidden></p>
+            <label for="f-pdesc" class="ai">Detalhes do ponto (opcional)<textarea id="f-pdesc" style="min-height:60px" placeholder="Ex.: piquet com carregado na trás a cada 2 carreiras, rapport de 2 agulhas"></textarea></label>
+            <div class="actions ai"><button id="btn-motif" type="button">Criar ponto com IA</button><span id="motif-status" class="status hint"></span></div>
+            <div id="motif-out" class="ai-out" hidden></div>
+            <div class="row">
+              <label for="f-mw">Rapport: agulhas<input id="f-mw" type="number" min="1" max="64" value="2"></label>
+              <label for="f-mh">Rapport: carreiras<input id="f-mh" type="number" min="1" max="64" value="2"></label>
+              <label for="f-paint">Pintar com<select id="f-paint"></select></label>
+            </div>
+            <div class="bed" style="max-height:320px;padding:8px"><canvas id="mcv" width="10" height="10" aria-label="Editor do rapport: clique numa casa para pintar com o código escolhido"></canvas></div>
+            <p class="hint">Clique numa casa para trocar o código. A coluna da esquerda (A/B/C/D) é o guia-fio de cada carreira: clique para trocar. A carreira 1 do rapport fica embaixo.</p>
+          </div>
+          <div class="cable j" id="jq-box">
+            <div class="cable-head"><span>Jacquard</span><span class="hint" id="jq-size"></span></div>
+            <p class="hint" id="jq-src"></p>
+            <div class="row">
+              <label for="f-cores">Cores<select id="f-cores"><option value="2">2 cores</option><option value="3">3 cores</option><option value="4">4 cores</option></select></label>
+              <label for="f-jmodo">Desenho<select id="f-jmodo"><option value="repetir">Repetir na peça toda</option><option value="centro">Uma vez, centralizado</option></select></label>
+              <label for="f-jpaint">Pintar com<select id="f-jpaint"></select></label>
+            </div>
+            <div class="row">
+              <label for="f-jmet">Formato no Raynen<select id="f-jmet"><option value="modulo">Módulo 120/121, igual ao 45018FG (2 cores)</option><option value="compacto">Compacto: camada INA + função 216</option><option value="expandido">Expandido: uma passada por cor no BMP</option></select></label>
+              <label for="f-javesso" id="lbl-javesso">Avesso (216, 2ª coluna)<input id="f-javesso" type="number" min="1" max="26" value="1"></label>
+            </div>
+            <p class="hint" id="jq-yarns"></p>
+            <label for="f-jdesc">Descreva o desenho<textarea id="f-jdesc" style="min-height:56px" placeholder="Ex.: uma rosa com folhas, estilo silhueta  ·  ou: escrever BRASIL"></textarea></label>
+            <label for="f-jlimpar" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jlimpar" type="checkbox" checked style="width:auto">Limpar pontos soltos (1 agulha isolada)</label>
+            <label for="f-jfino" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jfino" type="checkbox" checked style="width:auto">Preservar traços finos ao importar imagem</label>
+            <div class="cable" style="gap:8px">
+              <div class="cable-head"><span>Escrever texto</span></div>
+              <label for="f-jtxt">Texto (Enter quebra a linha)<textarea id="f-jtxt" style="min-height:44px" placeholder="Ex.: BRASIL"></textarea></label>
+              <div class="row">
+                <label for="f-jtfonte">Fonte<select id="f-jtfonte"><option value="bloco">Bloco (letra pequena, nítida)</option><option value="negrito">Negrito</option><option value="serifa">Serifada</option></select></label>
+                <label for="f-jtalt">Altura da letra (carreiras)<input id="f-jtalt" type="number" min="5" max="200" value="14"></label>
+                <label for="f-jtcor">Cor da letra<select id="f-jtcor"><option value="2">Cor 2</option><option value="3">Cor 3</option><option value="4">Cor 4</option></select></label>
+              </div>
+              <div class="actions"><button id="btn-jtxt" type="button" class="ghost">Gerar texto</button></div>
+            </div>
+            <div class="actions">
+              <button id="btn-jq" type="button">Criar desenho com IA</button>
+              <label for="f-jimg" class="ghost" style="flex-direction:row;align-items:center;gap:6px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:8px 12px;cursor:pointer">Importar imagem<input id="f-jimg" type="file" accept="image/*" style="display:none"></label>
+              <button id="btn-jex" type="button" class="ghost">Exemplo QTJTH24S</button>
+            </div>
+            <div class="row">
+              <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
+              <label for="f-jh">Desenho: carreiras<input id="f-jh" type="number" min="2" max="400" value="68"></label>
+              <label for="f-jratio">Proporção (carr./ag.) da imagem<input id="f-jratio" type="number" step="0.1" min="0.5" max="3" value="1.4"></label>
+            </div>
+            <span id="jq-status" class="status hint"></span>
+            <div class="bed" style="max-height:340px;padding:8px"><canvas id="jcv" width="10" height="10" aria-label="Editor do desenho do jacquard: clique para pintar com a cor escolhida"></canvas></div>
+            <p class="hint">No formato módulo (padrão) o desenho fica com os códigos 120/121 e a definição do módulo vai acima da linha de fim, igual ao 45018FG: dá para editar o desenho e o módulo no Raynen. No formato compacto cada carreira do desenho é uma carreira no Raynen, com as cores na camada INA: dá para editar o desenho lá. O Raynen cria as passadas de cada cor ao compilar. As cores na grade são só para visualizar: o que vale é o guia-fio de cada cor.</p>
+          </div>
+          <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
+        </div>
+
+        <details class="more">
+          <summary>Guia-fios</summary>
+          <div class="row">
+            <label for="f-guia">Guia-fio A (corpo)<input id="f-guia" type="number" min="1" max="16" value="3"></label>
+            <label for="f-gb">Guia-fio B<input id="f-gb" type="number" min="1" max="16" value="5"></label>
+            <label for="f-gc">Guia-fio C<input id="f-gc" type="number" min="1" max="16" value="4"></label>
+            <label for="f-gd">Guia-fio D<input id="f-gd" type="number" min="1" max="16" value="6"></label>
+          </div>
+        </details>
+        <details class="more">
+          <summary>Preencher tudo por descrição (IA)</summary>
         <textarea id="pedido" placeholder="Ex.: piquet, 120 agulhas de largura, 200 carreiras de corpo">Peça de 51 agulhas em meia malha, 80 carreiras de corpo.</textarea>
         <div class="actions">
           <button id="btn-ia" type="button">Interpretar com IA</button>
@@ -88,96 +212,14 @@ button:disabled{opacity:.5;cursor:default}
         </div>
         <div id="ia-out" class="ai-out" hidden></div>
         <p class="hint" id="ia-off" hidden>A interpretação por IA não está disponível nesta visualização. Preencha os parâmetros abaixo.</p>
-      </section>
-
-      <section aria-labelledby="h-param">
-        <h2 id="h-param">2 · Parâmetros (confira antes de baixar)</h2>
-        <label for="f-nome">Nome do arquivo<input id="f-nome" value="AMOSTRA"></label>
-        <div class="row">
-          <label for="f-guia">Guia-fio A (corpo)<input id="f-guia" type="number" min="1" max="16" value="3"></label>
-          <label for="f-gb">Guia-fio B<input id="f-gb" type="number" min="1" max="16" value="5"></label>
-          <label for="f-gc">Guia-fio C<input id="f-gc" type="number" min="1" max="16" value="4"></label>
-          <label for="f-gd">Guia-fio D<input id="f-gd" type="number" min="1" max="16" value="6"></label>
-        </div>
-        <div class="row">
-          <label for="f-larg">Largura (agulhas)<input id="f-larg" type="number" min="10" max="1000" value="51"></label>
-          <label for="f-carr">Carreiras do corpo<input id="f-carr" type="number" min="4" value="80"></label>
-          <label for="f-rib">Ribana 1x2 (repetições)<input id="f-rib" type="number" min="1" max="99" value="12"></label>
-        </div>
-        <label for="f-ponto">Ponto do corpo (escreva o ponto que quiser)
-          <input id="f-ponto" list="pontos" value="Meia malha" autocomplete="off">
-          <datalist id="pontos"></datalist>
-        </label>
-        <label for="f-lib">Biblioteca de pontos
-          <select id="f-lib"><option value="">Escolha um ponto pronto…</option></select>
-        </label>
-        <div class="row q">
-          <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
-          <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
-        </div>
-        <div class="cable m" id="motif-box">
-          <div class="cable-head"><span>Ponto personalizado</span><span class="hint" id="motif-size"></span></div>
-          <p class="hint" id="motif-src" hidden></p>
-          <label for="f-pdesc">Detalhes do ponto (opcional)<textarea id="f-pdesc" style="min-height:60px" placeholder="Ex.: piquet com carregado na trás a cada 2 carreiras, rapport de 2 agulhas"></textarea></label>
-          <div class="actions"><button id="btn-motif" type="button">Criar ponto com IA</button><span id="motif-status" class="status hint"></span></div>
-          <div id="motif-out" class="ai-out" hidden></div>
-          <div class="row">
-            <label for="f-mw">Rapport: agulhas<input id="f-mw" type="number" min="1" max="64" value="2"></label>
-            <label for="f-mh">Rapport: carreiras<input id="f-mh" type="number" min="1" max="64" value="2"></label>
-            <label for="f-paint">Pintar com<select id="f-paint"></select></label>
-          </div>
-          <div class="bed" style="max-height:320px;padding:8px"><canvas id="mcv" width="10" height="10" aria-label="Editor do rapport: clique numa casa para pintar com o código escolhido"></canvas></div>
-          <p class="hint">Clique numa casa para trocar o código. A coluna da esquerda (A/B/C/D) é o guia-fio de cada carreira: clique para trocar. A carreira 1 do rapport fica embaixo.</p>
-        </div>
-        <div class="cable j" id="jq-box">
-          <div class="cable-head"><span>Jacquard</span><span class="hint" id="jq-size"></span></div>
-          <p class="hint" id="jq-src"></p>
-          <div class="row">
-            <label for="f-cores">Cores<select id="f-cores"><option value="2">2 cores</option><option value="3">3 cores</option><option value="4">4 cores</option></select></label>
-            <label for="f-jmodo">Desenho<select id="f-jmodo"><option value="repetir">Repetir na peça toda</option><option value="centro">Uma vez, centralizado</option></select></label>
-            <label for="f-jpaint">Pintar com<select id="f-jpaint"></select></label>
-          </div>
-          <div class="row">
-            <label for="f-jmet">Formato no Raynen<select id="f-jmet"><option value="modulo">Módulo 120/121, igual ao 45018FG (2 cores)</option><option value="compacto">Compacto: camada INA + função 216</option><option value="expandido">Expandido: uma passada por cor no BMP</option></select></label>
-            <label for="f-javesso" id="lbl-javesso">Avesso (216, 2ª coluna)<input id="f-javesso" type="number" min="1" max="26" value="1"></label>
-          </div>
-          <p class="hint" id="jq-yarns"></p>
-          <label for="f-jdesc">Descreva o desenho<textarea id="f-jdesc" style="min-height:56px" placeholder="Ex.: uma rosa com folhas, estilo silhueta  ·  ou: escrever BRASIL"></textarea></label>
-          <label for="f-jlimpar" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jlimpar" type="checkbox" checked style="width:auto">Limpar pontos soltos (1 agulha isolada)</label>
-          <label for="f-jfino" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jfino" type="checkbox" checked style="width:auto">Preservar traços finos ao importar imagem</label>
-          <div class="cable" style="gap:8px">
-            <div class="cable-head"><span>Escrever texto</span></div>
-            <label for="f-jtxt">Texto (Enter quebra a linha)<textarea id="f-jtxt" style="min-height:44px" placeholder="Ex.: BRASIL"></textarea></label>
-            <div class="row">
-              <label for="f-jtfonte">Fonte<select id="f-jtfonte"><option value="bloco">Bloco (letra pequena, nítida)</option><option value="negrito">Negrito</option><option value="serifa">Serifada</option></select></label>
-              <label for="f-jtalt">Altura da letra (carreiras)<input id="f-jtalt" type="number" min="5" max="200" value="14"></label>
-              <label for="f-jtcor">Cor da letra<select id="f-jtcor"><option value="2">Cor 2</option><option value="3">Cor 3</option><option value="4">Cor 4</option></select></label>
-            </div>
-            <div class="actions"><button id="btn-jtxt" type="button" class="ghost">Gerar texto</button></div>
-          </div>
-          <div class="actions">
-            <button id="btn-jq" type="button">Criar desenho com IA</button>
-            <label for="f-jimg" class="ghost" style="flex-direction:row;align-items:center;gap:6px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:8px 12px;cursor:pointer">Importar imagem<input id="f-jimg" type="file" accept="image/*" style="display:none"></label>
-            <button id="btn-jex" type="button" class="ghost">Exemplo QTJTH24S</button>
-          </div>
-          <div class="row">
-            <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
-            <label for="f-jh">Desenho: carreiras<input id="f-jh" type="number" min="2" max="400" value="68"></label>
-            <label for="f-jratio">Proporção (carr./ag.) da imagem<input id="f-jratio" type="number" step="0.1" min="0.5" max="3" value="1.4"></label>
-          </div>
-          <span id="jq-status" class="status hint"></span>
-          <div class="bed" style="max-height:340px;padding:8px"><canvas id="jcv" width="10" height="10" aria-label="Editor do desenho do jacquard: clique para pintar com a cor escolhida"></canvas></div>
-          <p class="hint">No formato módulo (padrão) o desenho fica com os códigos 120/121 e a definição do módulo vai acima da linha de fim, igual ao 45018FG: dá para editar o desenho e o módulo no Raynen. No formato compacto cada carreira do desenho é uma carreira no Raynen, com as cores na camada INA: dá para editar o desenho lá. O Raynen cria as passadas de cada cor ao compilar. As cores na grade são só para visualizar: o que vale é o guia-fio de cada cor.</p>
-        </div>
-        <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
-        <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
+        </details>
       </section>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       <section aria-labelledby="h-prev">
         <div class="bedbar">
-          <h2 id="h-prev">3 · Prévia do desenho (carreira 1 embaixo, como no Raynen)</h2>
+          <h2 id="h-prev">Prévia do desenho (carreira 1 embaixo, como no Raynen)</h2>
           <div class="zoom"><label for="f-zoom" style="flex-direction:row;align-items:center;gap:8px">Zoom<input id="f-zoom" type="range" min="1" max="12" value="6"></label></div>
         </div>
         <div class="bed" id="bed"><canvas id="cv" width="10" height="10" aria-label="Prévia da grade de agulhas"></canvas></div>
@@ -186,7 +228,7 @@ button:disabled{opacity:.5;cursor:default}
       </section>
 
       <section aria-labelledby="h-ficha">
-        <h2 id="h-ficha">4 · Ficha e arquivos</h2>
+        <h2 id="h-ficha">Ficha e arquivos</h2>
         <div class="msgs" id="msgs"></div>
         <dl class="facts" id="facts"></dl>
         <div class="actions">
@@ -220,6 +262,8 @@ const RAYNEN = (function () {
     T = { bmpHeader: b64(t.bmpHeader), optHeader: b64(t.optHeader), start: b64(t.startRows), startW: t.startW, opt: b64(t.optRows), palette: t.palette };
   }
   // posicao de origem no inicio/ribana do 25009F (padroes com periodo <= 4); larguras > 575 repetem o padrao
+  // tipos de barra (ribana): codigo por agulha nas carreiras 16-24; '2x2' = original do 25009F
+  const BARRAS = { '2x2': null, '1x1': [1, 2], '2x1': [1, 1, 2], '3x1': [1, 1, 1, 2], '3x3': [1, 1, 1, 2, 2, 2] };
   function srcX(x) { return x <= 575 ? x : x - 4 * Math.ceil((x - 575) / 4); }
 
   // codigos aceitos num ponto personalizado (tabela do manual, cap. 15)
@@ -241,7 +285,7 @@ const RAYNEN = (function () {
     return out;
   }
   function normalize(s) {
-    const n = Object.assign({ nome: 'NOVO', largura: 50, carreiras: 60, ribanaRep: 12, guiaFio: 3, fios: [5, 4, 6], ponto: { tipo: 'meia' }, trancas: [] }, s || {});
+    const n = Object.assign({ nome: 'NOVO', largura: 50, carreiras: 60, ribanaRep: 12, barra: '2x2', guiaFio: 3, fios: [5, 4, 6], ponto: { tipo: 'meia' }, trancas: [] }, s || {});
     n.ponto = Object.assign({ tipo: 'meia', bx: 5, by: 5 }, n.ponto || {});
     if (!Array.isArray(n.fios)) n.fios = [5, 4, 6];
     n.trancas = (n.trancas || []).map(t => {
@@ -317,6 +361,7 @@ const RAYNEN = (function () {
     if (!int(s.largura) || s.largura < 10 || s.largura > 1000) erros.push('Largura deve ser entre 10 e 1000 agulhas.');
     if (!int(s.carreiras) || s.carreiras < 2) erros.push('O corpo precisa de pelo menos 2 carreiras.');
     if (!int(s.ribanaRep) || s.ribanaRep < 1 || s.ribanaRep > 99) erros.push('Repetições da ribana: entre 1 e 99.');
+    if (!(s.barra in BARRAS)) erros.push('Tipo de barra desconhecido.');
     if (!int(s.guiaFio) || s.guiaFio < 1 || s.guiaFio > 16) erros.push('Guia-fio entre 1 e 16.');
     s.fios.forEach((f, i) => { if (!int(f) || f < 1 || f > 16) erros.push(`Guia-fio ${'BCD'[i]} entre 1 e 16.`); });
     const p = s.ponto;
@@ -392,6 +437,8 @@ const RAYNEN = (function () {
       opt.set(T.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       if (opt[y * WO + COL_LOOP]) opt[y * WO + COL_LOOP] = s.ribanaRep;   // laco da ribana (201)
     }
+    const bp = BARRAS[s.barra];
+    if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
     const ina = new Uint8Array(rows * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
@@ -472,7 +519,7 @@ const RAYNEN = (function () {
     const all = [...parts, ...central, new Uint8Array(e.buffer)], out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
     let p = 0; all.forEach(a => { out.set(a, p); p += a.length; }); return out;
   }
-  return { load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 
 
@@ -503,23 +550,35 @@ const BUILTIN = {'meia malha':'meia','jersey':'meia','malha tras':'links','avess
 const LABEL = {meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
 const norm = t => (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
 const libByName = n => LIB.find(e=>norm(e.nome)===norm(n));
-const tipoAtual = () => { const n=norm($('f-ponto').value); return BUILTIN[n] || (n.startsWith('jacquard')?'jacquard':'motivo'); };
+const tipoAtual = () => { const t=$('f-tipo').value; return (t==='biblioteca'||t==='ia')?'motivo':t; };
 
-// biblioteca e lista de sugestoes
-(()=>{
-  const dl=$('pontos'), sel=$('f-lib');
-  ['Meia malha','Malha trás','Links quadriculado','Jacquard',...LIB.map(e=>e.nome)].forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});
-  const g1=document.createElement('optgroup'); g1.label='Dos programas de vocês'; const g2=document.createElement('optgroup'); g2.label='Padrões Raynen (ainda não compilados)';
-  LIB.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${e.nome} · ${e.motivo[0].length}×${e.motivo.length}`;(e.real?g1:g2).appendChild(o);});
-  sel.append(g1,g2);
-  const g3=document.createElement('optgroup'); g3.label='Outros'; [['meia','Meia malha'],['links','Malha trás'],['quadriculado','Links quadriculado'],['jacquard','Jacquard']].forEach(([v,t])=>{const o=document.createElement('option');o.value='b:'+v;o.textContent=t;g3.appendChild(o);}); sel.appendChild(g3);
-  sel.addEventListener('change',()=>{
-    const v=sel.value; if(v==='') return;
-    if(v.startsWith('b:')){ $('f-ponto').value=LABEL[v.slice(2)]; }
-    else { const e=LIB[+v]; $('f-ponto').value=e.nome; loadLib(e); }
-    update();
+// modulos de ponto (cartoes com miniatura do rapport)
+let libSel=-1;
+function miniRapport(cv,m){
+  const h=m.length,w=m[0].length,pal=RAYNEN.palette, ctx=cv.getContext('2d');
+  // repete o rapport ate preencher ~16x12 casas para dar ideia do ponto
+  const W=Math.max(w,Math.ceil(16/w)*w), H=Math.max(h,Math.ceil(12/h)*h); cv.width=W; cv.height=H;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ ctx.fillStyle=pal[m[y%h][x%w]]; ctx.fillRect(x,H-1-y,1,1); }
+}
+function renderMods(){
+  const box=$('mods'), q=norm($('f-libbusca').value); box.textContent='';
+  const grupos=[['Dos programas de vocês (testados)',e=>e.real],['Padrões Raynen (conferir no Raynen)',e=>!e.real]];
+  grupos.forEach(([titulo,f])=>{
+    const itens=LIB.map((e,i)=>[e,i]).filter(([e])=>f(e)&&(!q||norm(e.nome+' '+(e.nota||'')).includes(q)));
+    if(!itens.length) return;
+    const g=document.createElement('div'); g.className='modgrp'; g.textContent=titulo; box.appendChild(g);
+    itens.forEach(([e,i])=>{
+      const bt=document.createElement('button'); bt.type='button'; bt.className='mod'; bt.setAttribute('role','option'); bt.setAttribute('aria-selected',String(i===libSel));
+      const cv=document.createElement('canvas'); miniRapport(cv,e.motivo);
+      const t=document.createElement('span'); t.textContent=e.nome;
+      const sm=document.createElement('small'); sm.textContent=`${e.motivo[0].length}×${e.motivo.length}`;
+      bt.append(cv,t,sm); bt.addEventListener('click',()=>{ libSel=i; $('f-ponto').value=e.nome; loadLib(e); renderMods(); update(); });
+      box.appendChild(bt);
+    });
   });
-})();
+  if(!box.children.length){ const p=document.createElement('p'); p.className='hint'; p.textContent='Nenhum módulo com esse nome. Use "Ponto novo (criar com IA)" no item 5.'; box.appendChild(p); }
+}
+$('f-libbusca').addEventListener('input',renderMods);
 function loadLib(e){
   setMotif(e.motivo, e.fios); motivoReal=!!e.real; motifNome=norm(e.nome);
   const s=$('motif-src'); s.hidden=false; s.textContent=`${e.fonte}. ${e.nota||''}`;
@@ -533,12 +592,14 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.slice()); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
-    ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
+    barra:$('f-barra').value, ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
 function writeSpec(s){
-  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio;
+  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra) $('f-barra').value=s.barra;
   if(Array.isArray(s.fios)){ $('f-gb').value=s.fios[0]||5; $('f-gc').value=s.fios[1]||4; $('f-gd').value=s.fios[2]||6; }
   $('f-ponto').value = s.ponto.tipo==='motivo' ? (s.ponto.nome||'Ponto personalizado') : (LABEL[s.ponto.tipo]||'Meia malha');
+  if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); $('f-tipo').value=e?'biblioteca':'ia'; libSel=e?LIB.indexOf(e):-1; renderMods(); }
+  else $('f-tipo').value = LABEL[s.ponto.tipo] ? s.ponto.tipo : 'meia';
   $('f-bx').value=s.ponto.bx||5; $('f-by').value=s.ponto.by||5;
   if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); if(e) loadLib(e); else if(Array.isArray(s.ponto.motivo)) setMotif(s.ponto.motivo, s.ponto.fios); }
   if(s.ponto.tipo==='jacquard'){ if(s.ponto.cores) $('f-cores').value=s.ponto.cores; if(s.ponto.modo) $('f-jmodo').value=s.ponto.modo; }
@@ -687,18 +748,29 @@ $('btn-addc').addEventListener('click',()=>{
   const W=parseInt($('f-larg').value,10)||50;
   cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
 });
-['f-nome','f-larg','f-carr','f-rib','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
-$('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } $('f-lib').value = e ? String(LIB.indexOf(e)) : ''; update(); });
+['f-nome','f-larg','f-carr','f-rib','f-barra','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
+$('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } update(); });
+$('f-tipo').addEventListener('change',()=>{
+  const t=$('f-tipo').value;
+  if(t==='biblioteca'){ if(libSel<0){ libSel=LIB.findIndex(e=>e.real); if(libSel<0) libSel=0; } const e=LIB[libSel]; $('f-ponto').value=e.nome; loadLib(e); renderMods(); }
+  else if(t==='ia'){ $('f-ponto').value=''; $('motif-src').hidden=true; motifNome=''; $('f-ponto').focus(); }
+  else $('f-ponto').value=LABEL[t];
+  update();
+});
 $('f-zoom').addEventListener('input',draw);
 
 function update(){
   const tp=tipoAtual();
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
+  const t5=$('f-tipo').value;
   document.querySelectorAll('.m').forEach(el=>el.hidden=tp!=='motivo');
+  document.querySelectorAll('.b').forEach(el=>el.hidden=t5!=='biblioteca');
+  document.querySelectorAll('.ai').forEach(el=>el.hidden=t5!=='ia');
+  $('opt-none').hidden = !(tp==='meia'||tp==='links');
   document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
   $('btn-addc').hidden = tp==='jacquard'; $('cables').hidden = tp==='jacquard';
-  if(tp==='motivo' && norm($('f-ponto').value)!==motifNome && !$('btn-motif').disabled)
+  if(t5==='ia' && $('f-ponto').value.trim() && norm($('f-ponto').value)!==motifNome && !$('btn-motif').disabled)
     $('motif-status').textContent=`Clique em "Criar ponto com IA" para gerar “${$('f-ponto').value.trim()}”, ou monte o rapport à mão.`;
   const chk=RAYNEN.check(readSpec()), msgs=$('msgs'); msgs.textContent='';
   chk.erros.forEach(t=>{const m=document.createElement('div');m.className='msg err';m.textContent=t;msgs.appendChild(m);});
@@ -760,7 +832,7 @@ function ficha(){
   const s=last.spec, l=[];
   l.push(`FICHA - ${s.nome}`,`Gerado pelo Programador Raynen em ${new Date().toLocaleString('pt-BR')}`,'',
     `Largura: ${s.largura} agulhas (colunas 1-${s.largura})`,`Carreiras no desenho: ${last.rows}`,
-    `  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 ribana 1x2 do 25009F, laço de ${s.ribanaRep} repetições`,
+    `  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 barra: ribana ${s.barra||'2x2'}, laço de ${s.ribanaRep} voltas`,
     `  26-${last.rows} corpo, densidade segmento 8`,
     `Ponto: ${s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
@@ -795,7 +867,8 @@ Responda APENAS com um objeto JSON neste formato:
 {"nome": string (sem espaços, ex. "BLUSA_TRANCA"),
  "largura": inteiro (agulhas, 10-1000),
  "carreiras": inteiro (carreiras do corpo, depois da ribana; use número par),
- "ribanaRep": inteiro (repetições do laço da ribana 1x2; padrão 12; cada repetição = 4 carreiras),
+ "barra": "2x2" | "1x1" | "2x1" | "3x1" | "3x3" (tipo da barra/ribana do início; padrão "2x2"),
+ "ribanaRep": inteiro (voltas da barra: repetições do laço da ribana; padrão 12; cada volta = 4 carreiras),
  "guiaFio": inteiro (guia-fio A, padrão 3),
  "fios": [B, C, D] (guia-fios extras, padrão [5,4,6]),
  "ponto": {"tipo": "meia" | "links" | "quadriculado" | "biblioteca" | "personalizado" | "jacquard", "bx": inteiro, "by": inteiro, "nome": string (nome do ponto; para "biblioteca" use exatamente um nome da lista), "descricao": string (detalhes do ponto ou do desenho do jacquard), "cores": 2-4 (jacquard), "modo": "repetir" | "centro" (jacquard)},
@@ -811,7 +884,7 @@ Regras:
 - Entre duas tranças deixe pelo menos 2*lateral+1 agulhas. Cada trança com as laterais precisa caber entre a agulha 1 e a largura.
 - Se o pedido der medidas em cm sem densidade (agulhas/10 cm e carreiras/10 cm), não invente: mantenha os valores atuais e diga em observacoes que precisa da densidade.
 - Se faltar algum dado, mantenha o valor atual que eu passo.
-- O que o gerador ainda não faz (intarsia, decote, diminuições, outras ribanas de início): ignore e explique em observacoes.`;
+- O que o gerador ainda não faz (intarsia, decote, diminuições, barras diferentes de 1x1, 2x1, 2x2, 3x1, 3x3): ignore e explique em observacoes.`;
 
 function regrasPonto(){
   const tabela = RAYNEN.MOTIF_CODES.map(c=>`${c} = ${NOMES[c]}`).join('\n');
@@ -984,7 +1057,7 @@ $('btn-ia').addEventListener('click',async()=>{
   }finally{ $('btn-ia').disabled=false; $('btn-stop').hidden=true; }
 });
 
-setMotif(motivo,motivoFios); fillJPaint(); drawJq(); renderCables(); update();
+setMotif(motivo,motivoFios); renderMods(); fillJPaint(); drawJq(); renderCables(); update();
 (async()=>{
   const c=window.claude;
   if(!c||!c.use){ $('btn-ia').disabled=true; $('ia-off').hidden=false; return; }
@@ -992,4 +1065,5 @@ setMotif(motivo,motivoFios); fillJPaint(); drawJq(); renderCables(); update();
   if(!sample){ $('btn-ia').disabled=true; $('btn-motif').disabled=true; $('btn-jq').disabled=true; $('ia-off').hidden=false; }
 })();
 </script>
+
 </body></html>
