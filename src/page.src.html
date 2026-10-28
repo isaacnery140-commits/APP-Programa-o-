@@ -245,10 +245,10 @@ details.more>*:not(summary){margin-bottom:10px}
         <p class="hint" id="store-hint">Carregando o armazenamento…</p>
         <div class="cable">
           <div class="cable-head"><span>Meus módulos</span><span class="hint" id="mm-count"></span></div>
-          <p class="hint">Abra a pasta do computador com os módulos de vocês: BMP de 8 bits exportado pelo Raynen, um módulo por arquivo (o app pega o desenho e corta a parte vazia). Se tiver o .opt com o mesmo nome, os guia-fios de cada carreira também entram.</p>
+          <p class="hint">Abra a pasta do computador com os módulos de vocês em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP), um módulo por arquivo (o app pega o desenho e corta a parte vazia). Se tiver o .opt com o mesmo nome, os guia-fios de cada carreira também entram.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="mm-dir" type="file" webkitdirectory multiple hidden></label>
-            <label class="btnfile ghost">Escolher arquivos<input id="mm-files" type="file" accept=".bmp,.BMP,.opt,.OPT" multiple hidden></label>
+            <label class="btnfile ghost">Escolher arquivos<input id="mm-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
             <button id="mm-save" type="button" class="ghost">Salvar o rapport atual</button>
           </div>
           <span id="mm-status" class="status hint" aria-live="polite"></span>
@@ -256,10 +256,10 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="cable">
           <div class="cable-head"><span>Bases de programas</span><span class="hint" id="bs-count"></span></div>
-          <p class="hint">Abra a pasta com os programas base (o .BMP e o .opt com o mesmo nome, exportados pelo Raynen). Escolha o programa, diga até qual carreira vai a base (início + barra) e salve. A base aparece no item 4, "Tipo da barra", e o corpo do ponto começa logo acima dela.</p>
+          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa, diga até qual carreira vai a base (início + barra) e salve. A base aparece no item 4, "Tipo da barra", e o corpo do ponto começa logo acima dela.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="bs-dir" type="file" webkitdirectory multiple hidden></label>
-            <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT" multiple hidden></label>
+            <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
           </div>
           <div id="bs-edit" hidden>
             <div class="row">
@@ -936,12 +936,17 @@ async function apagar(col,id){
   }catch(e){ (col==='modulos'?$('mm-status'):$('bs-status')).textContent='Não consegui excluir: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
 }
 // agrupa arquivos por nome (sem extensao)
-function agrupa(files){ const g={}; [...files].forEach(f=>{ const m=f.name.match(/^(.*)\.(bmp|opt)$/i); if(!m) return; const k=m[1]; g[k]=g[k]||{}; g[k][m[2].toLowerCase()]=f; }); return g; }
+function agrupa(files){ const g={}; [...files].forEach(f=>{ const m=f.name.match(/^(.*)\.(bmp|opt|knx)$/i); if(!m) return; const k=m[1]; g[k]=g[k]||{}; g[k][m[2].toLowerCase()]=f; }); return g; }
+function avisoKnx(g){
+  const so=Object.keys(g).filter(k=>g[k].knx && !g[k].bmp);
+  if(!so.length) return '';
+  return ` ${so.length} arquivo(s) .KNX sem o .BMP ao lado (${so.slice(0,4).join(', ')}${so.length>4?'…':''}). O .KNX é criptografado pelo Raynen e o navegador não consegue ler: abra no Raynen, vá em Arquivo ▸ Salvar como ▸ tipo BMP na mesma pasta (ele grava o .BMP e o .opt) e abra a pasta de novo aqui.`;
+}
 async function lerBmp(f){ return RAYNEN.readBmp8(new Uint8Array(await f.arrayBuffer())); }
 // MEUS MODULOS
 async function importaModulos(files){
   const st=$('mm-status'), g=agrupa(files), nomes=Object.keys(g).filter(k=>g[k].bmp);
-  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'; return; }
+  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'+avisoKnx(g); return; }
   let ok=0; const falhas=[];
   for(const k of nomes){
     try{
@@ -955,7 +960,7 @@ async function importaModulos(files){
       await salvar('modulos',{nome:k,motivo:enc(motivo),fios,arquivo:g[k].bmp.name,criado:Date.now()}); ok++;
     }catch(e){ falhas.push(`${k} (${e.message})`); }
   }
-  st.textContent=`${ok} módulo(s) salvo(s).`+(falhas.length?` Não entraram: ${falhas.slice(0,6).join('; ')}${falhas.length>6?'…':''}`:'')+(ok?' Veja em 5 ▸ Módulo de ponto pronto ▸ Meus módulos.':'');
+  st.textContent=`${ok} módulo(s) salvo(s).`+(falhas.length?` Não entraram: ${falhas.slice(0,6).join('; ')}${falhas.length>6?'…':''}`:'')+(ok?' Veja em 5 ▸ Módulo de ponto pronto ▸ Meus módulos.':'')+avisoKnx(g);
 }
 $('mm-dir').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
 $('mm-files').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
@@ -969,9 +974,9 @@ $('mm-save').addEventListener('click',async()=>{
 let BPROGS={}, bsAtual=null;
 async function abreBases(files){
   const st=$('bs-status'); BPROGS=agrupa(files); const nomes=Object.keys(BPROGS).filter(k=>BPROGS[k].bmp).sort();
-  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'; $('bs-edit').hidden=true; return; }
+  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'+avisoKnx(BPROGS); $('bs-edit').hidden=true; return; }
   const sel=$('bs-prog'); sel.textContent=''; nomes.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k+(BPROGS[k].opt?'':' (sem .opt)'); sel.appendChild(o); });
-  $('bs-edit').hidden=false; st.textContent=`${nomes.length} programa(s) encontrados.`; await escolheBase();
+  $('bs-edit').hidden=false; st.textContent=`${nomes.length} programa(s) encontrados.`+avisoKnx(BPROGS); await escolheBase();
 }
 async function escolheBase(){
   const k=$('bs-prog').value, g=BPROGS[k], st=$('bs-info');
