@@ -284,6 +284,26 @@ const RAYNEN = (function () {
     return { rows: out, info };
   }
 
+  // ---- dados para a simulacao da peca: cursos (de baixo p/ cima) com cor (1-4) e tipo (1 frente, 2 tras, 3 carregado) por agulha ----
+  const PURL = new Set([2, 9, 12, ...R(40, 59), ...R(80, 99), ...R(105, 109), 113, 114, 115, 189, 234, 235, 236, 237, 238, 239]);
+  const TUCK = new Set([4, 5, 6, 7, 14]);
+  const NONE = new Set([0, 15, 16, 17, 100, 110, 18, 19, 224, 225, 254, 255]);
+  function stitchType(v) { if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1; if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; return 1; }
+  function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
+    const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
+    const map = new Map(), order = [];
+    rowsList.forEach(r => {
+      let cIdx = r.cor ? null : yarnIdx(r.yarn); if (!r.cor && !cIdx) return;   // fio de descarte nao entra
+      let cur = map.get(r.key); if (!cur) { cur = { col: new Uint8Array(W), typ: new Uint8Array(W) }; map.set(r.key, cur); order.push(r.key); }
+      for (let i = 0; i < W; i++) {
+        const v = r.g[i], t = stitchType(v); if (!t) continue;
+        const col = r.cor ? r.cor(i, v) : cIdx; if (!col) continue;
+        if (!cur.typ[i] || (t === 1 && cur.typ[i] === 3)) { cur.typ[i] = t; cur.col[i] = col; }
+      }
+    });
+    return { cols: W, cursos: order.map(k => map.get(k)).filter(c => c.typ.some(Boolean)) };
+  }
+
   function build(spec) {
     if (!T) throw new Error('modelo não carregado');
     const { spec: s0, erros } = check(spec);
@@ -356,6 +376,27 @@ const RAYNEN = (function () {
       if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
     });
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
+    // simulacao: inicio/barra + corpo agrupado por curso
+    const simRows = [];
+    { let y = 0, rep = 0;   // laco (201) da barra repetido como na maquina
+      while (y < S0) {
+        const L = opt[y * WO + COL_LOOP];
+        if (L > 1) { let e = y; while (e + 1 < S0 && opt[(e + 1) * WO + COL_LOOP] === L) e++;
+          for (let t = 0; t < L; t++) for (let yy = y; yy <= e; yy++) simRows.push({ key: 's' + (rep++), g: grid.subarray(yy * WB + X0, yy * WB + X0 + W), yarn: opt[yy * WO + COL_YARN] });
+          y = e + 1; continue; }
+        simRows.push({ key: 's' + (rep++), g: grid.subarray(y * WB + X0, y * WB + X0 + W), yarn: opt[y * WO + COL_YARN] }); y++;
+      } }
+    const pj = s.ponto;
+    bodyOut.forEach((rw, k) => {
+      const br = body[rw.c], key = br && br.course != null ? 'c' + br.course : 'b' + rw.c;
+      let cor = null;
+      if (br && br.jq) { const ii = bI.subarray(rw.c * W, rw.c * W + W); cor = i => { const y = ii[i]; return y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 1; }; }
+      else if (br && br.mod) cor = (i, v) => v === 121 ? 2 : 1;
+      else if (pj.tipo === 'jacquard' && pj.metodo === 'expandido' && br && br.course != null) { const f = br.f; cor = (i, v) => v === 8 ? f : 0; }
+      else { const f = (br && br.f) || 1; cor = () => f; }   // cor pelo fio do ponto (no decote o lado direito usa outro guia-fio, mas e o mesmo fio)
+      simRows.push({ key, g: rw.g, yarn: rw.o[COL_YARN], cor });
+    });
+    const sim = simData(s, W, simRows);
     const rows = S0 + bodyOut.length + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {
@@ -383,7 +424,7 @@ const RAYNEN = (function () {
     if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina.subarray(0, Math.min(rows, H) * WB), OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
     if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
     else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
-    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: bodyOut.length, start: S0, forma: fr.info };
+    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: bodyOut.length, start: S0, forma: fr.info, sim };
   }
 
   // programa inteiro da base, como o programador salvou (largura e carreiras da base)
@@ -397,7 +438,8 @@ const RAYNEN = (function () {
     }
     const bmp = new Uint8Array(OFF + WB * H); bmp.set(T.bmpHeader); bmp.set(grid, OFF);
     const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt, OFF);
-    return { spec: s, modDef: null, bmp, opt: optf, ina: null, jqd: null, inaGrid: null, grid, rows, width: W, crosses: [], passes, passadas: passes[s.guiaFio] || 0, bodyRows: rows - B.rows, start: B.rows };
+    const simRows = []; for (let y = 0; y < rows; y++) { const f = opt[y * WO + COL_YARN]; if (f) simRows.push({ key: 'r' + y, g: grid.subarray(y * WB + X0, y * WB + X0 + W), yarn: f, cor: () => 1 }); }
+    return { spec: s, modDef: null, bmp, opt: optf, ina: null, jqd: null, inaGrid: null, grid, rows, width: W, crosses: [], passes, passadas: passes[s.guiaFio] || 0, bodyRows: rows - B.rows, start: B.rows, sim: simData(s, W, simRows) };
   }
 
   // zip simples (sem compressao) para BMP + opt + ficha
