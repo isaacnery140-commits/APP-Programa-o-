@@ -76,6 +76,8 @@ button:disabled{opacity:.5;cursor:default}
 section label{font-size:14px}
 .r21{grid-template-columns:2fr 1fr}
 .opts{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.chk{flex-direction:row!important;align-items:center;gap:8px;color:var(--ink)!important;font-size:14px}
+.chk input{width:auto}
 .opts-head{font-size:14px;color:var(--muted);display:flex;align-items:center}
 .lib{display:flex;flex-direction:column;gap:8px}
 .tabs{display:flex;gap:0;border:1px solid var(--accent);border-radius:4px;overflow:hidden;align-self:flex-start}
@@ -156,7 +158,7 @@ details.more>*:not(summary){margin-bottom:10px}
               <button type="button" role="tab" id="tab-raynen" aria-selected="false">Módulos do Raynen</button>
               <button type="button" role="tab" id="tab-meus" aria-selected="false">Meus módulos</button>
             </div>
-            <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>pronto</b> já têm a grade de códigos; os outros ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
+            <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>pronto</b> já têm a grade de códigos (básicos, tranças e aran X montados pela tabela de cores do manual: confira no Raynen); os de <b>jacquard</b> abrem o jacquard do app com o número de cores certo; os <b>pendentes</b> ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
             <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
             <div class="mods" id="mods" role="listbox" aria-label="Módulos de ponto"></div>
           </div>
@@ -218,6 +220,30 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
           <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
           <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
+        </div>
+
+        <div class="opts" id="formas">
+          <div class="opts-head"><span class="lt"><span class="n">7</span>Cava e decote (forma da peça)</span></div>
+          <p class="hint">Igual à ficha de processo do Raynen: cada passo é <b>carreiras-agulhas-vezes</b>. Ex.: <span class="code">2-1-6</span> = a cada 2 carreiras diminui 1 agulha, 6 vezes. Vários passos separados por vírgula, na ordem: <span class="code">2-3-1, 2-2-2, 2-1-4</span>. Cada diminuição anda de 1 a 7 agulhas.</p>
+          <label class="chk" for="fc-on"><input id="fc-on" type="checkbox"> Fazer cava (nos dois lados)</label>
+          <div class="row" id="fc-box" hidden>
+            <label for="fc-ini">Começa na carreira do corpo<input id="fc-ini" type="number" min="1" value="60"></label>
+            <label for="fc-pas">Passos<input id="fc-pas" value="2-3-1, 2-2-2, 2-1-4" autocomplete="off"></label>
+            <label for="fc-bor">Borda (agulhas que andam)<input id="fc-bor" type="number" min="1" max="7" value="2"></label>
+          </div>
+          <label class="chk" for="fd-on"><input id="fd-on" type="checkbox"> Fazer decote</label>
+          <div id="fd-box" hidden>
+            <div class="row">
+              <label for="fd-tipo">Tipo<select id="fd-tipo"><option value="V">Decote V</option><option value="redondo">Decote redondo</option></select></label>
+              <label for="fd-ini">Começa na carreira do corpo<input id="fd-ini" type="number" min="1" value="80"></label>
+              <label for="fd-meio" id="lbl-fdmeio">Agulhas no meio (fundo)<input id="fd-meio" type="number" min="2" value="12"></label>
+            </div>
+            <div class="row">
+              <label for="fd-pas">Passos do decote (cada lado)<input id="fd-pas" value="2-1-12" autocomplete="off"></label>
+              <label for="fd-bor">Borda (agulhas que andam)<input id="fd-bor" type="number" min="1" max="7" value="2"></label>
+            </div>
+            <p class="hint">No decote a peça se divide: o lado esquerdo tece com o guia-fio A e o direito com o B, 2 carreiras de cada lado, como no 25009F.</p>
+          </div>
         </div>
 
         <details class="more">
@@ -324,7 +350,21 @@ const NOMES = (()=>{const n={120:'módulo: cor 1 do jacquard',121:'módulo: cor 
   for(let k=1;k<=7;k++){n[20+k]=`malha frente, transfere ${k} à esq.`;n[30+k]=`malha frente, transfere ${k} à dir.`;n[40+k]=`malha trás, transfere ${k} à esq.`;n[50+k]=`malha trás, transfere ${k} à dir.`;
     n[60+k]=`frente, vai p/ trás, ${k} à esq. p/ frente`;n[70+k]=`frente, vai p/ trás, ${k} à dir. p/ frente`;n[80+k]=`trás, vai p/ frente, ${k} à esq. p/ trás`;n[90+k]=`trás, vai p/ frente, ${k} à dir. p/ trás`;}
   n[78]='transfere p/ trás e tece frente e trás';n[79]='transfere p/ frente e tece frente e trás';n[88]='frente, 1 à dir. com T p/ frente';n[89]='frente, 2 à dir. com T p/ frente';
-  n[98]='frente, transfere à dir. com T p/ frente';n[99]='frente, 4 à dir. com T p/ frente';return n;})();
+  n[98]='frente, transfere à dir. com T p/ frente';n[99]='frente, 4 à dir. com T p/ frente';
+  for(let k=1;k<=4;k++){ n[100+k]=`frente, ${k} à esq. com T p/ frente`; n[104+k]=`trás, ${k} à dir. com T p/ trás`; }
+  n[109]='trás, 1 à esq. com T p/ trás'; n[113]='trás, 2 à esq. com T p/ trás'; n[114]='trás, 3 à esq. com T p/ trás'; n[115]='trás, 4 à esq. com T p/ trás';
+  n[111]='frente, meia laçada (levantar)'; n[112]='trás, meia laçada (levantar)'; n[116]='frente, meia laçada, 1 à esq.'; n[117]='frente, meia laçada, 1 à dir.'; n[118]='trás, meia laçada, 1 à esq.'; n[119]='trás, meia laçada, 1 à dir.';
+  n[184]='frente, falsa agulha depois'; n[185]='trás, falsa agulha antes'; n[186]='carregado frente, falsa agulha depois'; n[187]='carregado trás, falsa agulha antes';
+  n[188]='prensa frente'; n[189]='prensa trás'; n[190]='prensa frente e trás';
+  n[191]='frente, frente+trás 1 à esq.'; n[192]='frente, frente+trás 2 à esq.'; n[193]='frente, frente+trás 1 à esq. (2)'; n[194]='frente, frente+trás 2 à esq. (2)';
+  n[195]='frente, frente+trás 1 à dir.'; n[196]='frente, frente+trás 2 à dir.'; n[197]='frente, frente+trás 1 à dir. (2)'; n[198]='frente, frente+trás 2 à dir. (2)';
+  n[199]='liga frente e trás automático'; n[220]='levanta frente, trás apertado'; n[221]='frente apertado, levanta trás'; n[222]='frente tece, trás laçada grossa'; n[223]='frente grossa, trás tece';
+  n[224]='transfere p/ trás, não tece, volta p/ frente'; n[225]='transfere p/ frente, não tece, volta p/ trás'; n[226]='transfere p/ trás, tece trás, volta p/ frente'; n[227]='transfere p/ frente, tece frente, volta p/ trás';
+  for(let k=5;k<=7;k++){ n[223+k]=`frente, ${k} à esq. com T p/ frente`; n[226+k]=`frente, ${k} à dir. com T p/ frente`; n[229+k]=`trás, ${k} à esq. com T p/ trás`; n[232+k]=`trás, ${k} à dir. com T p/ trás`; }
+  n[240]='duplo e solta na frente'; n[241]='duplo e solta atrás'; n[244]='levanta frente apertado'; n[245]='levanta trás apertado'; n[246]='frente tece, trás levanta apertado'; n[247]='frente levanta apertado, trás tece';
+  n[248]='levanta frente e trás apertado'; n[249]='solta frente e trás'; n[250]='solta frente, prensa trás'; n[251]='prensa frente, solta trás';
+  n[252]='mesmo ponto da casa à esquerda'; n[253]='mesmo ponto da casa à direita'; n[254]='módulo: casa não expande'; n[255]='identificação de transição';
+  return n;})();
 const LIB = /*LIBRARY*/;
 const JQ_EX = /*JQEX*/;
 const RMODS = /*RMODS*/;
@@ -391,7 +431,7 @@ function renderMods(){
       const im=document.createElement('img'); im.src='data:image/png;base64,'+m.img; im.alt='';
       const t=document.createElement('span'); t.textContent=m.nome;
       const cn=document.createElement('span'); cn.className='cn'; cn.textContent=m.cn; cn.lang='zh';
-      const tg=document.createElement('span'); tg.className='tag'+(m.motivo?' ok':''); tg.textContent=m.motivo?'pronto':'pendente';
+      const tg=document.createElement('span'); tg.className='tag'+(m.motivo||m.jq?' ok':''); tg.textContent=m.motivo?'pronto':m.jq?`jacquard ${m.jq} cores`:'pendente';
       bt.append(im,t,cn,tg); box.appendChild(bt);
     });
   }
@@ -399,6 +439,12 @@ function renderMods(){
 }
 function escolheRaynen(i){
   const m=RMODS[i]; libSel='r'+i;
+  if(m.jq){
+    $('f-tipo').value='jacquard'; $('f-cores').value=String(m.jq); if(m.jq>2) $('f-jmet').value='compacto';
+    fillJPaint(); drawJq(); if(jqFonte===JQ_EX.fonte) ajustaPecaAoDesenho();
+    $('jq-status').textContent=`Módulo do Raynen “${m.cn}”: jacquard de ${m.jq} cores. O tipo de avesso desse módulo é definido no Raynen (função 216, 2ª coluna): confira lá.`;
+    update(); $('jq-box').scrollIntoView({block:'start',behavior:'smooth'}); return;
+  }
   if(m.motivo){
     $('f-ponto').value=m.nome; loadLib({nome:m.nome,motivo:m.motivo,fios:m.motivo.map(()=>1),real:false,fonte:`Módulo do sistema Raynen “${m.cn}”`,nota:m.nota||''});
     renderMods(); update();
@@ -425,6 +471,8 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
+    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini'),passos:$('fc-pas').value,borda:num('fc-bor')},
+           decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini'),meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:(tipo==='jacquard'||tipo==='base')?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
 function writeSpec(s){
@@ -436,6 +484,9 @@ function writeSpec(s){
   $('f-bx').value=s.ponto.bx||5; $('f-by').value=s.ponto.by||5;
   if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); if(e) loadLib(e); else if(Array.isArray(s.ponto.motivo)) setMotif(s.ponto.motivo, s.ponto.fios); }
   if(s.ponto.tipo==='jacquard'){ if(s.ponto.cores) $('f-cores').value=s.ponto.cores; if(s.ponto.modo) $('f-jmodo').value=s.ponto.modo; }
+  if(s.forma){ const c=s.forma.cava||{}, d=s.forma.decote||{};
+    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
+    $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; }
   cables = s.trancas.map(t=>({agulha:t.agulha,grupo:t.grupo,intervalo:t.intervalo,lateral:t.lateral,sentido:t.sentido||'esq'}));
   renderCables(); update();
 }
@@ -586,6 +637,8 @@ $('btn-addc').addEventListener('click',()=>{
   cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
 });
 $('f-barra').addEventListener('change',aplicaBase);
+['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor'].forEach(id=>$(id).addEventListener('input',update));
+['fc-on','fd-on','fd-tipo'].forEach(id=>$(id).addEventListener('change',update));
 function aplicaBase(){
   const bi=baseInfo(), ob=$('opt-tbase');
   ob.hidden=!bi;
@@ -613,6 +666,7 @@ $('f-zoom').addEventListener('input',draw);
 function update(){
   const tp=tipoAtual(), ehBase=tp==='base';
   $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
+  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo';
   $('btn-addc').disabled=ehBase;
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
@@ -679,7 +733,7 @@ function renderFacts(){
     jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`, base:()=>'Programa da base'}[s.ponto.tipo]();
   const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
   const items=[['Largura',`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (${last.start} ${s.base?'da base':'início/ribana'} + ${last.bodyRows}${last.rows-last.start-last.bodyRows?` + ${last.rows-last.start-last.bodyRows} do módulo`:''})`],
-    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],
+    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],['Forma',last.forma?[s.forma.cava.ativo?'cava':'',s.forma.decote.ativo?`decote ${s.forma.decote.tipo}`:''].filter(Boolean).join(' + '):'reta'],
     ['Passadas por guia-fio',ps],['Cruzamentos',last.crosses.length?last.crosses.slice(0,6).join(', ')+(last.crosses.length>6?'…':''):'—']];
   items.forEach(([k,v])=>{const d=document.createElement('div');const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;d.append(dt,dd);f.appendChild(d);});
 }
@@ -691,6 +745,9 @@ function ficha(){
     `  ${last.start+1}-${last.rows} corpo, densidade segmento 8`,
     `Ponto: ${s.ponto.tipo==='base'?`programa da base "${$('f-barra').selectedOptions[0].textContent}" como está (corpo das carreiras ${last.start+1} a ${last.rows})`:s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
+  if(last.forma){ const f=s.forma, fi=last.forma;
+    if(f.cava.ativo) l.push(`Cava: começa na carreira ${f.cava.inicio} do corpo, passos ${f.cava.passos}, borda ${f.cava.borda}; diminuições nas carreiras do corpo ${fi.cava.join(', ')}`);
+    if(f.decote.ativo) l.push(`Decote ${f.decote.tipo}${f.decote.tipo==='redondo'?` (${f.decote.meio} agulhas no meio, presas)`:''}: divide na carreira ${fi.divisao} do corpo, passos ${f.decote.passos}, borda ${f.decote.borda}; lado esquerdo guia-fio ${s.guiaFio}, direito ${s.fios[0]}`); }
   if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
   s.trancas.forEach((t,k)=>l.push(`Trança ${k+1}: agulhas ${t.agulha}-${t.agulha+2*t.grupo-1} (${t.grupo}+${t.grupo}), cruza a cada ${t.intervalo} carreiras, ${t.lateral} agulha(s) de malha trás de cada lado, códigos ${k%2?'48/49':'28/29'}${t.sentido==='dir'?' invertidos':''}`));
   if(last.crosses.length) l.push(`Cruzamentos (trança 1): carreiras ${last.crosses.join(', ')}`);
@@ -728,6 +785,8 @@ Responda APENAS com um objeto JSON neste formato:
  "fios": [B, C, D] (guia-fios extras, padrão [5,4,6]),
  "ponto": {"tipo": "meia" | "links" | "quadriculado" | "biblioteca" | "personalizado" | "jacquard", "bx": inteiro, "by": inteiro, "nome": string (nome do ponto; para "biblioteca" use exatamente um nome da lista), "descricao": string (detalhes do ponto ou do desenho do jacquard), "cores": 2-4 (jacquard), "modo": "repetir" | "centro" (jacquard)},
  "trancas": [{"agulha": inteiro (1ª agulha da trança, contando da esquerda a partir de 1), "grupo": 2 ou 3 (2 = trança de 4 agulhas, 3 = trança de 6), "intervalo": inteiro (carreiras entre cruzamentos, padrão 6), "lateral": inteiro (agulhas de malha trás de cada lado, padrão 2), "sentido": "esq" | "dir"}],
+ "forma": {"cava": {"ativo": bool, "inicio": inteiro (carreira do corpo onde começa a cava), "passos": "carreiras-agulhas-vezes separados por vírgula, ex. 2-3-1, 2-2-2, 2-1-4", "borda": 2},
+           "decote": {"ativo": bool, "tipo": "V" | "redondo", "inicio": inteiro, "meio": inteiro (agulhas do fundo do decote redondo), "passos": "ex. 2-1-12", "borda": 2}},
  "observacoes": string (em português, curta: o que você assumiu ou não conseguiu atender)}
 Regras:
 - "meia malha"/"jersey" = tipo meia. "links quadriculado"/"xadrez" = quadriculado com bx agulhas e by carreiras por bloco. "malha trás"/"avesso"/"links" liso = links.
@@ -739,7 +798,8 @@ Regras:
 - Entre duas tranças deixe pelo menos 2*lateral+1 agulhas. Cada trança com as laterais precisa caber entre a agulha 1 e a largura.
 - Se o pedido der medidas em cm sem densidade (agulhas/10 cm e carreiras/10 cm), não invente: mantenha os valores atuais e diga em observacoes que precisa da densidade.
 - Se faltar algum dado, mantenha o valor atual que eu passo.
-- O que o gerador ainda não faz (intarsia, decote, diminuições, barras diferentes de 1x1, 2x1, 2x2, 3x1, 3x3): ignore e explique em observacoes.`;
+- Cava e decote: use "forma" (diminuições de 1 a 7 agulhas por passo, formato carreiras-agulhas-vezes como a ficha de processo do Raynen). Sem cava/decote no pedido, deixe ativo false.
+- O que o gerador ainda não faz (intarsia, aumentos, ombro, barras diferentes de 1x1, 2x1, 2x2, 3x1, 3x3): ignore e explique em observacoes.`;
 
 function regrasPonto(){
   const tabela = RAYNEN.MOTIF_CODES.map(c=>`${c} = ${NOMES[c]}`).join('\n');

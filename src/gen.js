@@ -19,10 +19,10 @@ const RAYNEN = (function () {
 
   // codigos aceitos num ponto personalizado (tabela do manual, cap. 15)
   const R = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
-  const MOTIF_CODES = [...R(0, 14), 16, ...R(20, 27), ...R(30, 37), ...R(40, 47), ...R(50, 57), ...R(60, 99), 100, 110, 28, 29, 38, 39, 48, 49, 58, 59]
+  const MOTIF_CODES = [...R(0, 14), 16, ...R(20, 27), ...R(30, 37), ...R(40, 47), ...R(50, 57), ...R(60, 99), 100, 110, 28, 29, 38, 39, 48, 49, 58, 59, ...R(101, 119), ...R(184, 198), ...R(220, 239), 244, 245, 246, 247, 248]
     .filter((v, i, arr) => arr.indexOf(v) === i).sort((x, y) => x - y);
   const TESTED = new Set([1, 2, 5, 28, 29, 8, 9, 10, 100, 110]);
-  const KNITS = new Set([1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, ...R(20, 27), ...R(30, 37), ...R(40, 47), ...R(50, 57), ...R(60, 99), 28, 29, 38, 48, 49, 58]);
+  const KNITS = new Set([1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, ...R(20, 27), ...R(30, 37), ...R(40, 47), ...R(50, 57), ...R(60, 99), 28, 29, 38, 48, 49, 58, ...R(101, 109), ...R(111, 119), ...R(191, 198), 222, 223, 226, 227, ...R(228, 239), 246, 247]);
   const NOCONN = new Set([8, 9, 10]);
   function motifIssues(m) {
     const out = [];
@@ -44,6 +44,11 @@ const RAYNEN = (function () {
       if (tr.primeiro == null) tr.primeiro = tr.intervalo - 1;
       return tr;
     });
+    const f = n.forma || {};
+    n.forma = {
+      cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
+      decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2 }, f.decote || {})
+    };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
   }
@@ -168,6 +173,7 @@ const RAYNEN = (function () {
       used.push([a, b, k]);
       if (t.lateral < 1) avisos.push({ tipo: 'nota', txt: `${nome}: sem malha trás ao lado, a trança fica pouco visível.` });
     });
+    checkForma(s, erros, avisos);
     if (!erros.length) {
       const { N, note } = planRows(s);
       if (note) avisos.push({ tipo: 'auto', txt: note });
@@ -178,19 +184,125 @@ const RAYNEN = (function () {
     return { spec: s, erros, avisos };
   }
 
+  // ---- formas: cava (dos dois lados) e decote (V ou redondo) por diminuicao com transferencia ----
+  // passos no formato da ficha de processo: "carreiras-agulhas-vezes", ex.: "2-1-6, 4-1-3" (a cada 2 carreiras diminui 1 agulha, 6 vezes)
+  function parsePassos(t) {
+    const out = [];
+    String(t || '').split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).forEach(x => {
+      const m = x.match(/^(\d+)\s*-\s*(\d+)\s*-\s*(\d+)$/);
+      out.push(m ? { cada: +m[1], ag: +m[2], vezes: +m[3], txt: x } : { erro: x });
+    });
+    return out;
+  }
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo));
+  // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
+  function agenda(inicio, passos) {
+    const ev = []; let c = inicio;
+    passos.forEach(p => { for (let v = 0; v < p.vezes; v++) { ev.push([c, p.ag]); c += p.cada; } });
+    return ev;
+  }
+  // codigo de transferencia: stitch que tece e anda k agulhas (tabela de cores, cap. 15)
+  // frente: 6k = vai p/ tras, k a esq., volta p/ frente; 7k = k a dir.   tras: 8k = k a esq.; 9k = k a dir.
+  const BACK = new Set([2, 9, 12, 40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56, 57]);
+  function moveCode(v, k, dir) {           // dir -1 esquerda, +1 direita
+    if (!v) return 0;
+    const back = BACK.has(v);
+    return (back ? (dir < 0 ? 80 : 90) : (dir < 0 ? 60 : 70)) + k;
+  }
+  function checkForma(s, erros, avisos) {
+    if (!formaAtiva(s)) return;
+    const p = s.ponto, W = s.largura, N = s.carreiras, cv = s.forma.cava, dc = s.forma.decote;
+    if (p.tipo === 'jacquard') { erros.push('Cava/decote com jacquard ainda não são suportados. Use a ficha de processo do Raynen para dar forma ao jacquard.'); return; }
+    let tot = 0;
+    [['Cava', cv], ['Decote', dc]].forEach(([nm, f]) => {
+      if (!f.ativo) return;
+      const ps = parsePassos(f.passos);
+      ps.forEach(x => { if (x.erro) erros.push(`${nm}: passo "${x.erro}" inválido. Use carreiras-agulhas-vezes, ex.: 2-1-6.`); else if (x.ag < 1 || x.ag > 7) erros.push(`${nm}: cada diminuição pode andar de 1 a 7 agulhas (passo ${x.txt}).`); else if (x.cada < 1) erros.push(`${nm}: carreiras do passo ${x.txt} precisam ser 1 ou mais.`); });
+      if (!(f.inicio >= 1 && f.inicio < N)) erros.push(`${nm}: começa na carreira ${f.inicio} do corpo, mas o corpo tem ${N} carreiras.`);
+      if (!(f.borda >= 1 && f.borda <= 7)) erros.push(`${nm}: borda (agulhas que andam) de 1 a 7.`);
+      const ev = agenda(f.inicio - 1, ps.filter(x => !x.erro));
+      const fora = ev.filter(e => e[0] >= N); if (fora.length) avisos.push({ tipo: 'nota', txt: `${nm}: ${fora.length} diminuição(ões) passam do fim do corpo e ficam de fora. Aumente as carreiras.` });
+      const soma = ev.filter(e => e[0] < N).reduce((a, e) => a + e[1], 0);
+      tot += nm === 'Cava' ? 2 * soma : 2 * soma + (f.tipo === 'redondo' ? +f.meio || 0 : 0);
+    });
+    if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
+    if (dc.ativo) {
+      if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
+      if (s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
+      if (dc.tipo === 'redondo' && !(dc.meio >= 2 && dc.meio < W / 2)) erros.push('Decote redondo: agulhas do meio entre 2 e metade da largura.');
+      if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
+      avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
+    }
+    avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
+  }
+  function shapeRows(s, bG, bO, nb, W) {
+    const cv = s.forma.cava, dc = s.forma.decote, out = [];
+    const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
+    const evD = dc.ativo ? new Map(agenda(dc.inicio - 1, parsePassos(dc.passos).filter(x => !x.erro))) : new Map();
+    const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
+    let L = 0, R = W - 1;                       // limites da peca inteira (antes da divisao)
+    const mid = Math.floor(W / 2), meio = dc.ativo && dc.tipo === 'redondo' ? +dc.meio : 0;
+    let lA = 0, lB = 0, rA = 0, rB = 0;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
+    const borda = (f, k) => Math.max(+f.borda || 2, k);
+    // aplica uma diminuicao numa borda: 'L' (borda esquerda anda p/ direita) ou 'R' (borda direita anda p/ esquerda)
+    function dim(row, a, b, lado, k, f) {
+      const e = Math.min(borda(f, k), b - a + 1 - k); if (e < 1) return [a, b];
+      if (lado === 'L') { for (let i = a; i < a + e; i++) row[i] = moveCode(row[i], k, +1); return [a + k, b]; }
+      for (let i = b; i > b - e; i--) row[i] = moveCode(row[i], k, -1); return [a, b - k];
+    }
+    const yA = s.guiaFio, yB = s.fios[0];
+    let c = 0; const info = { divisao: null, cava: [], decote: [] };
+    while (c < nb) {
+      if (c < split) {
+        const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
+        if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO) }); c++;
+        continue;
+      }
+      if (info.divisao == null) {
+        info.divisao = c + 1;
+        lA = L; lB = mid - Math.ceil(meio / 2) - (meio ? 0 : 1) + (W % 2 && !meio ? 1 : 0); rA = lB + 1 + meio; rB = R;
+      }
+      // blocos de 2 carreiras: esquerda c, c+1 depois direita c, c+1
+      const cs = [c, c + 1].filter(x => x < nb);
+      const lados = [['E', yA], ['D', yB]];
+      for (const [lado, yarn] of lados) for (const cc of cs) {
+        const row = bG.slice(cc * W, cc * W + W);
+        const [a, b] = lado === 'E' ? [lA, lB] : [rA, rB];
+        for (let i = 0; i < W; i++) if (i < a || i > b) row[i] = 0;
+        let na = a, nb2 = b;
+        if (evC.has(cc)) { const k = evC.get(cc); if (lado === 'E') [na] = dim(row, na, nb2, 'L', k, cv); else [, nb2] = dim(row, na, nb2, 'R', k, cv); }
+        if (evD.has(cc)) { const k = evD.get(cc); if (lado === 'E') [, nb2] = dim(row, na, nb2, 'R', k, dc); else [na] = dim(row, na, nb2, 'L', k, dc); }
+        if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
+        if (lado === 'E' && evC.has(cc)) info.cava.push(cc + 1);
+        if (lado === 'E' && evD.has(cc)) info.decote.push(cc + 1);
+        const o = bO.slice(cc * WO, (cc + 1) * WO); o[COL_YARN] = yarn;
+        out.push({ c: cc, g: row, o });
+      }
+      c += 2;
+    }
+    return { rows: out, info };
+  }
+
   function build(spec) {
     if (!T) throw new Error('modelo não carregado');
     const { spec: s0, erros } = check(spec);
     if (erros.length) throw new Error(erros.join('\n'));
     if (s0.ponto.tipo === 'base') return buildBase(s0);
-    const { N } = planRows(s0);
+    let { N } = planRows(s0);
+    if (s0.forma && s0.forma.decote.ativo && s0.ponto.tipo !== 'jacquard') {   // cada lado do decote com passadas pares
+      const sp = 2 * Math.floor((s0.forma.decote.inicio - 1) / 2); if ((N - sp) % 2) N++;
+    }
     const s = Object.assign({}, s0, { carreiras: N });
     const body = bodyRows(s, N);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;
-    const rows = S0 + body.length + (isMod ? 29 : 0);
-    const grid = new Uint8Array(rows * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
-    const opt = new Uint8Array(rows * WO);
+    // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
+    const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
+    let bodyOut = null;   // definido depois do laco do corpo
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0);
+    const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
+    const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
       // base do programador: copia o inicio/barra do programa dele; mais largo que a base repete o periodo da direita
       const p = B0.periodo || 4, bw = B0.w;
@@ -207,36 +319,48 @@ const RAYNEN = (function () {
     const bp = B0 ? null : BARRAS[s.barra];
     if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
-    const ina = new Uint8Array(rows * WB), hasIna = body.some(b => b.jq);
+    const ina = new Uint8Array(rowsMax * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
     body.forEach((br, k0) => {
-      const y = S0 + k0, row = y * WB, r = br.r;
-      for (let i = 0; i < W; i++) grid[row + X0 + i] = br.v(i);
-      if (br.jq) for (let i = 0; i < W; i++) ina[row + X0 + i] = yarnOf(s, br.ina(i));
+      const y = S0 + k0, row = k0 * W - X0, r = br.r;    // row: indice em bG (coluna X0 = 0)
+      for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
+      if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null) s.trancas.forEach((t, k) => {
         const cx = X0 + t.agulha - 1, g = t.grupo;
-        for (let j = 0; j < 2 * g; j++) grid[row + cx + j] = 1;
-        for (let j = 0; j < t.lateral; j++) { grid[row + cx - 1 - j] = 2; grid[row + cx + 2 * g + j] = 2; }
+        for (let j = 0; j < 2 * g; j++) bG[row + cx + j] = 1;
+        for (let j = 0; j < t.lateral; j++) { bG[row + cx - 1 - j] = 2; bG[row + cx + 2 * g + j] = 2; }
         const p = t.primeiro - 1;
         if (r >= p && (r - p) % t.intervalo === 0 && r < N - 2) {
           const [lo, hi] = (k % 2 === 0) ? [28, 29] : [48, 49];   // grupos 1 e 2 do manual
           const [L, Rr] = t.sentido === 'dir' ? [hi, lo] : [lo, hi];
-          for (let j = 0; j < g; j++) { grid[row + cx + j] = L; grid[row + cx + g + j] = Rr; }
-          if (k === 0) crosses.push(y + 1);
+          for (let j = 0; j < g; j++) { bG[row + cx + j] = L; bG[row + cx + g + j] = Rr; }
+          if (k === 0) crosses.push(k0);
         }
       });
       const o = tmpl.slice();
       if (br.jq) {
         o[COL_YARN] = 0; o[COL_216] = s.ponto.cores; o[COL_216 + 1] = s.ponto.avesso;
         for (let k = 1; k <= s.ponto.cores; k++) { const g = yarnOf(s, k); passes[g] = (passes[g] || 0) + 1; }
-      } else { o[COL_YARN] = yarnOf(s, br.f); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1; }
-      if (k0 === body.length - 1) o[COL_END] = 1;
-      opt.set(o, y * WO);
+      } else o[COL_YARN] = yarnOf(s, br.f);
+      bO.set(o, k0 * WO);
     });
+    // cava / decote (formas) ou o corpo como esta
+    const fr = formaAtiva(s) ? shapeRows(s, bG, bO, nb, W) : { rows: Array.from({ length: nb }, (_, k) => ({ c: k, g: bG.subarray(k * W, k * W + W), o: bO.subarray(k * WO, (k + 1) * WO) })), info: null };
+    bodyOut = fr.rows;
+    bodyOut.forEach((rw, k) => {
+      const y = S0 + k;
+      grid.set(rw.g, y * WB + X0);
+      const o = rw.o.slice(); o[COL_END] = k === bodyOut.length - 1 ? 1 : 0;
+      opt.set(o, y * WO);
+      if (hasIna) ina.set(bI.subarray(rw.c * W, rw.c * W + W), y * WB + X0);
+      if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
+    });
+    for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
+    const rows = S0 + bodyOut.length + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
-      const d0 = S0 + body.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
+      const d0 = S0 + bodyOut.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
       const A = [[10, 8, 16, 9], [8, 10, 16, 9], [8, 10, 9, 16], [10, 8, 9, 16]];
       const B = [[16, 9, 10, 8], [9, 16, 8, 10], [9, 16, 8, 10], [16, 9, 10, 8]];
       const put = (y, vals) => vals.forEach((v, j) => { grid[y * WB + x0 + j] = v; });
@@ -253,13 +377,13 @@ const RAYNEN = (function () {
       const nA = body.filter(b => b.mod).length;
       passes[yarnOf(s, 2)] = (passes[yarnOf(s, 2)] || 0) + nA;                 // cada carreira do desenho = 2 passadas
     }
-    const bmp = new Uint8Array(OFF + WB * H); bmp.set(T.bmpHeader); bmp.set(grid, OFF);
-    const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt, OFF);
+    const bmp = new Uint8Array(OFF + WB * H); bmp.set(T.bmpHeader); bmp.set(grid.subarray(0, Math.min(rows, H) * WB), OFF);
+    const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt.subarray(0, Math.min(rows, H) * WO), OFF);
     let inaf = null, jqdf = null;
-    if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina, OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
+    if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina.subarray(0, Math.min(rows, H) * WB), OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
     if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
     else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
-    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length, start: S0 };
+    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: bodyOut.length, start: S0, forma: fr.info };
   }
 
   // programa inteiro da base, como o programador salvou (largura e carreiras da base)
