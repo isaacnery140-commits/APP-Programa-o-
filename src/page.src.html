@@ -1021,71 +1021,91 @@ function texturaPeca(sim, sx, sy, cores){
   }
   return cv;
 }
-function manequim(ctx, cx, top, s, busto){
-  // s = px por cm; medidas de frente (metade da circunferencia) para o tamanho
-  const b=busto/2, cin=b*.8, qua=b*1.05, omb=b*.88, pesc=6.5;
-  const yN=top, yO=top+4*s, yB=top+24*s, yC=top+40*s, yQ=top+60*s, yF=top+70*s;
-  const X=v=>v*s;
-  const g=ctx.createLinearGradient(cx-X(qua/2),0,cx+X(qua/2),0); g.addColorStop(0,'#1f2023'); g.addColorStop(.5,'#4b4c52'); g.addColorStop(1,'#1a1b1e');
-  ctx.save(); ctx.fillStyle=g; ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=1.5;
-  ctx.beginPath();
-  ctx.moveTo(cx-X(pesc/2),yN-6*s); ctx.lineTo(cx-X(pesc/2),yN);
-  ctx.quadraticCurveTo(cx-X(pesc/2)-X(2),yO-X(1.5),cx-X(omb/2),yO+X(1));
-  ctx.quadraticCurveTo(cx-X(omb/2)-X(2.5),yO+X(4),cx-X(b/2),yB-X(6));
-  ctx.quadraticCurveTo(cx-X(b/2)-X(1),yB,cx-X(b/2)+X(.5),yB+X(4));
-  ctx.quadraticCurveTo(cx-X(cin/2),yC-X(6),cx-X(cin/2),yC);
-  ctx.quadraticCurveTo(cx-X(cin/2),yC+X(8),cx-X(qua/2),yQ-X(4));
-  ctx.quadraticCurveTo(cx-X(qua/2),yF-X(3),cx-X(qua/2)+X(4),yF);
-  ctx.lineTo(cx+X(qua/2)-X(4),yF);
-  ctx.quadraticCurveTo(cx+X(qua/2),yF-X(3),cx+X(qua/2),yQ-X(4));
-  ctx.quadraticCurveTo(cx+X(cin/2),yC+X(8),cx+X(cin/2),yC);
-  ctx.quadraticCurveTo(cx+X(cin/2),yC-X(6),cx+X(b/2)-X(.5),yB+X(4));
-  ctx.quadraticCurveTo(cx+X(b/2)+X(1),yB,cx+X(b/2),yB-X(6));
-  ctx.quadraticCurveTo(cx+X(omb/2)+X(2.5),yO+X(4),cx+X(omb/2),yO+X(1));
-  ctx.quadraticCurveTo(cx+X(pesc/2)+X(2),yO-X(1.5),cx+X(pesc/2),yN);
-  ctx.lineTo(cx+X(pesc/2),yN-6*s); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // tampa do pescoco e suporte
-  ctx.fillStyle='#b08d57'; ctx.beginPath(); ctx.ellipse(cx,yN-6*s,X(pesc/2),X(1.2),0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#5b5650'; ctx.fillRect(cx-X(1),yF,X(2),X(26));
-  ctx.beginPath(); ctx.ellipse(cx,yF+X(27),X(12),X(2),0,0,Math.PI*2); ctx.fill();
+// manequim de costura em vista frontal: meia-largura (cm) em cada altura (cm a partir da base do pescoco)
+function perfilManequim(busto){
+  const k=1.08/Math.PI;                       // largura vista de frente ~ circunferencia/pi (secao oval)
+  const B=busto*k/2, C=(busto-20)*k/2, Q=(busto+6)*k/2, O=busto*0.215;   // O = meio ombro
+  const P=[[-7,3.3],[0,3.6],[3,O*.72],[5,O*.97],[7,O],[10,O*.95],[14,B*1.03],[22,B],[27,B*.97],[33,C*1.04],[40,C],[47,Q*.9],[55,Q],[62,Q*.99],[70,Q*.9],[73,Q*.82]];
+  const hw=y=>{ if(y<=P[0][0]) return P[0][1]; for(let i=0;i<P.length-1;i++){ const [y0,v0]=P[i],[y1,v1]=P[i+1]; if(y<=y1){ const t=(y-y0)/(y1-y0), tt=t*t*(3-2*t); return v0+(v1-v0)*tt; } } return P[P.length-1][1]; };
+  // linha do ombro (y em cm) para cada x: do pescoco ate a ponta do ombro, depois cai para o braco
+  const ombro=x=>{ const ax=Math.abs(x); if(ax<=3.6) return 0; if(ax<=O){ const t=(ax-3.6)/(O-3.6); return 0.5+t*3.6+t*t*1.6; } return 5.7+(ax-O)*1.8; };
+  return {hw, ombro, O, B, C, Q, fim:73};
+}
+function desenhaManequim(ctx, cx, y0, s, pf){
+  const L=[],Rr=[]; for(let y=-7;y<=pf.fim;y+=.5){ const w=pf.hw(y); if(y<0){ L.push([cx-w*s,y0+y*s]); Rr.push([cx+w*s,y0+y*s]); } }
+  ctx.save();
+  // pescoco
+  const gN=ctx.createLinearGradient(cx-3.6*s,0,cx+3.6*s,0); gN.addColorStop(0,'#25262a'); gN.addColorStop(.45,'#5a5b61'); gN.addColorStop(1,'#202125');
+  ctx.fillStyle=gN; ctx.fillRect(cx-3.3*s,y0-7*s,6.6*s,8*s);
+  ctx.fillStyle='#b08d57'; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.3*s,1*s,0,0,Math.PI*2); ctx.fill();
+  // tronco: contorno pela linha do ombro + perfil
+  ctx.beginPath(); ctx.moveTo(cx-3.6*s,y0);
+  for(let x=-3.6;x>=-pf.O*.88;x-=.5) ctx.lineTo(cx+x*s,y0+pf.ombro(x)*s);
+  ctx.quadraticCurveTo(cx-pf.O*1.02*s,y0+pf.ombro(pf.O*.9)*s,cx-pf.hw(9)*s,y0+9*s);
+  for(let y=9;y<=pf.fim;y+=.5) ctx.lineTo(cx-pf.hw(y)*s,y0+y*s);
+  ctx.quadraticCurveTo(cx,y0+(pf.fim+2.5)*s,cx+pf.hw(pf.fim)*s,y0+pf.fim*s);
+  for(let y=pf.fim;y>=9;y-=.5) ctx.lineTo(cx+pf.hw(y)*s,y0+y*s);
+  ctx.quadraticCurveTo(cx+pf.O*1.02*s,y0+pf.ombro(pf.O*.9)*s,cx+pf.O*.88*s,y0+pf.ombro(pf.O*.88)*s);
+  for(let x=pf.O*.88;x>=3.6;x-=.5) ctx.lineTo(cx+x*s,y0+pf.ombro(x)*s);
+  ctx.closePath();
+  const g=ctx.createLinearGradient(cx-pf.Q*s,0,cx+pf.Q*s,0); g.addColorStop(0,'#141518'); g.addColorStop(.18,'#2b2c31'); g.addColorStop(.42,'#5c5d64'); g.addColorStop(.6,'#3d3e44'); g.addColorStop(1,'#111214');
+  ctx.fillStyle=g; ctx.fill();
+  // costura central e reflexo
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(cx,y0+1*s); ctx.lineTo(cx,y0+pf.fim*s); ctx.stroke();
+  // suporte
+  const gp=ctx.createLinearGradient(cx-1.2*s,0,cx+1.2*s,0); gp.addColorStop(0,'#3a2d1e'); gp.addColorStop(.5,'#8a6a45'); gp.addColorStop(1,'#3a2d1e');
+  ctx.fillStyle=gp; ctx.fillRect(cx-1.1*s,y0+(pf.fim+2)*s,2.2*s,24*s);
+  ctx.fillStyle='#2b2620'; ctx.beginPath(); ctx.ellipse(cx,y0+(pf.fim+26.5)*s,13*s,2.2*s,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(cx,y0+(pf.fim+28.5)*s,20*s,2.6*s,0,0,Math.PI*2); ctx.fill();
   ctx.restore();
-  return {yO, yB, yC, yQ, yF, b, omb};
 }
 function simular(){
   const cv=$('sim-cv'), ctx=cv.getContext('2d'), Wc=cv.width, Hc=cv.height;
   ctx.clearRect(0,0,Wc,Hc);
   if(!last||!last.sim||!last.sim.cursos.length){ ctx.fillStyle='#5b665f'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem programa para simular.',Wc/2,Hc/2); $('sim-med').textContent=''; return; }
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
-  const sim=last.sim, W=sim.cols, H=sim.cursos.length;
-  const wcm=W/ag*10, hcm=H/cr*10;
-  // escala: manequim + peca cabem no quadro
-  const altTotal=Math.max(78, hcm+12), s=Math.min((Hc-60)/(altTotal+30), (Wc-40)/Math.max(busto*.62, wcm*1.05));
-  const cx=Wc/2, top=40+6*s;
-  const M=manequim(ctx,cx,top,s,busto);
-  // textura em resolucao de ponto
-  const sx=W>300?3:6, sy=sx>3?5:3;
+  const sim=last.sim, W=sim.cols, H=sim.cursos.length, wcm=W/ag*10, hcm=H/cr*10;
+  const pf=perfilManequim(busto);
+  const s=Math.min((Hc-40)/(Math.max(pf.fim, hcm+6)+38), (Wc-30)/(Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2))));
+  const cx=Wc/2, y0=26+8*s;
+  desenhaManequim(ctx,cx,y0,s,pf);
+  // textura no tamanho de tela (com suavizacao do navegador) para amostrar
+  const sx=Math.max(2,Math.min(6,Math.floor(2400/W))), sy=Math.max(2,Math.round(sx*.82));
   const tx=texturaPeca(sim,sx,sy,[1,2,3,4].map(k=>$('sm-c'+k).value));
-  // posicao: topo da peca na linha do ombro, centralizada; projecao cilindrica (peca envolve o corpo)
-  const pw=wcm*s, ph=hcm*s, y0=M.yO-1.2*s, wrap=Math.min(1.25, (pw/(M.b*s))*0.95);
-  const N=Math.max(40,Math.round(pw/2)), shadow=[];
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=14*s/4; ctx.shadowOffsetY=3;
-  for(let k=0;k<N;k++){
-    const u0=k/N, u1=(k+1)/N, th0=(u0-.5)*wrap, th1=(u1-.5)*wrap, sw=Math.sin(wrap/2)||1;
-    const x0=cx+pw/2*Math.sin(th0)/sw, x1=cx+pw/2*Math.sin(th1)/sw;
-    ctx.drawImage(tx, u0*tx.width,0,(u1-u0)*tx.width+.5,tx.height, x0,y0,Math.max(1,x1-x0)+.6,ph);
-    if(k===0) { ctx.shadowColor='transparent'; }
+  const tw=Math.max(8,Math.round(wcm*s*1.6)), th=Math.max(8,Math.round(hcm*s*1.6));
+  const t2=document.createElement('canvas'); t2.width=tw; t2.height=th; const c2=t2.getContext('2d'); c2.imageSmoothingQuality='high'; c2.drawImage(tx,0,0,tw,th);
+  const T=c2.getImageData(0,0,tw,th).data;
+  // corpo como secao oval: arco desde o centro da frente -> posicao x vista de frente
+  const out=ctx.getImageData(0,0,Wc,Hc), O=out.data;
+  const mask=new Uint8Array(Wc*Hc);
+  let maxA=0;
+  for(let Y=0;Y<Hc;Y++){
+    const ycm=(Y-y0)/s; if(ycm< -2 || ycm>Math.max(pf.fim, hcm+8)) continue;
+    // largura efetiva: a malha nao entra na cintura, cai a partir do busto
+    const real=pf.hw(Math.min(ycm,pf.fim)); if(ycm>14) maxA=Math.max(maxA,real); else maxA=real;
+    const a=ycm>14?(.55*maxA+.45*real):real, b=a*.72;
+    // tabela arco(phi)
+    const n=64, arc=new Float32Array(n+1); for(let k=1;k<=n;k++){ const f=(k-.5)/n*Math.PI/2; arc[k]=arc[k-1]+Math.sqrt((a*Math.cos(f))**2+(b*Math.sin(f))**2)*(Math.PI/2/n); }
+    const x0=Math.max(0,Math.floor(cx-a*s)), x1=Math.min(Wc-1,Math.ceil(cx+a*s));
+    for(let X=x0;X<=x1;X++){
+      const xc=(X+.5-cx)/s, rr=Math.min(1,Math.abs(xc)/a), phi=Math.asin(rr), kf=phi/(Math.PI/2)*n, k0=Math.floor(kf);
+      const ar=(k0>=n?arc[n]:arc[k0]+(arc[Math.min(n,k0+1)]-arc[k0])*(kf-k0))*Math.sign(xc);
+      const u=.5+ar/wcm; if(u<0||u>=1) continue;
+      const top=pf.ombro(ar), fd=Math.max(0,1-ycm/16); const v=(ycm-top*fd)/hcm; if(v<0||v>=1||ycm<top) continue;   // so a parte de cima acompanha o ombro
+      const ti=((Math.floor(v*th))*tw+Math.floor(u*tw))*4; const al=T[ti+3]; if(al<40) continue;
+      // luz: frontal + de cima a esquerda
+      const nx=Math.sin(phi)*Math.sign(xc), luz=Math.max(.25, .62+.38*Math.cos(phi) - .12*nx) * (ycm<6?.92:1);
+      const oi=(Y*Wc+X)*4; O[oi]=Math.min(255,T[ti]*luz); O[oi+1]=Math.min(255,T[ti+1]*luz); O[oi+2]=Math.min(255,T[ti+2]*luz); O[oi+3]=255; mask[Y*Wc+X]=1;
+    }
   }
-  ctx.restore();
-  // sombreamento de volume (claro no centro, escuro nas laterais) so onde ha malha
-  const sh=document.createElement('canvas'); sh.width=Wc; sh.height=Hc; const sc=sh.getContext('2d');
-  for(let k=0;k<N;k++){ const u0=k/N,u1=(k+1)/N,th0=(u0-.5)*wrap,th1=(u1-.5)*wrap,sw=Math.sin(wrap/2)||1;
-    const x0=cx+pw/2*Math.sin(th0)/sw, x1=cx+pw/2*Math.sin(th1)/sw; sc.drawImage(tx,u0*tx.width,0,(u1-u0)*tx.width+.5,tx.height,x0,y0,Math.max(1,x1-x0)+.6,ph); }
-  sc.globalCompositeOperation='source-in';
-  const gr=sc.createLinearGradient(cx-pw/2,0,cx+pw/2,0); gr.addColorStop(0,'rgba(0,0,0,.42)'); gr.addColorStop(.28,'rgba(0,0,0,.05)'); gr.addColorStop(.45,'rgba(255,255,255,.10)'); gr.addColorStop(.72,'rgba(0,0,0,.06)'); gr.addColorStop(1,'rgba(0,0,0,.45)');
-  sc.fillStyle=gr; sc.fillRect(0,0,Wc,Hc);
-  // dobras suaves na vertical (caimento)
-  for(let k=0;k<5;k++){ const fx=cx+pw*(-.38+.19*k), gf=sc.createLinearGradient(fx-6*s,0,fx+6*s,0); gf.addColorStop(0,'rgba(0,0,0,0)'); gf.addColorStop(.5,'rgba(0,0,0,.07)'); gf.addColorStop(1,'rgba(0,0,0,0)'); sc.fillStyle=gf; sc.fillRect(fx-6*s,M.yC,12*s,Hc); }
-  ctx.drawImage(sh,0,0);
+  // sombra suave da peca sobre o manequim (embaixo da barra e nas bordas)
+  const sh=document.createElement('canvas'); sh.width=Wc; sh.height=Hc; const sc=sh.getContext('2d'); const md=sc.createImageData(Wc,Hc);
+  for(let i=0;i<mask.length;i++) if(mask[i]){ md.data[i*4+3]=150; }
+  sc.putImageData(md,0,0);
+  ctx.save(); ctx.filter=`blur(${Math.max(2,s*.6)}px)`; ctx.globalAlpha=.55; ctx.drawImage(sh,0,Math.max(1,s*.35)); ctx.restore();
+  const base=ctx.getImageData(0,0,Wc,Hc), BD=base.data;
+  for(let i=0;i<mask.length;i++) if(mask[i]){ const o=i*4; BD[o]=O[o]; BD[o+1]=O[o+1]; BD[o+2]=O[o+2]; BD[o+3]=255; }
+  ctx.putImageData(base,0,0);
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${W} agulhas × ${H} carreiras)`;
 }
 $('sm-maq').addEventListener('change',()=>{ const [a,c]=$('sm-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); });
