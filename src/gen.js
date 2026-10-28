@@ -351,7 +351,9 @@ const RAYNEN = (function () {
   const PURL = new Set([2, 9, 12, ...R(40, 59), ...R(80, 99), ...R(105, 109), 113, 114, 115, 189, 234, 235, 236, 237, 238, 239]);
   const TUCK = new Set([4, 5, 6, 7, 14]);
   const NONE = new Set([0, 15, 16, 17, 100, 110, 18, 19, 224, 225, 254, 255]);
-  function stitchType(v) { if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1; if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; return 1; }
+  // 4 = malha frente que anda p/ esquerda (inclinada), 5 = anda p/ direita (diminuicoes/aumentos)
+  const LEAN_L = new Set([...R(21, 27), ...R(61, 67), ...R(101, 104), 228, 229, 230]), LEAN_R = new Set([...R(31, 37), ...R(71, 77), 88, 89, 98, 99, 231, 232, 233]);
+  function stitchType(v) { if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1; if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1; }
   function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
     const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
     const map = new Map(), order = [];
