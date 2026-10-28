@@ -7,24 +7,28 @@
 /* Layout: bancada de trabalho em duas colunas: pedido + parametros a esquerda, leito de agulhas (previa) a direita */
 :root{
   --bg:#eef0ee; --panel:#f8f9f7; --ink:#1b211e; --muted:#5b665f; --line:#cfd5d0;
-  --accent:#0f6b5c; --accent-ink:#ffffff; --bed:#141816; --warn:#a15c00; --warn-bg:#fff3df; --err:#b3261e; --err-bg:#fde8e6; --ok:#2e7d32;
+  --accent:#3d42a0; --accent-ink:#ffffff; --gold:#a8802f; --bed:#141816; --warn:#a15c00; --warn-bg:#fff3df; --err:#b3261e; --err-bg:#fde8e6; --ok:#2e7d32;
   --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
   --f-body:"Atkinson Hyperlegible", "Segoe UI", Arial, sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121614; --panel:#1a1f1c; --ink:#e3e8e4; --muted:#9aa59e; --line:#2f3732;
-  --accent:#4fbfa8; --accent-ink:#06201b; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}}
+  --accent:#9ea3f0; --accent-ink:#11143a; --gold:#d8b66a; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121614; --panel:#1a1f1c; --ink:#e3e8e4; --muted:#9aa59e; --line:#2f3732;
-  --accent:#4fbfa8; --accent-ink:#06201b; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}
+  --accent:#9ea3f0; --accent-ink:#11143a; --gold:#d8b66a; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
 .wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;border-bottom:2px solid var(--accent);box-shadow:0 3px 0 -1px var(--gold);padding-bottom:12px}
 h1{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);letter-spacing:-.01em;margin:0;text-wrap:balance}
-h1 span{color:var(--accent)}
+h1 span{color:var(--gold)}
+.brand{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand img{height:68px;width:auto;background:#fff;border-radius:6px;padding:6px 10px;display:block}
+.brand h1{font-size:clamp(18px,2.4vw,24px)}
+@media (max-width:480px){.brand img{height:44px}}
 .machine{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
 .grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
@@ -74,6 +78,13 @@ section label{font-size:14px}
 .opts{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
 .opts-head{font-size:14px;color:var(--muted);display:flex;align-items:center}
 .lib{display:flex;flex-direction:column;gap:8px}
+.tabs{display:flex;gap:0;border:1px solid var(--accent);border-radius:4px;overflow:hidden;align-self:flex-start}
+.tabs button{border:0;border-radius:0;background:transparent;color:var(--accent);padding:7px 12px;font-size:13px}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.mod img{width:64px;height:52px;object-fit:contain;background:#c0c0c0;border-radius:2px}
+.mod .tag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:9px;background:var(--line);color:var(--muted)}
+.mod .tag.ok{background:var(--accent);color:var(--accent-ink)}
+.mod .cn{font-size:10.5px;color:var(--muted)}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -90,7 +101,7 @@ details.more>*:not(summary){margin-bottom:10px}
 
 <div class="wrap">
   <header>
-    <h1>Programador <span>Raynen</span></h1>
+    <div class="brand"><img src="data:image/png;base64,/*LOGO*/" alt="A casa do Malharista"><h1>Programador <span>Raynen</span></h1></div>
     <div class="machine">Feng Fan · Raynen · BMP + OPT · base 25009F</div>
   </header>
 
@@ -130,6 +141,11 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
           </div>
           <div class="lib b" id="lib-box">
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" id="tab-nossos" aria-selected="true">Nossos pontos</button>
+              <button type="button" role="tab" id="tab-raynen" aria-selected="false">Módulos do Raynen</button>
+            </div>
+            <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>pronto</b> já têm a grade de códigos; os outros ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
             <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
             <div class="mods" id="mods" role="listbox" aria-label="Módulos de ponto"></div>
           </div>
@@ -161,6 +177,7 @@ details.more>*:not(summary){margin-bottom:10px}
               <label for="f-javesso" id="lbl-javesso">Avesso (216, 2ª coluna)<input id="f-javesso" type="number" min="1" max="26" value="1"></label>
             </div>
             <p class="hint" id="jq-yarns"></p>
+            <p class="hint">Desenho padrão: logo A casa do Malharista. Com 2 cores a logo sai toda na cor 2; com 3 cores (formato compacto) o “A casa do” e a linha de cima saem na cor 3 (dourado).</p>
             <label for="f-jdesc">Descreva o desenho<textarea id="f-jdesc" style="min-height:56px" placeholder="Ex.: uma rosa com folhas, estilo silhueta  ·  ou: escrever BRASIL"></textarea></label>
             <label for="f-jlimpar" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jlimpar" type="checkbox" checked style="width:auto">Limpar pontos soltos (1 agulha isolada)</label>
             <label for="f-jfino" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jfino" type="checkbox" checked style="width:auto">Preservar traços finos ao importar imagem</label>
@@ -177,7 +194,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <div class="actions">
               <button id="btn-jq" type="button">Criar desenho com IA</button>
               <label for="f-jimg" class="ghost" style="flex-direction:row;align-items:center;gap:6px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:8px 12px;cursor:pointer">Importar imagem<input id="f-jimg" type="file" accept="image/*" style="display:none"></label>
-              <button id="btn-jex" type="button" class="ghost">Exemplo QTJTH24S</button>
+              <button id="btn-jex" type="button" class="ghost">Logo A casa do Malharista</button>
             </div>
             <div class="row">
               <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
@@ -263,7 +280,9 @@ const NOMES = (()=>{const n={120:'módulo: cor 1 do jacquard',121:'módulo: cor 
   n[98]='frente, transfere à dir. com T p/ frente';n[99]='frente, 4 à dir. com T p/ frente';return n;})();
 const LIB = /*LIBRARY*/;
 const JQ_EX = /*JQEX*/;
-const JCOL = ['#ece6d6','#c8372d','#2d4a9a','#e3a21a'];
+const RMODS = /*RMODS*/;
+let libTab='nossos';
+const JCOL = ['#f4f1ea','#3d42a0','#b8913f','#c8372d'];
 const $ = id => document.getElementById(id);
 let cables = [];
 let last = null;
@@ -284,24 +303,55 @@ function miniRapport(cv,m){
   const W=Math.max(w,Math.ceil(16/w)*w), H=Math.max(h,Math.ceil(12/h)*h); cv.width=W; cv.height=H;
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){ ctx.fillStyle=pal[m[y%h][x%w]]; ctx.fillRect(x,H-1-y,1,1); }
 }
+function modCard(nome,sub,onclick,sel){
+  const bt=document.createElement('button'); bt.type='button'; bt.className='mod'; bt.setAttribute('role','option'); bt.setAttribute('aria-selected',String(!!sel));
+  bt.addEventListener('click',onclick); return bt;
+}
 function renderMods(){
   const box=$('mods'), q=norm($('f-libbusca').value); box.textContent='';
-  const grupos=[['Dos programas de vocês (testados)',e=>e.real],['Padrões Raynen (conferir no Raynen)',e=>!e.real]];
-  grupos.forEach(([titulo,f])=>{
-    const itens=LIB.map((e,i)=>[e,i]).filter(([e])=>f(e)&&(!q||norm(e.nome+' '+(e.nota||'')).includes(q)));
-    if(!itens.length) return;
-    const g=document.createElement('div'); g.className='modgrp'; g.textContent=titulo; box.appendChild(g);
-    itens.forEach(([e,i])=>{
-      const bt=document.createElement('button'); bt.type='button'; bt.className='mod'; bt.setAttribute('role','option'); bt.setAttribute('aria-selected',String(i===libSel));
-      const cv=document.createElement('canvas'); miniRapport(cv,e.motivo);
-      const t=document.createElement('span'); t.textContent=e.nome;
-      const sm=document.createElement('small'); sm.textContent=`${e.motivo[0].length}×${e.motivo.length}`;
-      bt.append(cv,t,sm); bt.addEventListener('click',()=>{ libSel=i; $('f-ponto').value=e.nome; loadLib(e); renderMods(); update(); });
-      box.appendChild(bt);
+  $('tab-nossos').setAttribute('aria-selected',String(libTab==='nossos')); $('tab-raynen').setAttribute('aria-selected',String(libTab==='raynen'));
+  $('rmod-hint').hidden = libTab!=='raynen';
+  const grp=t=>{const g=document.createElement('div'); g.className='modgrp'; g.textContent=t; box.appendChild(g);};
+  if(libTab==='nossos'){
+    [['Dos programas de vocês (testados)',e=>e.real],['Padrões (conferir no Raynen)',e=>!e.real]].forEach(([titulo,f])=>{
+      const itens=LIB.map((e,i)=>[e,i]).filter(([e])=>f(e)&&(!q||norm(e.nome+' '+(e.nota||'')).includes(q)));
+      if(!itens.length) return; grp(titulo);
+      itens.forEach(([e,i])=>{
+        const bt=modCard(e.nome,'',()=>{ libSel=i; $('f-ponto').value=e.nome; loadLib(e); renderMods(); update(); }, libSel===i);
+        const cv=document.createElement('canvas'); miniRapport(cv,e.motivo);
+        const t=document.createElement('span'); t.textContent=e.nome;
+        const sm=document.createElement('small'); sm.textContent=`${e.motivo[0].length}×${e.motivo.length}`;
+        bt.append(cv,t,sm); box.appendChild(bt);
+      });
     });
-  });
+  } else {
+    let cat='';
+    RMODS.forEach((m,i)=>{
+      if(q && !norm(m.nome+' '+m.cn+' '+m.cat).includes(q)) return;
+      if(m.cat!==cat){ cat=m.cat; grp(cat); }
+      const bt=modCard(m.nome,'',()=>escolheRaynen(i), libSel==='r'+i);
+      const im=document.createElement('img'); im.src='data:image/png;base64,'+m.img; im.alt='';
+      const t=document.createElement('span'); t.textContent=m.nome;
+      const cn=document.createElement('span'); cn.className='cn'; cn.textContent=m.cn; cn.lang='zh';
+      const tg=document.createElement('span'); tg.className='tag'+(m.motivo?' ok':''); tg.textContent=m.motivo?'pronto':'pendente';
+      bt.append(im,t,cn,tg); box.appendChild(bt);
+    });
+  }
   if(!box.children.length){ const p=document.createElement('p'); p.className='hint'; p.textContent='Nenhum módulo com esse nome. Use "Ponto novo (criar com IA)" no item 5.'; box.appendChild(p); }
 }
+function escolheRaynen(i){
+  const m=RMODS[i]; libSel='r'+i;
+  if(m.motivo){
+    $('f-ponto').value=m.nome; loadLib({nome:m.nome,motivo:m.motivo,fios:m.motivo.map(()=>1),real:false,fonte:`Módulo do sistema Raynen “${m.cn}”`,nota:m.nota||''});
+    renderMods(); update();
+  } else {
+    $('f-tipo').value='ia'; $('f-ponto').value=m.nome; motifNome='';
+    $('f-pdesc').value=`Módulo "${m.cn}" da biblioteca do Raynen (categoria ${m.cat}). Faça o rapport equivalente.`;
+    $('motif-src').hidden=true; update(); $('f-ponto').scrollIntoView({block:'center',behavior:'smooth'});
+  }
+}
+$('tab-nossos').addEventListener('click',()=>{libTab='nossos';renderMods();});
+$('tab-raynen').addEventListener('click',()=>{libTab='raynen';renderMods();});
 $('f-libbusca').addEventListener('input',renderMods);
 function loadLib(e){
   setMotif(e.motivo, e.fios); motivoReal=!!e.real; motifNome=norm(e.nome);
@@ -313,7 +363,7 @@ function readSpec(){
   const num = id => parseInt($(id).value,10), tipo=tipoAtual();
   const ponto={tipo, bx:num('f-bx'), by:num('f-by'), nome:$('f-ponto').value.trim()};
   if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; }
-  if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.slice()); ponto.fundo=1; }
+  if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
     barra:$('f-barra').value, ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
@@ -386,7 +436,7 @@ function jqCell(){ const w=desenho[0].length,h=desenho.length; return Math.max(2
 function drawJq(){
   const cv=$('jcv'), ctx=cv.getContext('2d'), w=desenho[0].length, h=desenho.length, z=jqCell();
   cv.width=w*z; cv.height=h*z;
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ ctx.fillStyle=JCOL[(desenho[y][x]||1)-1]; ctx.fillRect(x*z,(h-1-y)*z,z,z); }
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ ctx.fillStyle=JCOL[Math.min(desenho[y][x]||1,jqColors())-1]; ctx.fillRect(x*z,(h-1-y)*z,z,z); }
   if(z>=8){ctx.strokeStyle='rgba(0,0,0,.15)';ctx.beginPath();for(let x=0;x<=w;x++){ctx.moveTo(x*z+.5,0);ctx.lineTo(x*z+.5,h*z);}for(let y=0;y<=h;y++){ctx.moveTo(0,y*z+.5);ctx.lineTo(w*z,y*z+.5);}ctx.stroke();}
   $('jq-size').textContent=`${w} agulhas × ${h} carreiras`; $('jq-src').textContent=jqFonte?`Desenho: ${jqFonte}.`:'';
 }
@@ -405,10 +455,14 @@ function resizeJq(){
   desenho=Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=>(desenho[y]&&desenho[y][x])||1)); drawJq(); update();
 }
 $('f-jw').addEventListener('change',resizeJq); $('f-jh').addEventListener('change',resizeJq);
-$('f-cores').addEventListener('change',()=>{const n=jqColors(); desenho=desenho.map(r=>r.map(v=>Math.min(v,n))); fillJPaint(); drawJq(); update();});
+$('f-cores').addEventListener('change',()=>{ fillJPaint(); drawJq(); update(); });
 ['f-guia','f-gb','f-gc','f-gd'].forEach(id=>$(id).addEventListener('input',fillJPaint));
 $('f-jmodo').addEventListener('change',update); $('f-jmet').addEventListener('change',update); $('f-javesso').addEventListener('input',update);
-$('btn-jex').addEventListener('click',()=>{ $('f-cores').value='2'; fillJPaint(); setDesenho(JQ_EX.rows.map(r=>[...r].map(Number)),JQ_EX.fonte); });
+$('btn-jex').addEventListener('click',()=>{ setDesenho(JQ_EX.rows.map(r=>[...r].map(Number)),JQ_EX.fonte); ajustaPecaAoDesenho(); });
+function ajustaPecaAoDesenho(){ const w=desenho[0].length,h=desenho.length; let msg=[];
+  if((parseInt($('f-larg').value,10)||0)<w+6){ $('f-larg').value=w+11; msg.push(`largura ${w+11} agulhas`); }
+  if((parseInt($('f-carr').value,10)||0)<h+20){ $('f-carr').value=h+40; msg.push(`${h+40} carreiras`); }
+  $('f-jmodo').value='centro'; update(); if(msg.length) $('jq-status').textContent='Peça ajustada para caber o desenho: '+msg.join(', ')+'. Mude se precisar.'; }
 // importar imagem: recorta a margem, separa fundo e reduz por cobertura (preserva tracos finos)
 async function imagemParaGrade(bmp, w, ratio, n, fino){
   const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height)), iw=Math.round(bmp.width*sc), ih=Math.round(bmp.height*sc);
@@ -476,9 +530,10 @@ $('btn-addc').addEventListener('click',()=>{
 $('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } update(); });
 $('f-tipo').addEventListener('change',()=>{
   const t=$('f-tipo').value;
-  if(t==='biblioteca'){ if(libSel<0){ libSel=LIB.findIndex(e=>e.real); if(libSel<0) libSel=0; } const e=LIB[libSel]; $('f-ponto').value=e.nome; loadLib(e); renderMods(); }
+  if(t==='biblioteca'){ if(typeof libSel==='string' && RMODS[+libSel.slice(1)].motivo){ escolheRaynen(+libSel.slice(1)); return; } if(typeof libSel!=='number'||libSel<0){ libSel=LIB.findIndex(e=>e.real); if(libSel<0) libSel=0; } const e=LIB[libSel]; $('f-ponto').value=e.nome; loadLib(e); renderMods(); }
   else if(t==='ia'){ $('f-ponto').value=''; $('motif-src').hidden=true; motifNome=''; $('f-ponto').focus(); }
   else $('f-ponto').value=LABEL[t];
+  if(t==='jacquard' && jqFonte===JQ_EX.fonte) ajustaPecaAoDesenho();
   update();
 });
 $('f-zoom').addEventListener('input',draw);
