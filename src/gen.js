@@ -47,7 +47,9 @@ const RAYNEN = (function () {
     const f = n.forma || {};
     n.forma = {
       cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
-      decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2 }, f.decote || {})
+      decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2 }, f.decote || {}),
+      aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
+      aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {})
     };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
@@ -194,11 +196,26 @@ const RAYNEN = (function () {
     });
     return out;
   }
-  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo));
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo));
+  const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
+  // aumento depois do decote: comeca 'depois' carreiras apos a ultima diminuicao do decote (ou da cava)
+  function inicioAum2(f) {
+    let base = 0; [f.decote, f.cava].some(x => { const ev = evList(x); if (ev.length) { base = ev[ev.length - 1][0] + 1; return true; } return false; });
+    return base + Math.max(0, +f.aumento2.depois || 0) + 1;
+  }
+  function eventos(f) {
+    return { cava: evList(f.cava), decote: evList(f.decote), aum: evList(f.aumento),
+      aum2: f.aumento2 && f.aumento2.ativo ? agenda(inicioAum2(f) - 1, parsePassos(f.aumento2.passos).filter(p => !p.erro)) : [] };
+  }
+  // agulhas a mais de cada lado (largura inicial + aumentos = largura maxima)
+  function extraLado(f) {
+    if (!f) return 0; const e = eventos(f), soma = ev => ev.reduce((a, x) => a + x[1], 0);
+    return soma(e.aum) + (f.aumento2 && f.aumento2.onde === 'externa' ? soma(e.aum2) : 0);
+  }
   // ultima carreira do corpo (1-base) com diminuicao de cava ou decote; 0 se nao houver
   function fimForma(f) {
     let fim = 0;
-    [f.cava, f.decote].forEach(x => { if (!x || !x.ativo) return; const ev = agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)); if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
+    const e = eventos(f); [e.cava, e.decote, e.aum, e.aum2].forEach(ev => { if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
     return fim;
   }
   // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
@@ -236,6 +253,19 @@ const RAYNEN = (function () {
       const soma = ev.filter(e => e[0] < N).reduce((a, e) => a + e[1], 0);
       tot += nm === 'Cava' ? 2 * soma : 2 * soma + (f.tipo === 'redondo' ? +f.meio || 0 : 0);
     });
+    const fa = s.forma.aumento, fb = s.forma.aumento2;
+    [['Aumento antes da cava', fa], ['Aumento depois do decote', fb]].forEach(([nm, f]) => {
+      if (!f.ativo) return;
+      parsePassos(f.passos).forEach(x => { if (x.erro) erros.push(`${nm}: passo "${x.erro}" inválido. Use carreiras-agulhas-vezes, ex.: 6-1-5.`); else if (x.ag < 1 || x.ag > 7) erros.push(`${nm}: cada aumento pode andar de 1 a 7 agulhas (passo ${x.txt}).`); else if (x.cada < 1) erros.push(`${nm}: carreiras do passo ${x.txt} precisam ser 1 ou mais.`); });
+      if (!(f.borda >= 1 && f.borda <= 7)) erros.push(`${nm}: borda (agulhas que andam) de 1 a 7.`);
+    });
+    const evs = eventos(s.forma);
+    if (fa.ativo && cv.ativo && evs.aum.length && evs.cava.length && evs.aum[evs.aum.length - 1][0] >= evs.cava[0][0]) avisos.push({ tipo: 'nota', txt: 'Os aumentos passam do começo da cava. Aumente as carreiras retas abaixo da cava ou diminua os aumentos.' });
+    if (fb.ativo && !dc.ativo && !cv.ativo) erros.push('Aumento depois do decote: ligue o decote (ou a cava) para saber onde ele começa.');
+    if (fb.ativo && fb.onde === 'decote' && !dc.ativo) erros.push('Aumento na borda do decote: ligue o decote.');
+    if (fb.ativo && fb.onde === 'decote' && dc.ativo) { const sd = evs.decote.reduce((a, x) => a + x[1], 0), sa = evs.aum2.reduce((a, x) => a + x[1], 0); if (sa > sd + (dc.tipo === 'redondo' ? Math.floor((+dc.meio || 0) / 2) : 0)) erros.push(`Aumento na borda do decote: ${sa} agulhas por lado, mais do que o decote tirou (${sd}). Os dois lados iam se encontrar.`); }
+    const ex = extraLado(s.forma); if (W + 2 * ex > 1000) erros.push(`Com os aumentos a peça chega a ${W + 2 * ex} agulhas (máximo 1000).`);
+    if (ex) avisos.push({ tipo: 'nota', txt: `Aumentos: a peça começa com ${W} agulhas e chega a ${W + 2 * ex} (${ex} de cada lado). Aumento por transferência para fora, com borda; a agulha que fica vazia faz um furinho decorativo, como no aumento da ficha de processo.` });
     if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
@@ -251,7 +281,9 @@ const RAYNEN = (function () {
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     const evD = dc.ativo ? new Map(agenda(dc.inicio - 1, parsePassos(dc.passos).filter(x => !x.erro))) : new Map();
     const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
-    let L = 0, R = W - 1;                       // limites da peca inteira (antes da divisao)
+    const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
+    const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
+    let L = ex, R = W - 1 - ex;                 // limites da peca inteira (antes da divisao); comeca estreita se tiver aumentos
     const mid = Math.floor(W / 2), meio = dc.ativo && dc.tipo === 'redondo' ? +dc.meio : 0;
     let lA = 0, lB = 0, rA = 0, rB = 0;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
     const borda = (f, k) => Math.max(+f.borda || 2, k);
@@ -261,12 +293,20 @@ const RAYNEN = (function () {
       if (lado === 'L') { for (let i = a; i < a + e; i++) row[i] = moveCode(row[i], k, +1); return [a + k, b]; }
       for (let i = b; i > b - e; i--) row[i] = moveCode(row[i], k, -1); return [a, b - k];
     }
+    // aumento: borda anda para fora ('L' borda esquerda p/ esquerda, 'R' borda direita p/ direita)
+    function aum(row, a, b, lado, k, f) {
+      const e = Math.min(borda(f, k), b - a + 1); if (e < 1) return [a, b];
+      if (lado === 'L') { if (a - k < 0) return [a, b]; for (let i = a; i < a + e; i++) row[i] = moveCode(row[i], k, -1); return [a - k, b]; }
+      if (b + k > W - 1) return [a, b]; for (let i = b; i > b - e; i--) row[i] = moveCode(row[i], k, +1); return [a, b + k];
+    }
     const yA = s.guiaFio, yB = s.fios[0];
-    let c = 0; const info = { divisao: null, cava: [], decote: [] };
+    let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
-        if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        if (evA.has(c)) { const k = evA.get(c); [L] = aum(row, L, R, 'L', k, fa); [, R] = aum(row, L + k, R, 'R', k, fa); L = Math.max(0, L); info.aumento.push(c + 1); }
+        else if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
         out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
         continue;
@@ -285,6 +325,12 @@ const RAYNEN = (function () {
         let na = a, nb2 = b;
         if (evC.has(cc)) { const k = evC.get(cc); if (lado === 'E') [na] = dim(row, na, nb2, 'L', k, cv); else [, nb2] = dim(row, na, nb2, 'R', k, cv); }
         if (evD.has(cc)) { const k = evD.get(cc); if (lado === 'E') [, nb2] = dim(row, na, nb2, 'R', k, dc); else [na] = dim(row, na, nb2, 'L', k, dc); }
+        if (evA.has(cc)) { const k = evA.get(cc); if (lado === 'E') [na] = aum(row, na, nb2, 'L', k, fa); else [, nb2] = aum(row, na, nb2, 'R', k, fa); }
+        if (evB.has(cc)) { const k = evB.get(cc), ext = fb.onde !== 'decote';
+          if (lado === 'E') { if (ext) [na] = aum(row, na, nb2, 'L', k, fb); else [, nb2] = aum(row, na, nb2, 'R', k, fb); }
+          else { if (ext) [, nb2] = aum(row, na, nb2, 'R', k, fb); else [na] = aum(row, na, nb2, 'L', k, fb); } }
+        if (lado === 'E' && evA.has(cc)) info.aumento.push(cc + 1);
+        if (lado === 'E' && evB.has(cc)) info.aumento2.push(cc + 1);
         if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
         if (lado === 'E' && evC.has(cc)) info.cava.push(cc + 1);
         if (lado === 'E' && evD.has(cc)) info.decote.push(cc + 1);
@@ -330,7 +376,8 @@ const RAYNEN = (function () {
     if (s0.forma && s0.forma.decote.ativo && s0.ponto.tipo !== 'jacquard') {   // cada lado do decote com passadas pares
       const sp = 2 * Math.floor((s0.forma.decote.inicio - 1) / 2); if ((N - sp) % 2) N++;
     }
-    const s = Object.assign({}, s0, { carreiras: N });
+    const EX = s0.forma ? extraLado(s0.forma) : 0, W0 = s0.largura;          // aumentos: largura inicial W0, maxima W0 + 2*EX
+    const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX });
     const body = bodyRows(s, N);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;
@@ -345,16 +392,16 @@ const RAYNEN = (function () {
       const p = B0.periodo || 4, bw = B0.w;
       const bx = i => i < bw ? i : i - p * Math.ceil((i - (bw - 1)) / p);
       for (let y = 0; y < S0; y++) {
-        for (let i = 0; i < W; i++) { const j = bx(i); grid[y * WB + X0 + i] = j >= 0 ? B0.grid[y * bw + j] : 0; }
+        for (let i = 0; i < W0; i++) { const j = bx(i); grid[y * WB + X0 + EX + i] = j >= 0 ? B0.grid[y * bw + j] : 0; }
         opt.set(B0.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       }
     } else for (let y = 0; y < START; y++) {
-      for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = T.start[y * T.startW + srcX(x)];
+      for (let x = X0; x < X0 + W0; x++) grid[y * WB + x + EX] = T.start[y * T.startW + srcX(x)];
       opt.set(T.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       if (opt[y * WO + COL_LOOP]) opt[y * WO + COL_LOOP] = s.ribanaRep;   // laco da ribana (201)
     }
     const bp = B0 ? null : BARRAS[s.barra];
-    if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
+    if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W0; x++) grid[y * WB + x + EX] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
     const ina = new Uint8Array(rowsMax * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
@@ -363,7 +410,7 @@ const RAYNEN = (function () {
       for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
       if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null) s.trancas.forEach((t, k) => {
-        const cx = X0 + t.agulha - 1, g = t.grupo;
+        const cx = X0 + EX + t.agulha - 1, g = t.grupo;
         for (let j = 0; j < 2 * g; j++) bG[row + cx + j] = 1;
         for (let j = 0; j < t.lateral; j++) { bG[row + cx - 1 - j] = 2; bG[row + cx + 2 * g + j] = 2; }
         const p = t.primeiro - 1;
@@ -494,6 +541,6 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;
