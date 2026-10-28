@@ -227,7 +227,12 @@ details.more>*:not(summary){margin-bottom:10px}
         <div class="opts" id="formas">
           <div class="opts-head"><span class="lt"><span class="n">7</span>Cava e decote (forma da peça)</span></div>
           <p class="hint">Igual à ficha de processo do Raynen: cada passo é <b>carreiras-agulhas-vezes</b>. Com aumentos, o item 2 é a largura do começo (barra) e a peça cresce para os lados. Ex.: <span class="code">2-1-6</span> = a cada 2 carreiras diminui 1 agulha, 6 vezes. Vários passos separados por vírgula, na ordem: <span class="code">2-3-1, 2-2-2, 2-1-4</span>. Cada diminuição anda de 1 a 7 agulhas.</p>
-          <label class="chk" for="fe-on"><input id="fe-on" type="checkbox"> Aumentar antes da cava (nos dois lados)</label>
+          <div class="row" id="fx-box">
+            <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
+            <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
+          </div>
+          <p class="hint" id="fx-hint">Acrescenta carreiras retas (comprimento) sem mudar a largura: antes da cava a peça fica mais comprida embaixo e a cava e o decote sobem; depois do decote o ombro fica mais alto.</p>
+          <label class="chk" for="fe-on"><input id="fe-on" type="checkbox"> Aumento escalonado na largura, antes da cava (nos dois lados)</label>
           <div class="row" id="fe-box" hidden>
             <label for="fe-ini">Carreiras retas abaixo dos aumentos<input id="fe-ini" type="number" min="0" value="19"></label>
             <label for="fe-pas">Passos do aumento<input id="fe-pas" value="8-1-6" autocomplete="off"></label>
@@ -253,7 +258,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <p class="hint" style="display:none"></p>
             <p class="hint">No decote a peça se divide: o lado esquerdo tece com o guia-fio A e o direito com o B, 2 carreiras de cada lado, como no 25009F. No jacquard (formato Compacto, até 2 cores) o lado esquerdo usa A/B e o direito C/D, para não passar fio pelo decote.</p>
           </div>
-          <label class="chk" for="fg-on"><input id="fg-on" type="checkbox"> Aumentar depois do decote</label>
+          <label class="chk" for="fg-on"><input id="fg-on" type="checkbox"> Aumento escalonado na largura, depois do decote</label>
           <div id="fg-box" hidden>
             <div class="row">
               <label for="fg-dep">Carreiras retas depois do decote<input id="fg-dep" type="number" min="0" value="4"></label>
@@ -516,10 +521,10 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
-    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1,passos:$('fc-pas').value,borda:num('fc-bor')},
+    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
-           aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep'),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
-           decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini')+1,meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
+           aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
+           decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini')+1+Math.max(0,num('fx-antes')||0),meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:(tipo==='jacquard'||tipo==='base')?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
 function writeSpec(s){
@@ -532,6 +537,7 @@ function writeSpec(s){
   if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); if(e) loadLib(e); else if(Array.isArray(s.ponto.motivo)) setMotif(s.ponto.motivo, s.ponto.fios); }
   if(s.ponto.tipo==='jacquard'){ if(s.ponto.cores) $('f-cores').value=s.ponto.cores; if(s.ponto.modo) $('f-jmodo').value=s.ponto.modo; }
   if(s.forma){ const c=s.forma.cava||{}, d=s.forma.decote||{}, a=s.forma.aumento||{}, a2=s.forma.aumento2||{};
+    $('fx-antes').value=0; $('fx-depois').value=0;
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
     $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
@@ -686,7 +692,7 @@ $('btn-addc').addEventListener('click',()=>{
   cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
 });
 $('f-barra').addEventListener('change',aplicaBase);
-['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fx-antes','fx-depois','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -726,8 +732,9 @@ function update(){
   const formaOn=!ehBase && ($('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked);
   $('fe-box').hidden=!$('fe-on').checked; $('fg-box').hidden=!$('fg-on').checked;
   $('fa-box').hidden=!formaOn;
-  if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), tot=fim+Math.max(0,parseInt($('fa-acima').value,10)||0);
-    if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma + ${tot-fim} retas acima = ${tot} carreiras (item 3 ajustado sozinho).`; } }
+  $('fx-box').hidden=!formaOn; $('fx-hint').hidden=!formaOn;
+  if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
+    if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (item 3 ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
   $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo';
   $('btn-addc').disabled=ehBase;
