@@ -1,0 +1,723 @@
+<title>Programador Raynen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: bancada de trabalho em duas colunas: pedido + parametros a esquerda, leito de agulhas (previa) a direita */
+:root{
+  --bg:#eef0ee; --panel:#f8f9f7; --ink:#1b211e; --muted:#5b665f; --line:#cfd5d0;
+  --accent:#0f6b5c; --accent-ink:#ffffff; --bed:#141816; --warn:#a15c00; --warn-bg:#fff3df; --err:#b3261e; --err-bg:#fde8e6; --ok:#2e7d32;
+  --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", Arial, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --panel:#1a1f1c; --ink:#e3e8e4; --muted:#9aa59e; --line:#2f3732;
+  --accent:#4fbfa8; --accent-ink:#06201b; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --panel:#1a1f1c; --ink:#e3e8e4; --muted:#9aa59e; --line:#2f3732;
+  --accent:#4fbfa8; --accent-ink:#06201b; --bed:#0a0c0b; --warn:#f0b35a; --warn-bg:#2d2412; --err:#ff8a80; --err-bg:#331a18; --ok:#7bc67e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.machine{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--muted)}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;min-width:0;width:100%}
+textarea{min-height:92px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+button{font:inherit;font-weight:700;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.ai-out{font-size:13px;border-left:3px solid var(--accent);padding:4px 10px;white-space:pre-wrap}
+.cable{border:1px dashed var(--line);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.cable-head{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px}
+.cable-head button{padding:2px 8px;font-size:12px}
+.msgs{display:flex;flex-direction:column;gap:6px}
+.msg{font-size:13px;border-radius:4px;padding:7px 10px}
+.msg.err{background:var(--err-bg);color:var(--err)}
+.msg.warn{background:var(--warn-bg);color:var(--warn)}
+.msg.ok{color:var(--ok);padding-left:0}
+.bedbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.zoom{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.zoom input{width:120px}
+.bed{background:var(--bed);border-radius:4px;overflow:auto;max-height:68vh;padding:10px;position:relative}
+.bed canvas{display:block;image-rendering:pixelated;margin:0 auto}
+.readout{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-height:1.5em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:2px;border:1px solid var(--line);flex:none}
+.code{font-family:var(--f-mono);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 16px;margin:0}
+.facts div{display:flex;flex-direction:column}
+.facts dt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.facts dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:14px}
+.steps{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.dl{font-size:15px;padding:11px 18px}
+.status{font-size:13px}
+@media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not(:disabled){filter:brightness(1.08)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Programador <span>Raynen</span></h1>
+    <div class="machine">Feng Fan · Raynen · BMP + OPT · base 25009F</div>
+  </header>
+
+  <div class="grid">
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <section aria-labelledby="h-pedido">
+        <h2 id="h-pedido">1 · Descreva a peça</h2>
+        <textarea id="pedido" placeholder="Ex.: piquet, 120 agulhas de largura, 200 carreiras de corpo">Peça de 51 agulhas em meia malha, 80 carreiras de corpo.</textarea>
+        <div class="actions">
+          <button id="btn-ia" type="button">Interpretar com IA</button>
+          <button id="btn-stop" type="button" class="ghost" hidden>Parar</button>
+          <span id="ia-status" class="status hint"></span>
+        </div>
+        <div id="ia-out" class="ai-out" hidden></div>
+        <p class="hint" id="ia-off" hidden>A interpretação por IA não está disponível nesta visualização. Preencha os parâmetros abaixo.</p>
+      </section>
+
+      <section aria-labelledby="h-param">
+        <h2 id="h-param">2 · Parâmetros (confira antes de baixar)</h2>
+        <label for="f-nome">Nome do arquivo<input id="f-nome" value="AMOSTRA"></label>
+        <div class="row">
+          <label for="f-guia">Guia-fio A (corpo)<input id="f-guia" type="number" min="1" max="16" value="3"></label>
+          <label for="f-gb">Guia-fio B<input id="f-gb" type="number" min="1" max="16" value="5"></label>
+          <label for="f-gc">Guia-fio C<input id="f-gc" type="number" min="1" max="16" value="4"></label>
+          <label for="f-gd">Guia-fio D<input id="f-gd" type="number" min="1" max="16" value="6"></label>
+        </div>
+        <div class="row">
+          <label for="f-larg">Largura (agulhas)<input id="f-larg" type="number" min="10" max="1000" value="51"></label>
+          <label for="f-carr">Carreiras do corpo<input id="f-carr" type="number" min="4" value="80"></label>
+          <label for="f-rib">Ribana 1x2 (repetições)<input id="f-rib" type="number" min="1" max="99" value="12"></label>
+        </div>
+        <label for="f-ponto">Ponto do corpo (escreva o ponto que quiser)
+          <input id="f-ponto" list="pontos" value="Meia malha" autocomplete="off">
+          <datalist id="pontos"></datalist>
+        </label>
+        <label for="f-lib">Biblioteca de pontos
+          <select id="f-lib"><option value="">Escolha um ponto pronto…</option></select>
+        </label>
+        <div class="row q">
+          <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
+          <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
+        </div>
+        <div class="cable m" id="motif-box">
+          <div class="cable-head"><span>Ponto personalizado</span><span class="hint" id="motif-size"></span></div>
+          <p class="hint" id="motif-src" hidden></p>
+          <label for="f-pdesc">Detalhes do ponto (opcional)<textarea id="f-pdesc" style="min-height:60px" placeholder="Ex.: piquet com carregado na trás a cada 2 carreiras, rapport de 2 agulhas"></textarea></label>
+          <div class="actions"><button id="btn-motif" type="button">Criar ponto com IA</button><span id="motif-status" class="status hint"></span></div>
+          <div id="motif-out" class="ai-out" hidden></div>
+          <div class="row">
+            <label for="f-mw">Rapport: agulhas<input id="f-mw" type="number" min="1" max="64" value="2"></label>
+            <label for="f-mh">Rapport: carreiras<input id="f-mh" type="number" min="1" max="64" value="2"></label>
+            <label for="f-paint">Pintar com<select id="f-paint"></select></label>
+          </div>
+          <div class="bed" style="max-height:320px;padding:8px"><canvas id="mcv" width="10" height="10" aria-label="Editor do rapport: clique numa casa para pintar com o código escolhido"></canvas></div>
+          <p class="hint">Clique numa casa para trocar o código. A coluna da esquerda (A/B/C/D) é o guia-fio de cada carreira: clique para trocar. A carreira 1 do rapport fica embaixo.</p>
+        </div>
+        <div class="cable j" id="jq-box">
+          <div class="cable-head"><span>Jacquard</span><span class="hint" id="jq-size"></span></div>
+          <p class="hint" id="jq-src"></p>
+          <div class="row">
+            <label for="f-cores">Cores<select id="f-cores"><option value="2">2 cores</option><option value="3">3 cores</option><option value="4">4 cores</option></select></label>
+            <label for="f-jmodo">Desenho<select id="f-jmodo"><option value="repetir">Repetir na peça toda</option><option value="centro">Uma vez, centralizado</option></select></label>
+            <label for="f-jpaint">Pintar com<select id="f-jpaint"></select></label>
+          </div>
+          <div class="row">
+            <label for="f-jmet">Formato no Raynen<select id="f-jmet"><option value="modulo">Módulo 120/121, igual ao 45018FG (2 cores)</option><option value="compacto">Compacto: camada INA + função 216</option><option value="expandido">Expandido: uma passada por cor no BMP</option></select></label>
+            <label for="f-javesso" id="lbl-javesso">Avesso (216, 2ª coluna)<input id="f-javesso" type="number" min="1" max="26" value="1"></label>
+          </div>
+          <p class="hint" id="jq-yarns"></p>
+          <label for="f-jdesc">Descreva o desenho<textarea id="f-jdesc" style="min-height:56px" placeholder="Ex.: uma rosa com folhas, estilo silhueta  ·  ou: escrever BRASIL"></textarea></label>
+          <label for="f-jlimpar" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jlimpar" type="checkbox" checked style="width:auto">Limpar pontos soltos (1 agulha isolada)</label>
+          <label for="f-jfino" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jfino" type="checkbox" checked style="width:auto">Preservar traços finos ao importar imagem</label>
+          <div class="cable" style="gap:8px">
+            <div class="cable-head"><span>Escrever texto</span></div>
+            <label for="f-jtxt">Texto (Enter quebra a linha)<textarea id="f-jtxt" style="min-height:44px" placeholder="Ex.: BRASIL"></textarea></label>
+            <div class="row">
+              <label for="f-jtfonte">Fonte<select id="f-jtfonte"><option value="bloco">Bloco (letra pequena, nítida)</option><option value="negrito">Negrito</option><option value="serifa">Serifada</option></select></label>
+              <label for="f-jtalt">Altura da letra (carreiras)<input id="f-jtalt" type="number" min="5" max="200" value="14"></label>
+              <label for="f-jtcor">Cor da letra<select id="f-jtcor"><option value="2">Cor 2</option><option value="3">Cor 3</option><option value="4">Cor 4</option></select></label>
+            </div>
+            <div class="actions"><button id="btn-jtxt" type="button" class="ghost">Gerar texto</button></div>
+          </div>
+          <div class="actions">
+            <button id="btn-jq" type="button">Criar desenho com IA</button>
+            <label for="f-jimg" class="ghost" style="flex-direction:row;align-items:center;gap:6px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:8px 12px;cursor:pointer">Importar imagem<input id="f-jimg" type="file" accept="image/*" style="display:none"></label>
+            <button id="btn-jex" type="button" class="ghost">Exemplo QTJTH24S</button>
+          </div>
+          <div class="row">
+            <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
+            <label for="f-jh">Desenho: carreiras<input id="f-jh" type="number" min="2" max="400" value="68"></label>
+            <label for="f-jratio">Proporção (carr./ag.) da imagem<input id="f-jratio" type="number" step="0.1" min="0.5" max="3" value="1.4"></label>
+          </div>
+          <span id="jq-status" class="status hint"></span>
+          <div class="bed" style="max-height:340px;padding:8px"><canvas id="jcv" width="10" height="10" aria-label="Editor do desenho do jacquard: clique para pintar com a cor escolhida"></canvas></div>
+          <p class="hint">No formato módulo (padrão) o desenho fica com os códigos 120/121 e a definição do módulo vai acima da linha de fim, igual ao 45018FG: dá para editar o desenho e o módulo no Raynen. No formato compacto cada carreira do desenho é uma carreira no Raynen, com as cores na camada INA: dá para editar o desenho lá. O Raynen cria as passadas de cada cor ao compilar. As cores na grade são só para visualizar: o que vale é o guia-fio de cada cor.</p>
+        </div>
+        <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
+      </section>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <section aria-labelledby="h-prev">
+        <div class="bedbar">
+          <h2 id="h-prev">3 · Prévia do desenho (carreira 1 embaixo, como no Raynen)</h2>
+          <div class="zoom"><label for="f-zoom" style="flex-direction:row;align-items:center;gap:8px">Zoom<input id="f-zoom" type="range" min="1" max="12" value="6"></label></div>
+        </div>
+        <div class="bed" id="bed"><canvas id="cv" width="10" height="10" aria-label="Prévia da grade de agulhas"></canvas></div>
+        <div class="readout" id="readout">Passe o mouse na prévia para ver carreira, agulha e código.</div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section aria-labelledby="h-ficha">
+        <h2 id="h-ficha">4 · Ficha e arquivos</h2>
+        <div class="msgs" id="msgs"></div>
+        <dl class="facts" id="facts"></dl>
+        <div class="actions">
+          <button id="btn-dl" type="button" class="dl">Baixar para o Raynen (.zip)</button>
+          <span id="dl-status" class="status hint"></span>
+        </div>
+        <ol class="steps">
+          <li>Descompacte o .zip. O <span class="code">.BMP</span>, o <span class="code">.opt</span> (e no jacquard o <span class="code">.INA</span> e o <span class="code">.JQD</span>) ficam juntos na mesma pasta.</li>
+          <li>No Raynen: ícone Abrir → tipo de arquivo <b>BMP</b> → escolha o <span class="code">.BMP</span>.</li>
+          <li>Confira o desenho e as linhas de função, compile e veja a simulação antes de mandar para a máquina.</li>
+          <li>Ajuste a densidade do corpo (segmento 8) na máquina para o ponto escolhido.</li>
+        </ol>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/*GEN*/
+RAYNEN.load(/*TEMPLATE*/);
+
+const NOMES = (()=>{const n={120:'módulo: cor 1 do jacquard',121:'módulo: cor 2 do jacquard',102:'identificação do módulo (jacquard)',0:'agulha vazia',1:'malha frente',2:'malha trás',3:'malha frente + trás',4:'carregado frente',5:'carregado trás',
+  6:'malha frente, carregado trás',7:'malha trás, carregado frente',8:'frente, sem conexão',9:'trás, sem conexão',
+  10:'frente + trás, sem conexão',11:'frente, 2ª densidade',12:'trás, 2ª densidade',13:'frente + trás, 2ª densidade',14:'carregado frente + trás',16:'sem agulha',17:'soltar (trás)',
+  20:'malha frente, transfere p/ trás',30:'malha frente, transfere p/ frente',40:'malha trás, transfere p/ frente',50:'malha trás, transfere p/ trás',
+  60:'frente, vai p/ trás e volta p/ frente',70:'transfere p/ frente e tece frente',80:'trás, vai p/ frente e volta p/ trás',90:'transfere p/ trás e tece trás',
+  100:'transferir p/ trás',110:'transferir p/ frente',
+  28:'trança: osso de baixo (gr.1)',29:'trança: osso de cima (gr.1)',38:'trança trás: osso de baixo (gr.1)',39:'trança: osso de cima, sem tecer (gr.1)',
+  48:'trança: osso de baixo (gr.2)',49:'trança: osso de cima (gr.2)',58:'trança trás: osso de baixo (gr.2)',59:'trança: osso de cima, sem tecer (gr.2)'};
+  for(let k=1;k<=7;k++){n[20+k]=`malha frente, transfere ${k} à esq.`;n[30+k]=`malha frente, transfere ${k} à dir.`;n[40+k]=`malha trás, transfere ${k} à esq.`;n[50+k]=`malha trás, transfere ${k} à dir.`;
+    n[60+k]=`frente, vai p/ trás, ${k} à esq. p/ frente`;n[70+k]=`frente, vai p/ trás, ${k} à dir. p/ frente`;n[80+k]=`trás, vai p/ frente, ${k} à esq. p/ trás`;n[90+k]=`trás, vai p/ frente, ${k} à dir. p/ trás`;}
+  n[78]='transfere p/ trás e tece frente e trás';n[79]='transfere p/ frente e tece frente e trás';n[88]='frente, 1 à dir. com T p/ frente';n[89]='frente, 2 à dir. com T p/ frente';
+  n[98]='frente, transfere à dir. com T p/ frente';n[99]='frente, 4 à dir. com T p/ frente';return n;})();
+const LIB = /*LIBRARY*/;
+const JQ_EX = /*JQEX*/;
+const JCOL = ['#ece6d6','#c8372d','#2d4a9a','#e3a21a'];
+const $ = id => document.getElementById(id);
+let cables = [];
+let last = null;
+let motivo = [[1,5],[1,1]], motivoFios = [1,1], motivoReal = false;   // rapport (carreira 1 primeiro) e guia-fio por carreira
+let motifNome = '';
+let desenho = JQ_EX.rows.map(r=>[...r].map(Number)), jqFonte = JQ_EX.fonte;
+const BUILTIN = {'meia malha':'meia','jersey':'meia','malha tras':'links','avesso':'links','links':'links','links quadriculado':'quadriculado','quadriculado':'quadriculado','xadrez':'quadriculado','jacquard':'jacquard'};
+const LABEL = {meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
+const norm = t => (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+const libByName = n => LIB.find(e=>norm(e.nome)===norm(n));
+const tipoAtual = () => { const n=norm($('f-ponto').value); return BUILTIN[n] || (n.startsWith('jacquard')?'jacquard':'motivo'); };
+
+// biblioteca e lista de sugestoes
+(()=>{
+  const dl=$('pontos'), sel=$('f-lib');
+  ['Meia malha','Malha trás','Links quadriculado','Jacquard',...LIB.map(e=>e.nome)].forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});
+  const g1=document.createElement('optgroup'); g1.label='Dos programas de vocês'; const g2=document.createElement('optgroup'); g2.label='Padrões Raynen (ainda não compilados)';
+  LIB.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${e.nome} · ${e.motivo[0].length}×${e.motivo.length}`;(e.real?g1:g2).appendChild(o);});
+  sel.append(g1,g2);
+  const g3=document.createElement('optgroup'); g3.label='Outros'; [['meia','Meia malha'],['links','Malha trás'],['quadriculado','Links quadriculado'],['jacquard','Jacquard']].forEach(([v,t])=>{const o=document.createElement('option');o.value='b:'+v;o.textContent=t;g3.appendChild(o);}); sel.appendChild(g3);
+  sel.addEventListener('change',()=>{
+    const v=sel.value; if(v==='') return;
+    if(v.startsWith('b:')){ $('f-ponto').value=LABEL[v.slice(2)]; }
+    else { const e=LIB[+v]; $('f-ponto').value=e.nome; loadLib(e); }
+    update();
+  });
+})();
+function loadLib(e){
+  setMotif(e.motivo, e.fios); motivoReal=!!e.real; motifNome=norm(e.nome);
+  const s=$('motif-src'); s.hidden=false; s.textContent=`${e.fonte}. ${e.nota||''}`;
+  $('motif-status').textContent='';
+}
+
+function readSpec(){
+  const num = id => parseInt($(id).value,10), tipo=tipoAtual();
+  const ponto={tipo, bx:num('f-bx'), by:num('f-by'), nome:$('f-ponto').value.trim()};
+  if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; }
+  if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.slice()); ponto.fundo=1; }
+  return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
+    fios:[num('f-gb'),num('f-gc'),num('f-gd')],
+    ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
+}
+function writeSpec(s){
+  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio;
+  if(Array.isArray(s.fios)){ $('f-gb').value=s.fios[0]||5; $('f-gc').value=s.fios[1]||4; $('f-gd').value=s.fios[2]||6; }
+  $('f-ponto').value = s.ponto.tipo==='motivo' ? (s.ponto.nome||'Ponto personalizado') : (LABEL[s.ponto.tipo]||'Meia malha');
+  $('f-bx').value=s.ponto.bx||5; $('f-by').value=s.ponto.by||5;
+  if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); if(e) loadLib(e); else if(Array.isArray(s.ponto.motivo)) setMotif(s.ponto.motivo, s.ponto.fios); }
+  if(s.ponto.tipo==='jacquard'){ if(s.ponto.cores) $('f-cores').value=s.ponto.cores; if(s.ponto.modo) $('f-jmodo').value=s.ponto.modo; }
+  cables = s.trancas.map(t=>({agulha:t.agulha,grupo:t.grupo,intervalo:t.intervalo,lateral:t.lateral,sentido:t.sentido||'esq'}));
+  renderCables(); update();
+}
+
+// ---- editor do rapport ----
+const paint=$('f-paint');
+RAYNEN.MOTIF_CODES.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=`${c} · ${NOMES[c]||''}`;paint.appendChild(o);});
+paint.value='1';
+function setMotif(m,f){
+  motivo=m.map(r=>r.map(v=>+v||0)); motivoFios=(Array.isArray(f)&&f.length===motivo.length)?f.map(v=>+v||1):motivo.map(()=>1);
+  $('f-mh').value=motivo.length; $('f-mw').value=motivo[0].length; drawMotif();
+}
+function resizeMotif(){
+  const w=Math.min(64,Math.max(1,parseInt($('f-mw').value,10)||1)), h=Math.min(64,Math.max(1,parseInt($('f-mh').value,10)||1));
+  motivo=Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=> (motivo[y]&&motivo[y][x]!=null)?motivo[y][x]:1));
+  motivoFios=Array.from({length:h},(_,y)=>motivoFios[y]||1); motivoReal=false;
+  drawMotif(); update();
+}
+$('f-mw').addEventListener('change',resizeMotif); $('f-mh').addEventListener('change',resizeMotif);
+function motifCell(){ const w=motivo[0].length+1,h=motivo.length; return Math.max(12,Math.min(34,Math.floor(320/Math.max(w,h)))); }
+function drawMotif(){
+  const cv=$('mcv'), ctx=cv.getContext('2d'), w=motivo[0].length, h=motivo.length, z=motifCell(), pal=RAYNEN.palette;
+  cv.width=(w+1)*z; cv.height=h*z;
+  ctx.font=`${Math.floor(z*0.42)}px "IBM Plex Mono", monospace`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let y=0;y<h;y++){
+    ctx.fillStyle=JCOL[(motivoFios[y]||1)-1]; ctx.fillRect(0,(h-1-y)*z,z,z);
+    ctx.fillStyle='#111'; ctx.fillText('ABCD'[(motivoFios[y]||1)-1],z/2,(h-1-y)*z+z/2);
+    for(let x=0;x<w;x++){
+      const v=motivo[y][x]; ctx.fillStyle=pal[v]; ctx.fillRect((x+1)*z,(h-1-y)*z,z,z);
+      if(z>=16){ const c=pal[v]; const lum=(parseInt(c.slice(1,3),16)*299+parseInt(c.slice(3,5),16)*587+parseInt(c.slice(5,7),16)*114)/1000;
+        ctx.fillStyle=lum>140?'#000':'#fff'; ctx.fillText(String(v),(x+1)*z+z/2,(h-1-y)*z+z/2); }
+    }
+  }
+  ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.beginPath();
+  for(let x=0;x<=w+1;x++){ctx.moveTo(x*z+.5,0);ctx.lineTo(x*z+.5,h*z);} for(let y=0;y<=h;y++){ctx.moveTo(0,y*z+.5);ctx.lineTo((w+1)*z,y*z+.5);} ctx.stroke();
+  $('motif-size').textContent=`${w} agulhas × ${h} carreiras`;
+}
+$('mcv').addEventListener('click',e=>{
+  const r=$('mcv').getBoundingClientRect(), z=motifCell(), h=motivo.length;
+  const x=Math.floor((e.clientX-r.left)/z)-1, y=h-1-Math.floor((e.clientY-r.top)/z);
+  if(y<0||y>=h||x>=motivo[0].length) return;
+  if(x<0){ motivoFios[y]=(motivoFios[y]%4)+1; } else motivo[y][x]=+paint.value;
+  motivoReal=false; drawMotif(); update();
+});
+
+// ---- editor do jacquard ----
+function jqColors(){ return parseInt($('f-cores').value,10)||2; }
+function fillJPaint(){
+  const s=$('f-jpaint'), cur=s.value||'2'; s.textContent='';
+  for(let k=1;k<=jqColors();k++){const o=document.createElement('option');o.value=k;o.textContent=`Cor ${k} (guia-fio ${'ABCD'[k-1]})`;s.appendChild(o);}
+  s.value=Math.min(+cur,jqColors());
+  const ys=[$('f-guia'),$('f-gb'),$('f-gc'),$('f-gd')].slice(0,jqColors()).map((el,i)=>`cor ${i+1} = guia-fio ${el.value}`).join(' · ');
+  $('jq-yarns').textContent='Guia-fios: '+ys+' (mude em "Guia-fio A/B/C/D" acima).';
+}
+function setDesenho(d,fonte){ desenho=d; jqFonte=fonte||''; $('f-jw').value=d[0].length; $('f-jh').value=d.length; drawJq(); update(); }
+function jqCell(){ const w=desenho[0].length,h=desenho.length; return Math.max(2,Math.min(24,Math.floor(340/Math.max(w,h)))); }
+function drawJq(){
+  const cv=$('jcv'), ctx=cv.getContext('2d'), w=desenho[0].length, h=desenho.length, z=jqCell();
+  cv.width=w*z; cv.height=h*z;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ ctx.fillStyle=JCOL[(desenho[y][x]||1)-1]; ctx.fillRect(x*z,(h-1-y)*z,z,z); }
+  if(z>=8){ctx.strokeStyle='rgba(0,0,0,.15)';ctx.beginPath();for(let x=0;x<=w;x++){ctx.moveTo(x*z+.5,0);ctx.lineTo(x*z+.5,h*z);}for(let y=0;y<=h;y++){ctx.moveTo(0,y*z+.5);ctx.lineTo(w*z,y*z+.5);}ctx.stroke();}
+  $('jq-size').textContent=`${w} agulhas × ${h} carreiras`; $('jq-src').textContent=jqFonte?`Desenho: ${jqFonte}.`:'';
+}
+let painting=false;
+function jqPaintAt(e){
+  const r=$('jcv').getBoundingClientRect(), z=jqCell(), h=desenho.length;
+  const x=Math.floor((e.clientX-r.left)/z), y=h-1-Math.floor((e.clientY-r.top)/z);
+  if(x<0||y<0||x>=desenho[0].length||y>=h) return false;
+  desenho[y][x]=+$('f-jpaint').value; return true;
+}
+$('jcv').addEventListener('pointerdown',e=>{painting=true; if(jqPaintAt(e)) drawJq();});
+$('jcv').addEventListener('pointermove',e=>{if(painting&&jqPaintAt(e)) drawJq();});
+window.addEventListener('pointerup',()=>{ if(painting){painting=false; jqFonte=jqFonte&&!jqFonte.includes('editado')?jqFonte+' (editado)':jqFonte; drawJq(); update();} });
+function resizeJq(){
+  const w=Math.min(400,Math.max(2,parseInt($('f-jw').value,10)||2)), h=Math.min(400,Math.max(2,parseInt($('f-jh').value,10)||2));
+  desenho=Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=>(desenho[y]&&desenho[y][x])||1)); drawJq(); update();
+}
+$('f-jw').addEventListener('change',resizeJq); $('f-jh').addEventListener('change',resizeJq);
+$('f-cores').addEventListener('change',()=>{const n=jqColors(); desenho=desenho.map(r=>r.map(v=>Math.min(v,n))); fillJPaint(); drawJq(); update();});
+['f-guia','f-gb','f-gc','f-gd'].forEach(id=>$(id).addEventListener('input',fillJPaint));
+$('f-jmodo').addEventListener('change',update); $('f-jmet').addEventListener('change',update); $('f-javesso').addEventListener('input',update);
+$('btn-jex').addEventListener('click',()=>{ $('f-cores').value='2'; fillJPaint(); setDesenho(JQ_EX.rows.map(r=>[...r].map(Number)),JQ_EX.fonte); });
+// importar imagem: recorta a margem, separa fundo e reduz por cobertura (preserva tracos finos)
+async function imagemParaGrade(bmp, w, ratio, n, fino){
+  const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height)), iw=Math.round(bmp.width*sc), ih=Math.round(bmp.height*sc);
+  const c0=document.createElement('canvas'); c0.width=iw; c0.height=ih; const x0=c0.getContext('2d'); x0.fillStyle='#fff'; x0.fillRect(0,0,iw,ih); x0.drawImage(bmp,0,0,iw,ih);
+  const px=x0.getImageData(0,0,iw,ih).data;
+  // fundo = mediana da borda
+  const bord=[]; for(let x=0;x<iw;x++){bord.push(x,(ih-1)*iw+x);} for(let y=0;y<ih;y++){bord.push(y*iw,y*iw+iw-1);}
+  const med=k=>{const v=bord.map(i=>px[i*4+k]).sort((a,b)=>a-b);return v[v.length>>1];}; const bg=[med(0),med(1),med(2)];
+  const dist=i=>Math.sqrt((px[i*4]-bg[0])**2+(px[i*4+1]-bg[1])**2+(px[i*4+2]-bg[2])**2);
+  const fg=new Uint8Array(iw*ih); let minx=iw,miny=ih,maxx=-1,maxy=-1;
+  for(let i=0;i<iw*ih;i++) if(dist(i)>70){ fg[i]=1; const x=i%iw,y=(i/iw)|0; if(x<minx)minx=x; if(x>maxx)maxx=x; if(y<miny)miny=y; if(y>maxy)maxy=y; }
+  if(maxx<0) throw new Error('vazia');
+  const cw=maxx-minx+1, ch=maxy-miny+1, h=Math.min(400,Math.max(4,Math.round(w*ch/cw*ratio)));
+  // cores do primeiro plano: k-means em (n-1) grupos
+  const sample=[]; for(let y=miny;y<=maxy;y+=Math.max(1,ch>>7)) for(let x=minx;x<=maxx;x+=Math.max(1,cw>>7)){const i=y*iw+x; if(fg[i]) sample.push([px[i*4],px[i*4+1],px[i*4+2]]);}
+  const k=Math.max(1,n-1), lum=q=>q[0]*.3+q[1]*.59+q[2]*.11, ss=sample.slice().sort((a,b)=>lum(a)-lum(b));
+  let C=Array.from({length:k},(_,j)=>ss[Math.floor((j+.5)/k*ss.length)].slice());
+  for(let it=0;it<10;it++){ const S=C.map(()=>[0,0,0,0]); sample.forEach(q=>{let b=0,bd=1e9;C.forEach((c,j)=>{const d=(q[0]-c[0])**2+(q[1]-c[1])**2+(q[2]-c[2])**2;if(d<bd){bd=d;b=j;}});const s=S[b];s[0]+=q[0];s[1]+=q[1];s[2]+=q[2];s[3]++;}); C=C.map((c,j)=>S[j][3]?[S[j][0]/S[j][3],S[j][1]/S[j][3],S[j][2]/S[j][3]]:c); }
+  const lab=i=>{let b=0,bd=1e9;C.forEach((c,j)=>{const d=(px[i*4]-c[0])**2+(px[i*4+1]-c[1])**2+(px[i*4+2]-c[2])**2;if(d<bd){bd=d;b=j;}});return b;};
+  const thr=fino?0.18:0.35, d=[];
+  for(let gy=h-1;gy>=0;gy--){ const row=[]; const y0=miny+gy*ch/h, y1=miny+(gy+1)*ch/h;
+    for(let gx=0;gx<w;gx++){ const xa=minx+gx*cw/w, xb=minx+(gx+1)*cw/w; let tot=0; const cnt=new Array(k).fill(0);
+      for(let y=Math.floor(y0);y<Math.max(Math.floor(y0)+1,Math.ceil(y1));y++) for(let x=Math.floor(xa);x<Math.max(Math.floor(xa)+1,Math.ceil(xb));x++){ if(x>=iw||y>=ih) continue; tot++; const i=y*iw+x; if(fg[i]) cnt[lab(i)]++; }
+      const f=cnt.reduce((a,b)=>a+b,0)/Math.max(1,tot); let best=0; cnt.forEach((v,j)=>{if(v>cnt[best])best=j;});
+      row.push(f>=thr ? best+2 : 1); }
+    d.push(row); }
+  return d;
+}
+$('f-jimg').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  try{
+    $('jq-status').textContent='Convertendo a imagem…';
+    const bmp=await createImageBitmap(f), n=jqColors(), ratio=parseFloat($('f-jratio').value)||1.4, Wp=parseInt($('f-larg').value,10)||100;
+    const centro=$('f-jmodo').value==='centro';
+    const w=Math.min(400,Math.max(8, centro ? Wp-6 : (parseInt($('f-jw').value,10)||72)));
+    let d=await imagemParaGrade(bmp,w,ratio,n,$('f-jfino').checked);
+    if($('f-jlimpar').checked) d=limparSoltos(d);
+    setDesenho(d,`imagem "${f.name}" com ${n} cores, ${w} agulhas de largura (margem recortada)`);
+    const h=d.length; $('jq-status').textContent=`Imagem convertida: ${w} agulhas × ${h} carreiras.`+(h>(parseInt($('f-carr').value,10)||0)?` O corpo tem menos carreiras que o desenho: aumente "Carreiras do corpo" para pelo menos ${h+10}.`:'')+' Para letras mais nítidas, aumente a largura da peça.';
+  }catch(err){ $('jq-status').textContent='Não consegui ler essa imagem. Tente um PNG ou JPG com fundo liso.'; }
+  e.target.value='';
+});
+function renderCables(){
+  const box=$('cables'); box.textContent='';
+  cables.forEach((c,k)=>{
+    const d=document.createElement('div'); d.className='cable';
+    d.innerHTML=`<div class="cable-head"><span>Trança ${k+1}</span><button type="button" class="ghost" data-del="${k}">Remover</button></div>
+    <div class="row">
+      <label>1ª agulha<input type="number" min="1" data-k="${k}" data-f="agulha" value="${c.agulha}"></label>
+      <label>Tamanho<select data-k="${k}" data-f="grupo">${[1,2,3,4,5,6,7].map(g=>`<option value="${g}"${c.grupo==g?' selected':''}>${2*g} agulhas (${g}+${g})</option>`).join('')}</select></label>
+      <label>Cruza a cada<input type="number" min="2" data-k="${k}" data-f="intervalo" value="${c.intervalo}"></label>
+      <label>Trás ao lado<input type="number" min="0" max="4" data-k="${k}" data-f="lateral" value="${c.lateral}"></label>
+      <label>Sentido<select data-k="${k}" data-f="sentido"><option value="esq"${c.sentido!=='dir'?' selected':''}>28 | 29</option><option value="dir"${c.sentido==='dir'?' selected':''}>29 | 28 (invertido)</option></select></label>
+    </div>`;
+    box.appendChild(d);
+  });
+  box.querySelectorAll('[data-k]').forEach(el=>el.addEventListener('input',e=>{const t=e.target; cables[+t.dataset.k][t.dataset.f]=t.value; update();}));
+  box.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',e=>{cables.splice(+e.target.dataset.del,1); renderCables(); update();}));
+}
+$('btn-addc').addEventListener('click',()=>{
+  const W=parseInt($('f-larg').value,10)||50;
+  cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
+});
+['f-nome','f-larg','f-carr','f-rib','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
+$('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } $('f-lib').value = e ? String(LIB.indexOf(e)) : ''; update(); });
+$('f-zoom').addEventListener('input',draw);
+
+function update(){
+  const tp=tipoAtual();
+  $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
+  document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
+  document.querySelectorAll('.m').forEach(el=>el.hidden=tp!=='motivo');
+  document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
+  $('btn-addc').hidden = tp==='jacquard'; $('cables').hidden = tp==='jacquard';
+  if(tp==='motivo' && norm($('f-ponto').value)!==motifNome && !$('btn-motif').disabled)
+    $('motif-status').textContent=`Clique em "Criar ponto com IA" para gerar “${$('f-ponto').value.trim()}”, ou monte o rapport à mão.`;
+  const chk=RAYNEN.check(readSpec()), msgs=$('msgs'); msgs.textContent='';
+  chk.erros.forEach(t=>{const m=document.createElement('div');m.className='msg err';m.textContent=t;msgs.appendChild(m);});
+  chk.avisos.forEach(a=>{const m=document.createElement('div');m.className='msg warn';m.textContent=a.txt;msgs.appendChild(m);});
+  if(chk.erros.length){ last=null; $('btn-dl').disabled=true; draw(); renderFacts(); return; }
+  last=RAYNEN.build(readSpec()); $('btn-dl').disabled=false;
+  if(!chk.avisos.length){const m=document.createElement('div');m.className='msg ok';m.textContent='Sem conflitos com as regras testadas no Raynen.';msgs.appendChild(m);}
+  draw(); renderFacts();
+}
+function draw(){
+  const cv=$('cv'), ctx=cv.getContext('2d');
+  if(!last){cv.width=10;cv.height=10;ctx.clearRect(0,0,10,10);$('legend').textContent='';return;}
+  const z=+$('f-zoom').value, W=last.width+2, H=last.rows, pal=RAYNEN.palette, used=new Set();
+  cv.width=W*z; cv.height=H*z;
+  const img=ctx.createImageData(W,H);
+  const yarnIdx={}; [last.spec.guiaFio,...last.spec.fios].forEach((g,k)=>{ if(!(g in yarnIdx)) yarnIdx[g]=k; });
+  let inaUsed=new Set();
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const v=last.grid[y*1024+x], g=last.inaGrid?last.inaGrid[y*1024+x]:0;
+    let c;
+    if(g){ c=JCOL[yarnIdx[g]??0]; inaUsed.add(g); }
+    else if((v===120||v===121) && last.spec.ponto.tipo==='jacquard'){ c=JCOL[v-120]; used.add(v); }
+    else { used.add(v); c=pal[v]; }
+    const i=((H-1-y)*W+x)*4;
+    img.data[i]=parseInt(c.slice(1,3),16); img.data[i+1]=parseInt(c.slice(3,5),16); img.data[i+2]=parseInt(c.slice(5,7),16); img.data[i+3]=255;
+  }
+  const off=document.createElement('canvas'); off.width=W; off.height=H; off.getContext('2d').putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=false; ctx.drawImage(off,0,0,W*z,H*z);
+  if(z>=5){ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();
+    for(let x=0;x<=W;x++){ctx.moveTo(x*z+.5,0);ctx.lineTo(x*z+.5,H*z);} for(let y=0;y<=H;y++){ctx.moveTo(0,y*z+.5);ctx.lineTo(W*z,y*z+.5);} ctx.stroke();}
+  const lg=$('legend'); lg.textContent='';
+  [...inaUsed].sort((a,b)=>a-b).forEach(g=>{const s=document.createElement('span');const sw=document.createElement('i');sw.className='sw';sw.style.background=JCOL[yarnIdx[g]??0];const c=document.createElement('b');c.className='code';c.textContent='INA '+g;s.append(sw,c,document.createTextNode(' guia-fio '+g+' (camada de cores)'));lg.appendChild(s);});
+  [...used].filter(v=>v).sort((a,b)=>a-b).forEach(v=>{
+    const s=document.createElement('span'); const sw=document.createElement('i'); sw.className='sw'; sw.style.background=((v===120||v===121)&&last.spec.ponto.tipo==='jacquard')?JCOL[v-120]:pal[v];
+    const c=document.createElement('b'); c.className='code'; c.textContent=v; const t=document.createTextNode(' '+(NOMES[v]||'código do modelo'));
+    s.append(sw,c,t); lg.appendChild(s);
+  });
+}
+$('cv').addEventListener('mousemove',e=>{
+  if(!last) return; const z=+$('f-zoom').value, r=$('cv').getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/z), yTop=Math.floor((e.clientY-r.top)/z), y=last.rows-1-yTop;
+  if(x<1||x>last.width||y<0) {$('readout').textContent=''; return;}
+  const v=last.grid[y*1024+x], fase=y<14?'início':y<25?'ribana':'corpo', g=last.inaGrid?last.inaGrid[y*1024+x]:0;
+  $('readout').textContent=`Carreira ${y+1} (${fase}) · agulha ${x} · código ${v}: ${NOMES[v]||'—'}`+(g?` · INA: guia-fio ${g}`:'');
+});
+function renderFacts(){
+  const f=$('facts'); f.textContent='';
+  if(!last) return;
+  const s=last.spec, pt={meia:()=>'Meia malha',links:()=>'Malha trás',quadriculado:()=>`Links ${s.ponto.bx}×${s.ponto.by}`,
+    motivo:()=>`${s.ponto.nome||'Personalizado'} (${s.ponto.motivo[0].length}×${s.ponto.motivo.length})`,
+    jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`}[s.ponto.tipo]();
+  const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
+  const items=[['Largura',`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (25 início/ribana + ${last.bodyRows}${last.rows-25-last.bodyRows?` + ${last.rows-25-last.bodyRows} do módulo`:''})`],
+    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],
+    ['Passadas por guia-fio',ps],['Cruzamentos',last.crosses.length?last.crosses.slice(0,6).join(', ')+(last.crosses.length>6?'…':''):'—']];
+  items.forEach(([k,v])=>{const d=document.createElement('div');const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;d.append(dt,dd);f.appendChild(d);});
+}
+function ficha(){
+  const s=last.spec, l=[];
+  l.push(`FICHA - ${s.nome}`,`Gerado pelo Programador Raynen em ${new Date().toLocaleString('pt-BR')}`,'',
+    `Largura: ${s.largura} agulhas (colunas 1-${s.largura})`,`Carreiras no desenho: ${last.rows}`,
+    `  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 ribana 1x2 do 25009F, laço de ${s.ribanaRep} repetições`,
+    `  26-${last.rows} corpo, densidade segmento 8`,
+    `Ponto: ${s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
+  const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
+  if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
+  s.trancas.forEach((t,k)=>l.push(`Trança ${k+1}: agulhas ${t.agulha}-${t.agulha+2*t.grupo-1} (${t.grupo}+${t.grupo}), cruza a cada ${t.intervalo} carreiras, ${t.lateral} agulha(s) de malha trás de cada lado, códigos ${k%2?'48/49':'28/29'}${t.sentido==='dir'?' invertidos':''}`));
+  if(last.crosses.length) l.push(`Cruzamentos (trança 1): carreiras ${last.crosses.join(', ')}`);
+  l.push('Passadas por guia-fio: '+Object.entries(last.passes).map(([g,n])=>`${g}=${n}`).join(', '),'','Como abrir: Raynen > Abrir > tipo BMP > '+s.nome+'.BMP (o .opt'+(last.ina?', o .INA e o .JQD precisam':' precisa')+' estar na mesma pasta).',
+    'Confira a simulação e ajuste a densidade antes de produzir.');
+  return l.join('\r\n');
+}
+let downloads=null;
+$('btn-dl').addEventListener('click',async()=>{
+  if(!last) return;
+
+  const n=last.spec.nome, files=[{name:n+'.BMP',data:last.bmp},{name:n+'.opt',data:last.opt}];
+  if(last.ina){ files.push({name:n+'.INA',data:last.ina},{name:n+'.JQD',data:last.jqd}); }
+  files.push({name:n+'_ficha.txt',data:ficha()});
+  const data=RAYNEN.zip(files);
+  $('dl-status').textContent='Preparando…';
+  if(!downloads){ // fora do Claude (ex.: GitHub Pages): download comum do navegador
+    const url=URL.createObjectURL(new Blob([data],{type:'application/zip'})), a=document.createElement('a');
+    a.href=url; a.download=n+'.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000);
+    $('dl-status').textContent=`${n}.zip baixado.`; return;
+  }
+  try{ await downloads.save({filename:n+'.zip',data:new Blob([data])}); $('dl-status').textContent=`${n}.zip salvo.`; }
+  catch(e){ $('dl-status').textContent = e&&e.code==='declined'?'Download cancelado.':e&&e.code==='rate_limited'?'Já há um download aberto. Tente de novo em instantes.':'Não foi possível baixar aqui.'; }
+});
+
+// ---- IA: texto em portugues -> parametros ----
+const REGRAS = `Você converte pedidos de programadores de máquina retilínea (Feng Fan, sistema Raynen) em parâmetros para um gerador.
+Responda APENAS com um objeto JSON neste formato:
+{"nome": string (sem espaços, ex. "BLUSA_TRANCA"),
+ "largura": inteiro (agulhas, 10-1000),
+ "carreiras": inteiro (carreiras do corpo, depois da ribana; use número par),
+ "ribanaRep": inteiro (repetições do laço da ribana 1x2; padrão 12; cada repetição = 4 carreiras),
+ "guiaFio": inteiro (guia-fio A, padrão 3),
+ "fios": [B, C, D] (guia-fios extras, padrão [5,4,6]),
+ "ponto": {"tipo": "meia" | "links" | "quadriculado" | "biblioteca" | "personalizado" | "jacquard", "bx": inteiro, "by": inteiro, "nome": string (nome do ponto; para "biblioteca" use exatamente um nome da lista), "descricao": string (detalhes do ponto ou do desenho do jacquard), "cores": 2-4 (jacquard), "modo": "repetir" | "centro" (jacquard)},
+ "trancas": [{"agulha": inteiro (1ª agulha da trança, contando da esquerda a partir de 1), "grupo": 2 ou 3 (2 = trança de 4 agulhas, 3 = trança de 6), "intervalo": inteiro (carreiras entre cruzamentos, padrão 6), "lateral": inteiro (agulhas de malha trás de cada lado, padrão 2), "sentido": "esq" | "dir"}],
+ "observacoes": string (em português, curta: o que você assumiu ou não conseguiu atender)}
+Regras:
+- "meia malha"/"jersey" = tipo meia. "links quadriculado"/"xadrez" = quadriculado com bx agulhas e by carreiras por bloco. "malha trás"/"avesso"/"links" liso = links.
+- Pontos prontos da biblioteca (use tipo "biblioteca" e o nome exato): ${LIB.map(e=>e.nome).join('; ')}.
+- Outro ponto ou trama que não esteja na biblioteca = tipo "personalizado", com "nome" e "descricao".
+- Jacquard (desenho com 2 a 4 cores: flores, losangos, letras, listras coloridas etc.) = tipo "jacquard" com "cores", "modo" e "descricao" do desenho. "carreiras" no jacquard = carreiras do desenho. Jacquard não leva tranças.
+- Só inclua tranças se o pedido falar explicitamente em trança; caso contrário devolva "trancas": [].
+- Trança centralizada: agulha = floor((largura - 2*grupo)/2) + 1. Várias tranças "distribuídas": divida a largura em partes iguais e centralize cada trança na sua parte.
+- Entre duas tranças deixe pelo menos 2*lateral+1 agulhas. Cada trança com as laterais precisa caber entre a agulha 1 e a largura.
+- Se o pedido der medidas em cm sem densidade (agulhas/10 cm e carreiras/10 cm), não invente: mantenha os valores atuais e diga em observacoes que precisa da densidade.
+- Se faltar algum dado, mantenha o valor atual que eu passo.
+- O que o gerador ainda não faz (intarsia, decote, diminuições, outras ribanas de início): ignore e explique em observacoes.`;
+
+function regrasPonto(){
+  const tabela = RAYNEN.MOTIF_CODES.map(c=>`${c} = ${NOMES[c]}`).join('\n');
+  return `Você é programador de máquina retilínea Raynen (Feng Fan). Crie o RAPPORT (célula que se repete) de um ponto de malha usando somente os códigos de cor do Raynen abaixo.
+Cada casa = 1 agulha numa carreira (1 passada do carro). A máquina tem frontura da frente e de trás. Cada carreira usa um guia-fio: A (principal), B, C ou D.
+Códigos permitidos:
+${tabela}
+Regras:
+- Responda APENAS com JSON: {"nome": string, "rapport": [[...],[...]], "fios": [1 ou 2 ou 3 ou 4 para cada carreira do rapport: 1=A, 2=B, 3=C, 4=D], "explicacao": string em português (2-4 frases: como o ponto funciona e o que conferir na simulação)}.
+- Use só o guia-fio A, a não ser que o ponto peça listras ou duas cores; com mais de um guia-fio, cada guia-fio deve aparecer um número par de vezes no rapport.
+- "rapport" é a lista de carreiras de BAIXO para CIMA (a primeira é a carreira 1); cada carreira é uma lista de códigos, da agulha da esquerda para a direita; todas com o mesmo tamanho; no máximo 24 x 24.
+- Use o menor rapport que represente o ponto.
+- Nenhuma agulha pode ficar mais de 15 carreiras seguidas sem tecer (só carregado ou vazio); repare que o rapport se repete na vertical.
+- Malha frente (1) e malha trás (2) já fazem a transferência automática quando o ponto está na outra frontura.
+- Tranças: 28/29 lado a lado no mesmo grupo (osso de baixo à esquerda, osso de cima à direita), mesmo número de agulhas em cada lado; prefira deixar tranças para o campo de tranças do app.
+- Evite 0 (agulha vazia) a não ser que o ponto peça escada/vazado.
+- Se o ponto pedido não puder ser feito com esses códigos, faça a aproximação mais próxima e explique em "explicacao".`;
+}
+async function criarPonto(){
+  if(!sample) return;
+  const nome=$('f-ponto').value.trim(), det=$('f-pdesc').value.trim();
+  ctl=new AbortController(); $('btn-motif').disabled=true; $('motif-status').textContent='Pensando…'; $('motif-out').hidden=true;
+  try{
+    const r=await sample.json(`${regrasPonto()}\n\nPonto pedido: "${nome}"${det?`\nDetalhes: ${det}`:''}`,{signal:ctl.signal,modelTier:'default'});
+    if(!Array.isArray(r.rapport)||!r.rapport.length) throw {code:'invalid'};
+    const w=Math.max(...r.rapport.map(x=>x.length));
+    const rr=r.rapport.slice(0,64);
+    setMotif(rr.map(row=>Array.from({length:Math.min(64,w)},(_,i)=>+(row[i]??1)||0)), Array.isArray(r.fios)?rr.map((_,i)=>Math.min(4,Math.max(1,+r.fios[i]||1))):null);
+    motivoReal=false; motifNome=norm(nome); $('motif-src').hidden=false; $('motif-src').textContent='Criado pela IA a partir da descrição. Confira no Raynen.';
+    $('motif-status').textContent='Rapport criado. Confira na grade e ajuste à mão se precisar.';
+    if(r.explicacao){$('motif-out').textContent=r.explicacao;$('motif-out').hidden=false;}
+    update();
+  }catch(e){
+    const c=e&&e.code;
+    $('motif-status').textContent=c==='cancelled'?'Interrompido.':c==='not_granted'?'Sem permissão para usar a IA. Monte o rapport à mão na grade.':c==='rate_limited'?'Muitos pedidos seguidos. Espere um pouco.':'A IA não devolveu um rapport válido. Detalhe melhor o ponto e tente de novo.';
+  }finally{ $('btn-motif').disabled=false; }
+}
+$('btn-motif').addEventListener('click',criarPonto);
+// ---- desenho do jacquard: texto (fonte propria) e desenho (SVG da IA rasterizado) ----
+const FONT5x7={'A':'01110100011000111111100011000110001','B':'11110100011000111110100011000111110','C':'01110100011000010000100001000101110','D':'11110100011000110001100011000111110','E':'11111100001000011110100001000011111','F':'11111100001000011110100001000010000','G':'01110100011000010111100011000101111','H':'10001100011000111111100011000110001','I':'01110001000010000100001000010001110','J':'00111000100001000010000101001001100','K':'10001100101010011000101001001010001','L':'10000100001000010000100001000011111','M':'10001110111010110101100011000110001','N':'10001100011100110101100111000110001','O':'01110100011000110001100011000101110','P':'11110100011000111110100001000010000','Q':'01110100011000110001101011001001101','R':'11110100011000111110101001001010001','S':'01111100001000001110000010000111110','T':'11111001000010000100001000010000100','U':'10001100011000110001100011000101110','V':'10001100011000110001100010101000100','W':'10001100011000110101101011010101010','X':'10001100010101000100010101000110001','Y':'10001100010101000100001000010000100','Z':'11111000010001000100010001000011111','0':'01110100011001110101110011000101110','1':'00100011000010000100001000010001110','2':'01110100010000100010001000100011111','3':'11111000100010000010000011000101110','4':'00010001100101010010111110001000010','5':'11111100001111000001000011000101110','6':'00110010001000011110100011000101110','7':'11111000010001000100010000100001000','8':'01110100011000101110100011000101110','9':'01110100011000101111000010001001100',' ':'00000000000000000000000000000000000','.':'00000000000000000000000000110001100',',':'00000000000000000000001100010001000','!':'00100001000010000100001000000000100','?':'01110100010000100010001000000000100','-':'00000000000000011111000000000000000','&':'01100100101010001000101011001001101','+':'00000001000010011111001000010000000','/':'00001000010001000100010001000010000',':':'00000011000110000000011000110000000','\'':'00100001000100000000000000000000000','#':'01010010101111101010111110101001010','@':'01110100011011110101101111000001110','*':'00000001001010101110101010010000000','=':'00000000001111100000111110000000000','(':'00010001000100001000010000010000010',')':'01000001000001000010000100010001000'};
+const semAcento = t => t.normalize('NFD').replace(/[̀-ͯ]/g,'');
+function textoGrade(texto, cor, fonte, alturaLetra, larguraMax, ratio){
+  // devolve desenho (linhas de baixo para cima) com fundo 1 e letras na cor escolhida
+  const linhas = String(texto).split(/\n|\\n/).map(s=>s.trimEnd()).filter((s,i,a)=>s||a.length===1);
+  const gap = Math.max(2, Math.round(alturaLetra*0.35));
+  let rowsOut=[];
+  if(fonte==='bloco'){
+    const sy = Math.max(1, Math.round(alturaLetra/7)), sx = Math.max(1, Math.round(sy/ratio*1.0)) ;
+    const blocos = linhas.map(l=>{
+      const chars=[...semAcento(l).toUpperCase()].map(c=>FONT5x7[c]||FONT5x7['?']);
+      const w = chars.length*6*sx - sx, g=Array.from({length:7*sy},()=>new Array(Math.max(1,w)).fill(1));
+      chars.forEach((bits,ci)=>{ for(let r=0;r<7;r++) for(let c=0;c<5;c++) if(bits[r*5+c]==='1')
+        for(let yy=0;yy<sy;yy++) for(let xx=0;xx<sx;xx++) g[r*sy+yy][ci*6*sx+c*sx+xx]=cor; });
+      return g; });
+    const W=Math.max(...blocos.map(b=>b[0].length))+4;
+    blocos.forEach((b,i)=>{ if(i) for(let k=0;k<gap;k++) rowsOut.push(new Array(W).fill(1));
+      b.forEach(r=>{ const pad=Math.floor((W-r.length)/2); rowsOut.push([...new Array(pad).fill(1),...r,...new Array(W-pad-r.length).fill(1)]); }); });
+    rowsOut=[new Array(W).fill(1),new Array(W).fill(1),...rowsOut,new Array(W).fill(1),new Array(W).fill(1)];
+    if(W>larguraMax) return {erro:`O texto ficou com ${W} agulhas e a peça tem ${larguraMax}. Diminua a altura da letra ou quebre em linhas.`};
+    return {d: rowsOut.reverse()};
+  }
+  // negrito: canvas com super-amostragem; letra esticada na vertical pela proporção do ponto
+  const S=6, fam = fonte==='serifa' ? '"Times New Roman", Georgia, serif' : '"Archivo", "Arial Black", Arial, sans-serif';
+  const fsN = alturaLetra/ratio/0.72;                      // tamanho da fonte em "agulhas"
+  const mc=document.createElement('canvas').getContext('2d'); mc.font=`800 ${fsN*S}px ${fam}`;
+  const wN = Math.ceil(Math.max(...linhas.map(l=>mc.measureText(l).width))/S)+4;
+  if(wN>larguraMax) return {erro:`O texto ficou com ${wN} agulhas e a peça tem ${larguraMax}. Diminua a altura da letra ou quebre em linhas.`};
+  const hR = Math.ceil(linhas.length*alturaLetra + (linhas.length-1)*gap + 4);
+  const cv=document.createElement('canvas'); cv.width=wN*S; cv.height=hR*S; const c=cv.getContext('2d');
+  c.fillStyle='#fff'; c.fillRect(0,0,cv.width,cv.height); c.fillStyle='#000'; c.textAlign='center'; c.textBaseline='alphabetic';
+  linhas.forEach((l,i)=>{ c.save(); const base=(2+alturaLetra*(i+1)+gap*i)*S; c.translate(cv.width/2,base); c.scale(1,ratio); c.font=`800 ${fsN*S}px ${fam}`; c.fillText(l,0,0); c.restore(); });
+  const px=c.getImageData(0,0,cv.width,cv.height).data, d=[];
+  for(let y=hR-1;y>=0;y--){ const row=[]; for(let x=0;x<wN;x++){ let dark=0; for(let yy=0;yy<S;yy++) for(let xx=0;xx<S;xx++){ const i=((y*S+yy)*cv.width+(x*S+xx))*4; if(px[i]<128) dark++; } row.push(dark>S*S*0.45?cor:1); } d.push(row); }
+  return {d};
+}
+function limparSoltos(d){
+  const h=d.length,w=d[0].length,o=d.map(r=>r.slice());
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const v=d[y][x], nb=[];
+    if(y>0) nb.push(d[y-1][x]); if(y<h-1) nb.push(d[y+1][x]); if(x>0) nb.push(d[y][x-1]); if(x<w-1) nb.push(d[y][x+1]);
+    if(nb.length && !nb.includes(v)){ const c={}; nb.forEach(k=>c[k]=(c[k]||0)+1); o[y][x]=+Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0]; } }
+  return o;
+}
+const SVGCOR=['#ffffff','#000000','#ff0000','#0000ff'];
+async function svgParaGrade(svg, w, ratio, n){
+  const m=svg.match(/viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+  const vw=m?+m[1]:100, vh=m?+m[2]:100, h=Math.min(400,Math.max(4,Math.round(w*vh/vw*ratio)));
+  if(!/xmlns=/.test(svg)) svg=svg.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+  const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); await img.decode();
+  const S=4, cv=document.createElement('canvas'); cv.width=w*S; cv.height=h*S; const c=cv.getContext('2d');
+  c.fillStyle='#ffffff'; c.fillRect(0,0,cv.width,cv.height); c.drawImage(img,0,0,cv.width,cv.height);
+  const px=c.getImageData(0,0,cv.width,cv.height).data, P=SVGCOR.slice(0,n).map(hx=>[parseInt(hx.slice(1,3),16),parseInt(hx.slice(3,5),16),parseInt(hx.slice(5,7),16)]);
+  const near=(r,g,b)=>{let bi=0,bd=1e9;P.forEach((q,k)=>{const dd=(r-q[0])**2+(g-q[1])**2+(b-q[2])**2;if(dd<bd){bd=dd;bi=k;}});return bi+1;};
+  const d=[]; for(let y=h-1;y>=0;y--){ const row=[]; for(let x=0;x<w;x++){ const cnt={}; for(let yy=0;yy<S;yy++) for(let xx=0;xx<S;xx++){ const i=((y*S+yy)*cv.width+(x*S+xx))*4; const k=near(px[i],px[i+1],px[i+2]); cnt[k]=(cnt[k]||0)+1; } row.push(+Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0]); } d.push(row); }
+  return d;
+}
+function gerarTexto(){
+  const t=$('f-jtxt').value; if(!t.trim()){ $('jq-status').textContent='Escreva o texto primeiro.'; return; }
+  const n=jqColors(), cor=Math.min(n,Math.max(2,parseInt($('f-jtcor').value,10)||2)), alt=Math.max(5,parseInt($('f-jtalt').value,10)||14);
+  const r=textoGrade(t,cor,$('f-jtfonte').value,alt,parseInt($('f-larg').value,10)||100,parseFloat($('f-jratio').value)||1.4);
+  if(r.erro){ $('jq-status').textContent=r.erro; return; }
+  $('f-jmodo').value='centro';
+  setDesenho(r.d,`texto "${t.replace(/\n/g,' / ').slice(0,40)}" (${$('f-jtfonte').selectedOptions[0].textContent}, letra de ${alt} carreiras)`);
+  $('jq-status').textContent='Texto gerado e centralizado na peça. Ajuste a altura da letra se precisar.';
+}
+$('btn-jtxt').addEventListener('click',gerarTexto);
+async function criarDesenho(){
+  if(!sample) return;
+  const n=jqColors(), txt=$('f-jdesc').value.trim(); if(!txt){ $('jq-status').textContent='Descreva o desenho primeiro.'; return; }
+  const W=parseInt($('f-larg').value,10)||100, ratio=parseFloat($('f-jratio').value)||1.4;
+  const repetir=$('f-jmodo').value==='repetir';
+  const wAlvo=Math.min(400, repetir ? Math.max(16,Math.min(W,parseInt($('f-jw').value,10)||60)) : Math.max(16,Math.min(W-4, parseInt($('f-jw').value,10)||W-4)));
+  ctl=new AbortController(); $('btn-jq').disabled=true; $('jq-status').textContent='Pensando…';
+  const cores=SVGCOR.slice(0,n).map((c,i)=>`cor ${i+1} = ${c}${i===0?' (fundo)':''}`).join(', ');
+  try{
+    const r=await sample.json(`Você cria motivos para JACQUARD de malharia retilínea com ${n} cores.
+Primeiro decida se o pedido é ESCRITA (palavras, nome, frase, letras, monograma de letras) ou DESENHO.
+Responda APENAS com JSON:
+- Para escrita: {"tipo":"texto","texto":"o texto exato a escrever (use \\n para quebrar linha)","explicacao":"..."}
+- Para desenho: {"tipo":"desenho","svg":"<svg ...>...</svg>","explicacao":"frase curta em português"}
+Regras do SVG:
+- viewBox="0 0 L A" com proporção real do desenho (o app converte para ${wAlvo} agulhas de largura).
+- Use SOMENTE fill sólido com estas cores: ${cores}. Comece com um <rect> de fundo cobrindo todo o viewBox com a cor 1.
+- Nada de gradiente, sombra, transparência, imagem, <text> ou contorno fino: formas cheias e simples, silhueta clara, que fiquem legíveis com ${wAlvo} pontos de largura (detalhes menores que 1/${Math.round(wAlvo/3)} da largura somem).
+- Prefira paths, polígonos, círculos e elipses bem definidos; desenhe com cuidado para a forma ficar reconhecível.
+${repetir?'- O motivo vai ser repetido lado a lado e em cima/embaixo: faça um rapport que emende nas bordas (o que sai de um lado entra do outro) e deixe margem de fundo equilibrada.':'- O motivo aparece uma vez, centralizado: deixe uma margem de fundo em volta.'}
+Pedido: ${txt}`,{signal:ctl.signal,modelTier:'default'});
+    if(r.tipo==='texto' && r.texto){
+      $('f-jtxt').value=String(r.texto).replace(/\\n/g,'\n'); $('jq-status').textContent='Pedido de escrita: gerando as letras…'; gerarTexto();
+      return;
+    }
+    if(!r.svg || !/<svg/i.test(r.svg)) throw {code:'invalid'};
+    let d=await svgParaGrade(r.svg, wAlvo, ratio, n);
+    if($('f-jlimpar').checked) d=limparSoltos(d);
+    setDesenho(d,'criado pela IA: '+txt.slice(0,60));
+    $('jq-status').textContent=(r.explicacao?r.explicacao+' ':'')+'Confira na grade e ajuste à mão se precisar.';
+  }catch(e){
+    const c=e&&e.code;
+    $('jq-status').textContent=c==='cancelled'?'Interrompido.':c==='not_granted'?'Sem permissão para usar a IA. Importe uma imagem, escreva o texto ou desenhe na grade.':c==='rate_limited'?'Muitos pedidos seguidos. Espere um pouco.':'A IA não devolveu um desenho válido. Tente descrever de outro jeito.';
+  }finally{ $('btn-jq').disabled=false; }
+}
+$('btn-jq').addEventListener('click',criarDesenho);
+let sample=null, ctl=null;
+$('btn-stop').addEventListener('click',()=>ctl&&ctl.abort());
+$('btn-ia').addEventListener('click',async()=>{
+  const txt=$('pedido').value.trim(); if(!txt||!sample) return;
+  ctl=new AbortController(); $('btn-ia').disabled=true; $('btn-stop').hidden=false; $('ia-status').textContent='Pensando…'; $('ia-out').hidden=true;
+  const atual=readSpec();
+  try{
+    const r=await sample.json(`${REGRAS}\n\nValores atuais: ${JSON.stringify(atual)}\n\nPedido do programador:\n"""${txt}"""`,{signal:ctl.signal,modelTier:'default'});
+    const rp=Object.assign({},r.ponto||{}); let custom=rp.tipo==='personalizado'; const isJq=rp.tipo==='jacquard';
+    if(rp.tipo==='biblioteca'){ const e=libByName(rp.nome||''); if(e){ rp.tipo='motivo'; rp.nome=e.nome; rp.motivo=e.motivo; rp.fios=e.fios; } else custom=true; }
+    if(custom){ rp.tipo='motivo'; rp.motivo=motivo; rp.fios=motivoFios; }
+    if(isJq){ rp.desenho=desenho; }
+    const s=RAYNEN.normalize(Object.assign({},atual,r,{ponto:Object.assign({},atual.ponto,rp),trancas:Array.isArray(r.trancas)?r.trancas:atual.trancas}));
+    writeSpec(s);
+    if(r.observacoes){$('ia-out').textContent=r.observacoes;$('ia-out').hidden=false;}
+    if(custom){
+      $('f-pdesc').value=rp.descricao||''; $('ia-status').textContent='Parâmetros preenchidos. Criando o ponto…';
+      await criarPonto();
+    }
+    if(isJq && rp.descricao){
+      $('f-jdesc').value=rp.descricao; $('ia-status').textContent='Parâmetros preenchidos. Criando o desenho do jacquard…';
+      await criarDesenho();
+    }
+    $('ia-status').textContent='Parâmetros preenchidos. Confira e ajuste se precisar.';
+  }catch(e){
+    const c=e&&e.code;
+    $('ia-status').textContent = c==='cancelled'?'Interrompido.':c==='not_granted'?'Sem permissão para usar a IA. Preencha os parâmetros à mão.':c==='rate_limited'?'Muitos pedidos seguidos. Espere um pouco.':'A IA não devolveu parâmetros válidos. Tente reformular o pedido.';
+    if(c==='not_granted'){ $('btn-ia').hidden=true; $('ia-off').hidden=false; }
+  }finally{ $('btn-ia').disabled=false; $('btn-stop').hidden=true; }
+});
+
+setMotif(motivo,motivoFios); fillJPaint(); drawJq(); renderCables(); update();
+(async()=>{
+  const c=window.claude;
+  if(!c||!c.use){ $('btn-ia').disabled=true; $('ia-off').hidden=false; return; }
+  [sample,downloads]=await Promise.all([c.use('sample'),c.use('downloads')]);
+  if(!sample){ $('btn-ia').disabled=true; $('btn-motif').disabled=true; $('btn-jq').disabled=true; $('ia-off').hidden=false; }
+})();
+</script>
