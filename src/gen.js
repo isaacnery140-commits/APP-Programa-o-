@@ -165,7 +165,7 @@ const RAYNEN = (function () {
     if (!erros.length) {
       const { N, note } = planRows(s);
       if (note) avisos.push({ tipo: 'auto', txt: note });
-      const total = START + bodyRows(s, N).length + (p.tipo === 'jacquard' && p.metodo === 'modulo' ? 29 : 0);
+      const total = (s.base ? s.base.rows : START) + bodyRows(s, N).length + (p.tipo === 'jacquard' && p.metodo === 'modulo' ? 29 : 0);
       if (total > H) erros.push(`Programa longo demais: ${total} carreiras no desenho (máximo ${H}). Diminua o corpo.`);
     }
     if (s.largura % 2 === 0) avisos.push({ tipo: 'nota', txt: 'Largura par: a última agulha cai numa posição de "trás" da ribana. Se o Raynen avisar W021 na última coluna, use largura ímpar.' });
@@ -180,21 +180,30 @@ const RAYNEN = (function () {
     const s = Object.assign({}, s0, { carreiras: N });
     const body = bodyRows(s, N);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
-    const rows = START + body.length + (isMod ? 29 : 0);
+    const B0 = s.base || null, S0 = B0 ? B0.rows : START;
+    const rows = S0 + body.length + (isMod ? 29 : 0);
     const grid = new Uint8Array(rows * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rows * WO);
-    for (let y = 0; y < START; y++) {
+    if (B0) {
+      // base do programador: copia o inicio/barra do programa dele; mais largo que a base repete o periodo da direita
+      const p = B0.periodo || 4, bw = B0.w;
+      const bx = i => i < bw ? i : i - p * Math.ceil((i - (bw - 1)) / p);
+      for (let y = 0; y < S0; y++) {
+        for (let i = 0; i < W; i++) { const j = bx(i); grid[y * WB + X0 + i] = j >= 0 ? B0.grid[y * bw + j] : 0; }
+        opt.set(B0.opt.subarray(y * WO, (y + 1) * WO), y * WO);
+      }
+    } else for (let y = 0; y < START; y++) {
       for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = T.start[y * T.startW + srcX(x)];
       opt.set(T.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       if (opt[y * WO + COL_LOOP]) opt[y * WO + COL_LOOP] = s.ribanaRep;   // laco da ribana (201)
     }
-    const bp = BARRAS[s.barra];
+    const bp = B0 ? null : BARRAS[s.barra];
     if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
     const ina = new Uint8Array(rows * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
     body.forEach((br, k0) => {
-      const y = START + k0, row = y * WB, r = br.r;
+      const y = S0 + k0, row = y * WB, r = br.r;
       for (let i = 0; i < W; i++) grid[row + X0 + i] = br.v(i);
       if (br.jq) for (let i = 0; i < W; i++) ina[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null) s.trancas.forEach((t, k) => {
@@ -220,7 +229,7 @@ const RAYNEN = (function () {
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
-      const d0 = START + body.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
+      const d0 = S0 + body.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
       const A = [[10, 8, 16, 9], [8, 10, 16, 9], [8, 10, 9, 16], [10, 8, 9, 16]];
       const B = [[16, 9, 10, 8], [9, 16, 8, 10], [9, 16, 8, 10], [16, 9, 10, 8]];
       const put = (y, vals) => vals.forEach((v, j) => { grid[y * WB + x0 + j] = v; });
@@ -241,8 +250,9 @@ const RAYNEN = (function () {
     const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt, OFF);
     let inaf = null, jqdf = null;
     if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina, OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
-    passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
-    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length };
+    if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
+    else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
+    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length, start: S0 };
   }
 
   // zip simples (sem compressao) para BMP + opt + ficha
@@ -270,6 +280,16 @@ const RAYNEN = (function () {
     const all = [...parts, ...central, new Uint8Array(e.buffer)], out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
     let p = 0; all.forEach(a => { out.set(a, p); p += a.length; }); return out;
   }
-  return { BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  // le um BMP/OPT de 8 bits (exportado pelo Raynen): devolve {w,h,px} com linha 0 = carreira 1
+  function readBmp8(buf) {
+    const d = new DataView(buf.buffer || buf, buf.byteOffset || 0);
+    if (d.getUint8(0) !== 0x42 || d.getUint8(1) !== 0x4D) throw new Error('não é BMP');
+    const off = d.getUint32(10, true), w = d.getInt32(18, true), hh = d.getInt32(22, true), bpp = d.getUint16(28, true);
+    if (bpp !== 8) throw new Error('BMP de ' + bpp + ' bits: precisa ser 8 bits (exportado pelo Raynen)');
+    const h = Math.abs(hh), stride = (w + 3) & ~3, src = new Uint8Array(d.buffer, d.byteOffset + off), px = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
+    return { w, h, px };
+  }
+  return { readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;

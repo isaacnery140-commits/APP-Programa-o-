@@ -86,6 +86,13 @@ section label{font-size:14px}
 .mod .tag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:9px;background:var(--line);color:var(--muted)}
 .mod .tag.ok{background:var(--accent);color:var(--accent-ink)}
 .mod .cn{font-size:10.5px;color:var(--muted)}
+.btnfile{display:inline-flex;flex-direction:row;align-items:center;font-weight:700;font-size:15px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;cursor:pointer}
+.btnfile.ghost{background:transparent;color:var(--accent)}
+.btnfile:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto}
+.mlist li{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;border-bottom:1px solid var(--line);padding:4px 0}
+.mlist li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mlist button{padding:2px 8px;font-size:12px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -122,6 +129,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <option value="2x1">Ribana 2x1</option>
             <option value="3x1">Ribana 3x1</option>
             <option value="3x3">Ribana 3x3</option>
+            <optgroup label="Bases dos programadores" id="og-bases"></optgroup>
           </select></label>
           <label for="f-rib">Voltas da barra<input id="f-rib" type="number" min="1" max="99" value="12"></label>
         </div>
@@ -145,6 +153,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <div class="tabs" role="tablist">
               <button type="button" role="tab" id="tab-nossos" aria-selected="true">Nossos pontos</button>
               <button type="button" role="tab" id="tab-raynen" aria-selected="false">Módulos do Raynen</button>
+              <button type="button" role="tab" id="tab-meus" aria-selected="false">Meus módulos</button>
             </div>
             <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>pronto</b> já têm a grade de códigos; os outros ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
             <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
@@ -230,6 +239,42 @@ details.more>*:not(summary){margin-bottom:10px}
         <div id="ia-out" class="ai-out" hidden></div>
         <p class="hint" id="ia-off" hidden>A interpretação por IA não está disponível nesta visualização. Preencha os parâmetros abaixo.</p>
         </details>
+      </section>
+
+      <section aria-labelledby="h-pasta">
+        <h2 id="h-pasta">Pasta do programador</h2>
+        <p class="hint" id="store-hint">Carregando o armazenamento…</p>
+        <div class="cable">
+          <div class="cable-head"><span>Meus módulos</span><span class="hint" id="mm-count"></span></div>
+          <p class="hint">Abra a pasta do computador com os módulos de vocês: BMP de 8 bits exportado pelo Raynen, um módulo por arquivo (o app pega o desenho e corta a parte vazia). Se tiver o .opt com o mesmo nome, os guia-fios de cada carreira também entram.</p>
+          <div class="actions">
+            <label class="btnfile">Abrir pasta<input id="mm-dir" type="file" webkitdirectory multiple hidden></label>
+            <label class="btnfile ghost">Escolher arquivos<input id="mm-files" type="file" accept=".bmp,.BMP,.opt,.OPT" multiple hidden></label>
+            <button id="mm-save" type="button" class="ghost">Salvar o rapport atual</button>
+          </div>
+          <span id="mm-status" class="status hint" aria-live="polite"></span>
+          <ul class="mlist" id="mm-list"></ul>
+        </div>
+        <div class="cable">
+          <div class="cable-head"><span>Bases de programas</span><span class="hint" id="bs-count"></span></div>
+          <p class="hint">Abra a pasta com os programas base (o .BMP e o .opt com o mesmo nome, exportados pelo Raynen). Escolha o programa, diga até qual carreira vai a base (início + barra) e salve. A base aparece no item 4, "Tipo da barra", e o corpo do ponto começa logo acima dela.</p>
+          <div class="actions">
+            <label class="btnfile">Abrir pasta<input id="bs-dir" type="file" webkitdirectory multiple hidden></label>
+            <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT" multiple hidden></label>
+          </div>
+          <div id="bs-edit" hidden>
+            <div class="row">
+              <label for="bs-prog">Programa<select id="bs-prog"></select></label>
+              <label for="bs-rows">Base até a carreira<input id="bs-rows" type="number" min="1" max="600" value="25"></label>
+            </div>
+            <label for="bs-nome">Nome da base<input id="bs-nome" autocomplete="off"></label>
+            <p class="hint" id="bs-info"></p>
+            <div class="bed" style="max-height:260px;padding:8px"><canvas id="bs-cv" width="10" height="10" aria-label="Prévia da base: a linha clara marca onde a base termina"></canvas></div>
+            <div class="actions"><button id="bs-save" type="button">Salvar base</button></div>
+          </div>
+          <span id="bs-status" class="status hint" aria-live="polite"></span>
+          <ul class="mlist" id="bs-list"></ul>
+        </div>
       </section>
     </div>
 
@@ -431,7 +476,7 @@ const RAYNEN = (function () {
     if (!erros.length) {
       const { N, note } = planRows(s);
       if (note) avisos.push({ tipo: 'auto', txt: note });
-      const total = START + bodyRows(s, N).length + (p.tipo === 'jacquard' && p.metodo === 'modulo' ? 29 : 0);
+      const total = (s.base ? s.base.rows : START) + bodyRows(s, N).length + (p.tipo === 'jacquard' && p.metodo === 'modulo' ? 29 : 0);
       if (total > H) erros.push(`Programa longo demais: ${total} carreiras no desenho (máximo ${H}). Diminua o corpo.`);
     }
     if (s.largura % 2 === 0) avisos.push({ tipo: 'nota', txt: 'Largura par: a última agulha cai numa posição de "trás" da ribana. Se o Raynen avisar W021 na última coluna, use largura ímpar.' });
@@ -446,21 +491,30 @@ const RAYNEN = (function () {
     const s = Object.assign({}, s0, { carreiras: N });
     const body = bodyRows(s, N);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
-    const rows = START + body.length + (isMod ? 29 : 0);
+    const B0 = s.base || null, S0 = B0 ? B0.rows : START;
+    const rows = S0 + body.length + (isMod ? 29 : 0);
     const grid = new Uint8Array(rows * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rows * WO);
-    for (let y = 0; y < START; y++) {
+    if (B0) {
+      // base do programador: copia o inicio/barra do programa dele; mais largo que a base repete o periodo da direita
+      const p = B0.periodo || 4, bw = B0.w;
+      const bx = i => i < bw ? i : i - p * Math.ceil((i - (bw - 1)) / p);
+      for (let y = 0; y < S0; y++) {
+        for (let i = 0; i < W; i++) { const j = bx(i); grid[y * WB + X0 + i] = j >= 0 ? B0.grid[y * bw + j] : 0; }
+        opt.set(B0.opt.subarray(y * WO, (y + 1) * WO), y * WO);
+      }
+    } else for (let y = 0; y < START; y++) {
       for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = T.start[y * T.startW + srcX(x)];
       opt.set(T.opt.subarray(y * WO, (y + 1) * WO), y * WO);
       if (opt[y * WO + COL_LOOP]) opt[y * WO + COL_LOOP] = s.ribanaRep;   // laco da ribana (201)
     }
-    const bp = BARRAS[s.barra];
+    const bp = B0 ? null : BARRAS[s.barra];
     if (bp) for (let y = 15; y <= 23; y++) for (let x = X0; x < X0 + W; x++) grid[y * WB + x] = bp[(x - X0) % bp.length];
     const tmpl = T.opt.slice(25 * WO, 26 * WO); tmpl[COL_LOOP] = 0;
     const ina = new Uint8Array(rows * WB), hasIna = body.some(b => b.jq);
     const crosses = [], passes = {};
     body.forEach((br, k0) => {
-      const y = START + k0, row = y * WB, r = br.r;
+      const y = S0 + k0, row = y * WB, r = br.r;
       for (let i = 0; i < W; i++) grid[row + X0 + i] = br.v(i);
       if (br.jq) for (let i = 0; i < W; i++) ina[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null) s.trancas.forEach((t, k) => {
@@ -486,7 +540,7 @@ const RAYNEN = (function () {
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
-      const d0 = START + body.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
+      const d0 = S0 + body.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
       const A = [[10, 8, 16, 9], [8, 10, 16, 9], [8, 10, 9, 16], [10, 8, 9, 16]];
       const B = [[16, 9, 10, 8], [9, 16, 8, 10], [9, 16, 8, 10], [16, 9, 10, 8]];
       const put = (y, vals) => vals.forEach((v, j) => { grid[y * WB + x0 + j] = v; });
@@ -507,8 +561,9 @@ const RAYNEN = (function () {
     const optf = new Uint8Array(OFF + WO * H); optf.set(T.optHeader); optf.set(opt, OFF);
     let inaf = null, jqdf = null;
     if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina, OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
-    passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
-    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length };
+    if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
+    else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
+    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: body.length, start: S0 };
   }
 
   // zip simples (sem compressao) para BMP + opt + ficha
@@ -536,7 +591,17 @@ const RAYNEN = (function () {
     const all = [...parts, ...central, new Uint8Array(e.buffer)], out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
     let p = 0; all.forEach(a => { out.set(a, p); p += a.length; }); return out;
   }
-  return { BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  // le um BMP/OPT de 8 bits (exportado pelo Raynen): devolve {w,h,px} com linha 0 = carreira 1
+  function readBmp8(buf) {
+    const d = new DataView(buf.buffer || buf, buf.byteOffset || 0);
+    if (d.getUint8(0) !== 0x42 || d.getUint8(1) !== 0x4D) throw new Error('não é BMP');
+    const off = d.getUint32(10, true), w = d.getInt32(18, true), hh = d.getInt32(22, true), bpp = d.getUint16(28, true);
+    if (bpp !== 8) throw new Error('BMP de ' + bpp + ' bits: precisa ser 8 bits (exportado pelo Raynen)');
+    const h = Math.abs(hh), stride = (w + 3) & ~3, src = new Uint8Array(d.buffer, d.byteOffset + off), px = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
+    return { w, h, px };
+  }
+  return { readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 
 
@@ -586,7 +651,7 @@ function modCard(nome,sub,onclick,sel){
 function renderMods(){
   const box=$('mods'), q=norm($('f-libbusca').value); box.textContent='';
   $('tab-nossos').setAttribute('aria-selected',String(libTab==='nossos')); $('tab-raynen').setAttribute('aria-selected',String(libTab==='raynen'));
-  $('rmod-hint').hidden = libTab!=='raynen';
+  $('rmod-hint').hidden = libTab!=='raynen'; $('tab-meus').setAttribute('aria-selected',String(libTab==='meus'));
   const grp=t=>{const g=document.createElement('div'); g.className='modgrp'; g.textContent=t; box.appendChild(g);};
   if(libTab==='nossos'){
     [['Dos programas de vocês (testados)',e=>e.real],['Padrões (conferir no Raynen)',e=>!e.real]].forEach(([titulo,f])=>{
@@ -599,6 +664,16 @@ function renderMods(){
         const sm=document.createElement('small'); sm.textContent=`${e.motivo[0].length}×${e.motivo.length}`;
         bt.append(cv,t,sm); box.appendChild(bt);
       });
+    });
+  } else if(libTab==='meus'){
+    const itens=MEUS.filter(m=>!q||norm(m.nome).includes(q));
+    if(!itens.length && !q){ const p=document.createElement('p'); p.className='hint'; p.style.gridColumn='1/-1'; p.textContent='Ainda não há módulos de vocês. Abra a pasta em "Pasta do programador" ou salve um rapport pelo editor.'; box.appendChild(p); return; }
+    itens.forEach(m=>{
+      const bt=modCard(m.nome,'',()=>{ libSel='m'+m.id; $('f-ponto').value=m.nome; loadLib({nome:m.nome,motivo:m.motivo,fios:m.fios,real:false,fonte:`Módulo de vocês${m.arquivo?` (${m.arquivo})`:''}`,nota:''}); renderMods(); update(); }, libSel==='m'+m.id);
+      const cv=document.createElement('canvas'); miniRapport(cv,m.motivo);
+      const t=document.createElement('span'); t.textContent=m.nome;
+      const sm=document.createElement('small'); sm.textContent=`${m.motivo[0].length}×${m.motivo.length}`;
+      bt.append(cv,t,sm); box.appendChild(bt);
     });
   } else {
     let cat='';
@@ -628,6 +703,7 @@ function escolheRaynen(i){
 }
 $('tab-nossos').addEventListener('click',()=>{libTab='nossos';renderMods();});
 $('tab-raynen').addEventListener('click',()=>{libTab='raynen';renderMods();});
+$('tab-meus').addEventListener('click',()=>{libTab='meus';renderMods();});
 $('f-libbusca').addEventListener('input',renderMods);
 function loadLib(e){
   setMotif(e.motivo, e.fios); motivoReal=!!e.real; motifNome=norm(e.nome);
@@ -642,10 +718,10 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')],
-    barra:$('f-barra').value, ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
+    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:tipo==='jacquard'?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
 function writeSpec(s){
-  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra) $('f-barra').value=s.barra;
+  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
   if(Array.isArray(s.fios)){ $('f-gb').value=s.fios[0]||5; $('f-gc').value=s.fios[1]||4; $('f-gd').value=s.fios[2]||6; }
   $('f-ponto').value = s.ponto.tipo==='motivo' ? (s.ponto.nome||'Ponto personalizado') : (LABEL[s.ponto.tipo]||'Meia malha');
   if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); $('f-tipo').value=e?'biblioteca':'ia'; libSel=e?LIB.indexOf(e):-1; renderMods(); }
@@ -823,6 +899,7 @@ function update(){
   document.querySelectorAll('.b').forEach(el=>el.hidden=t5!=='biblioteca');
   document.querySelectorAll('.ai').forEach(el=>el.hidden=t5!=='ia');
   $('opt-none').hidden = !(tp==='meia'||tp==='links');
+  $('f-rib').disabled = $('f-barra').value.startsWith('base:');
   document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
   $('btn-addc').hidden = tp==='jacquard'; $('cables').hidden = tp==='jacquard';
   if(t5==='ia' && $('f-ponto').value.trim() && norm($('f-ponto').value)!==motifNome && !$('btn-motif').disabled)
@@ -868,7 +945,7 @@ $('cv').addEventListener('mousemove',e=>{
   if(!last) return; const z=+$('f-zoom').value, r=$('cv').getBoundingClientRect();
   const x=Math.floor((e.clientX-r.left)/z), yTop=Math.floor((e.clientY-r.top)/z), y=last.rows-1-yTop;
   if(x<1||x>last.width||y<0) {$('readout').textContent=''; return;}
-  const v=last.grid[y*1024+x], fase=y<14?'início':y<25?'ribana':'corpo', g=last.inaGrid?last.inaGrid[y*1024+x]:0;
+  const v=last.grid[y*1024+x], fase=last.spec.base?(y<last.start?'base':'corpo'):y<14?'início':y<25?'ribana':'corpo', g=last.inaGrid?last.inaGrid[y*1024+x]:0;
   $('readout').textContent=`Carreira ${y+1} (${fase}) · agulha ${x} · código ${v}: ${NOMES[v]||'—'}`+(g?` · INA: guia-fio ${g}`:'');
 });
 function renderFacts(){
@@ -878,7 +955,7 @@ function renderFacts(){
     motivo:()=>`${s.ponto.nome||'Personalizado'} (${s.ponto.motivo[0].length}×${s.ponto.motivo.length})`,
     jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`}[s.ponto.tipo]();
   const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
-  const items=[['Largura',`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (25 início/ribana + ${last.bodyRows}${last.rows-25-last.bodyRows?` + ${last.rows-25-last.bodyRows} do módulo`:''})`],
+  const items=[['Largura',`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (${last.start} ${s.base?'da base':'início/ribana'} + ${last.bodyRows}${last.rows-last.start-last.bodyRows?` + ${last.rows-last.start-last.bodyRows} do módulo`:''})`],
     ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],
     ['Passadas por guia-fio',ps],['Cruzamentos',last.crosses.length?last.crosses.slice(0,6).join(', ')+(last.crosses.length>6?'…':''):'—']];
   items.forEach(([k,v])=>{const d=document.createElement('div');const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;d.append(dt,dd);f.appendChild(d);});
@@ -887,8 +964,8 @@ function ficha(){
   const s=last.spec, l=[];
   l.push(`FICHA - ${s.nome}`,`Gerado pelo Programador Raynen em ${new Date().toLocaleString('pt-BR')}`,'',
     `Largura: ${s.largura} agulhas (colunas 1-${s.largura})`,`Carreiras no desenho: ${last.rows}`,
-    `  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 barra: ribana ${s.barra||'2x2'}, laço de ${s.ribanaRep} voltas`,
-    `  26-${last.rows} corpo, densidade segmento 8`,
+    ...(s.base?[`  1-${last.start}  base do programador: ${$('f-barra').selectedOptions[0].textContent}`]:[`  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 barra: ribana ${s.barra||'2x2'}, laço de ${s.ribanaRep} voltas`]),
+    `  ${last.start+1}-${last.rows} corpo, densidade segmento 8`,
     `Ponto: ${s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
   if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
@@ -1088,7 +1165,7 @@ $('btn-ia').addEventListener('click',async()=>{
   ctl=new AbortController(); $('btn-ia').disabled=true; $('btn-stop').hidden=false; $('ia-status').textContent='Pensando…'; $('ia-out').hidden=true;
   const atual=readSpec();
   try{
-    const r=await sample.json(`${REGRAS}\n\nValores atuais: ${JSON.stringify(atual)}\n\nPedido do programador:\n"""${txt}"""`,{signal:ctl.signal,modelTier:'default'});
+    const r=await sample.json(`${REGRAS}\n\nValores atuais: ${JSON.stringify(Object.assign({},atual,{base:undefined}))}\n\nPedido do programador:\n"""${txt}"""`,{signal:ctl.signal,modelTier:'default'});
     const rp=Object.assign({},r.ponto||{}); let custom=rp.tipo==='personalizado'; const isJq=rp.tipo==='jacquard';
     if(rp.tipo==='biblioteca'){ const e=libByName(rp.nome||''); if(e){ rp.tipo='motivo'; rp.nome=e.nome; rp.motivo=e.motivo; rp.fios=e.fios; } else custom=true; }
     if(custom){ rp.tipo='motivo'; rp.motivo=motivo; rp.fios=motivoFios; }
@@ -1112,11 +1189,135 @@ $('btn-ia').addEventListener('click',async()=>{
   }finally{ $('btn-ia').disabled=false; $('btn-stop').hidden=true; }
 });
 
+
+// ---- pasta do programador: meus modulos e bases (salvos no banco do app para a equipe; sem ele, so neste navegador) ----
+let MEUS=[], BASES=[], db=null;
+const BASECACHE={};
+const LS='raynen_pasta_v1';
+function lsLoad(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+function lsSave(o){ try{ localStorage.setItem(LS,JSON.stringify(o)); return true; }catch(e){ return false; } }
+const enc=m=>m.map(r=>r.join(','));
+const dec=m=>m.map(r=>String(r).split(',').map(Number));
+async function gz(u8){ const s=new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip')); const b=new Uint8Array(await new Response(s).arrayBuffer()); let t=''; for(let i=0;i<b.length;i+=0x8000) t+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(t); }
+async function ungz(b64){ const b=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)); const s=new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip')); return new Uint8Array(await new Response(s).arrayBuffer()); }
+function setMeus(list){ MEUS=list.map(d=>({id:d.id,nome:d.nome,motivo:dec(d.motivo),fios:d.fios||[],arquivo:d.arquivo||''})).sort((a,b)=>a.nome.localeCompare(b.nome)); renderPasta(); if(libTab==='meus') renderMods(); }
+async function setBases(list){
+  BASES=list.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+  for(const b of BASES) if(!BASECACHE[b.id]){ try{ BASECACHE[b.id]={rows:b.rows,w:b.w,periodo:b.periodo||4,grid:await ungz(b.grid),opt:await ungz(b.opt)}; }catch(e){} }
+  const og=$('og-bases'), cur=$('f-barra').value; og.textContent='';
+  BASES.forEach(b=>{ const o=document.createElement('option'); o.value='base:'+b.id; o.textContent=`${b.nome} (${b.rows} carr.)`; og.appendChild(o); });
+  if(cur.startsWith('base:') && !BASES.some(b=>'base:'+b.id===cur)) $('f-barra').value='2x2'; else $('f-barra').value=cur;
+  renderPasta(); update();
+}
+function baseAtual(){ const v=$('f-barra').value; if(!v.startsWith('base:')) return null; return BASECACHE[v.slice(5)]||null; }
+function renderPasta(){
+  const ml=$('mm-list'); ml.textContent='';
+  MEUS.forEach(m=>{ const li=document.createElement('li'); const s=document.createElement('span'); s.textContent=`${m.nome} · ${m.motivo[0].length}×${m.motivo.length}`; const b=document.createElement('button'); b.type='button'; b.className='ghost'; b.textContent='Excluir'; b.addEventListener('click',()=>{ if(confirmaExcluir(b)) apagar('modulos',m.id); }); li.append(s,b); ml.appendChild(li); });
+  $('mm-count').textContent=MEUS.length?`${MEUS.length} salvo(s)`:'';
+  const bl=$('bs-list'); bl.textContent='';
+  BASES.forEach(x=>{ const li=document.createElement('li'); const s=document.createElement('span'); s.textContent=`${x.nome} · ${x.w} agulhas × ${x.rows} carreiras`; const b=document.createElement('button'); b.type='button'; b.className='ghost'; b.textContent='Excluir'; b.addEventListener('click',()=>{ if(confirmaExcluir(b)) apagar('bases',x.id); }); li.append(s,b); bl.appendChild(li); });
+  $('bs-count').textContent=BASES.length?`${BASES.length} salva(s)`:'';
+}
+// excluir pede um segundo clique (sem dialogo do navegador)
+function confirmaExcluir(b){ if(b.dataset.ok){ return true; } b.dataset.ok='1'; b.textContent='Confirmar'; setTimeout(()=>{ delete b.dataset.ok; b.textContent='Excluir'; },3000); return false; }
+async function salvar(col,data){
+  if(db){ await db.collection(col).add(data); return; }
+  const o=lsLoad(); o[col]=o[col]||[]; data.id=String(Date.now())+Math.random().toString(36).slice(2,6); o[col].push(data);
+  if(!lsSave(o)) throw new Error('sem espaço'); col==='modulos'?setMeus(o[col]):setBases(o[col]);
+}
+async function apagar(col,id){
+  try{
+    if(db){ await db.collection(col).doc(id).delete(); return; }
+    const o=lsLoad(); o[col]=(o[col]||[]).filter(d=>d.id!==id); lsSave(o); col==='modulos'?setMeus(o[col]):setBases(o[col]);
+  }catch(e){ (col==='modulos'?$('mm-status'):$('bs-status')).textContent='Não consegui excluir: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
+}
+// agrupa arquivos por nome (sem extensao)
+function agrupa(files){ const g={}; [...files].forEach(f=>{ const m=f.name.match(/^(.*)\.(bmp|opt)$/i); if(!m) return; const k=m[1]; g[k]=g[k]||{}; g[k][m[2].toLowerCase()]=f; }); return g; }
+async function lerBmp(f){ return RAYNEN.readBmp8(new Uint8Array(await f.arrayBuffer())); }
+// MEUS MODULOS
+async function importaModulos(files){
+  const st=$('mm-status'), g=agrupa(files), nomes=Object.keys(g).filter(k=>g[k].bmp);
+  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'; return; }
+  let ok=0; const falhas=[];
+  for(const k of nomes){
+    try{
+      const b=await lerBmp(g[k].bmp); let x0=b.w,x1=-1,y0=b.h,y1=-1;
+      for(let y=0;y<b.h;y++) for(let x=0;x<b.w;x++) if(b.px[y*b.w+x]){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+      if(x1<0) throw new Error('vazio');
+      const w=x1-x0+1,h=y1-y0+1; if(w>64||h>64) throw new Error(`${w}×${h}, maior que 64×64`);
+      const motivo=Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=>b.px[(y0+y)*b.w+x0+x]));
+      let fios=motivo.map(()=>1);
+      if(g[k].opt){ try{ const o=await lerBmp(g[k].opt), seen=[]; fios=motivo.map((_,y)=>{ const f=o.px[(y0+y)*o.w+RAYNEN.COL_YARN]; if(!f) return 1; if(!seen.includes(f)) seen.push(f); return Math.min(4,seen.indexOf(f)+1); }); }catch(e){} }
+      await salvar('modulos',{nome:k,motivo:enc(motivo),fios,arquivo:g[k].bmp.name,criado:Date.now()}); ok++;
+    }catch(e){ falhas.push(`${k} (${e.message})`); }
+  }
+  st.textContent=`${ok} módulo(s) salvo(s).`+(falhas.length?` Não entraram: ${falhas.slice(0,6).join('; ')}${falhas.length>6?'…':''}`:'')+(ok?' Veja em 5 ▸ Módulo de ponto pronto ▸ Meus módulos.':'');
+}
+$('mm-dir').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
+$('mm-files').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
+$('mm-save').addEventListener('click',async()=>{
+  const st=$('mm-status'); if(tipoAtual()!=='motivo'){ st.textContent='Escolha um módulo ou crie um ponto (item 5) para ter um rapport para salvar.'; return; }
+  const nome=($('f-ponto').value.trim()||'Meu ponto');
+  try{ await salvar('modulos',{nome,motivo:enc(motivo),fios:motivoFios.slice(),arquivo:'',criado:Date.now()}); st.textContent=`"${nome}" salvo em Meus módulos.`; }
+  catch(e){ st.textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
+});
+// BASES
+let BPROGS={}, bsAtual=null;
+async function abreBases(files){
+  const st=$('bs-status'); BPROGS=agrupa(files); const nomes=Object.keys(BPROGS).filter(k=>BPROGS[k].bmp).sort();
+  if(!nomes.length){ st.textContent='Nenhum .BMP nessa seleção.'; $('bs-edit').hidden=true; return; }
+  const sel=$('bs-prog'); sel.textContent=''; nomes.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k+(BPROGS[k].opt?'':' (sem .opt)'); sel.appendChild(o); });
+  $('bs-edit').hidden=false; st.textContent=`${nomes.length} programa(s) encontrados.`; await escolheBase();
+}
+async function escolheBase(){
+  const k=$('bs-prog').value, g=BPROGS[k], st=$('bs-info');
+  try{
+    const b=await lerBmp(g.bmp); const o=g.opt?await lerBmp(g.opt):null;
+    let used=0, h=0; for(let y=0;y<b.h;y++) for(let x=0;x<b.w;x++) if(b.px[y*b.w+x]){ if(x+1>used) used=x+1; h=y+1; }
+    // sugestao: ate 4 carreiras depois do ultimo laco (201) nas primeiras 150 carreiras; senao 25
+    let sug=25; if(o){ let last=-1; for(let y=0;y<Math.min(150,o.h);y++) if(o.px[y*o.w+RAYNEN.COL_LOOP]) last=y; if(last>=0) sug=Math.min(h,last+5); }
+    bsAtual={b,o,used,h}; $('bs-rows').value=sug; $('bs-nome').value=k;
+    st.textContent=`${k}: ${used-1} agulhas, ${h} carreiras.`+(o?'':' Sem o .opt: as linhas de função da base ficam vazias, prefira salvar com o .opt.');
+    drawBase();
+  }catch(e){ bsAtual=null; st.textContent='Não consegui ler: '+e.message; }
+}
+function drawBase(){
+  if(!bsAtual) return; const {b,used,h}=bsAtual, n=Math.max(1,Math.min(+$('bs-rows').value||1,h)), show=Math.min(h,n+20), z=Math.max(1,Math.min(4,Math.floor(360/Math.max(used,1)))), cv=$('bs-cv'), ctx=cv.getContext('2d'), pal=RAYNEN.palette;
+  cv.width=used*z; cv.height=show*z;
+  for(let y=0;y<show;y++) for(let x=0;x<used;x++){ ctx.fillStyle=pal[b.px[y*b.w+x]]; ctx.fillRect(x*z,(show-1-y)*z,z,z); }
+  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillRect(0,(show-n)*z-1,cv.width,2);
+}
+$('bs-dir').addEventListener('change',e=>{ abreBases(e.target.files); e.target.value=''; });
+$('bs-files').addEventListener('change',e=>{ abreBases(e.target.files); e.target.value=''; });
+$('bs-prog').addEventListener('change',escolheBase); $('bs-rows').addEventListener('input',drawBase);
+$('bs-save').addEventListener('click',async()=>{
+  const st=$('bs-status'); if(!bsAtual) return;
+  const {b,o,used,h}=bsAtual, n=Math.max(1,Math.min(+$('bs-rows').value||1,h,600)), w=Math.max(1,used-1);
+  const grid=new Uint8Array(n*w); for(let y=0;y<n;y++) grid.set(b.px.subarray(y*b.w+1,y*b.w+1+w),y*w);
+  const opt=new Uint8Array(n*512); if(o) for(let y=0;y<n;y++) opt.set(o.px.subarray(y*o.w,y*o.w+Math.min(512,o.w)),y*512);
+  try{
+    const nome=$('bs-nome').value.trim()||$('bs-prog').value;
+    await salvar('bases',{nome,rows:n,w,periodo:4,grid:await gz(grid),opt:await gz(opt),arquivo:$('bs-prog').value,criado:Date.now()});
+    st.textContent=`Base "${nome}" salva. Escolha em 4 ▸ Tipo da barra.`;
+  }catch(e){ st.textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
+});
+async function iniciaPasta(){
+  const c=window.claude; db=c&&c.use?await c.use('db'):null;
+  if(db){
+    $('store-hint').textContent='O que vocês salvarem aqui fica guardado no app para toda a equipe que abrir este link.';
+    db.collection('modulos').onSnapshot(s=>setMeus(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
+    db.collection('bases').onSnapshot(s=>setBases(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
+  } else {
+    $('store-hint').textContent='Salvo só neste navegador (o armazenamento da equipe não está disponível nesta visualização).';
+    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]);
+  }
+}
+
 setMotif(motivo,motivoFios); renderMods(); fillJPaint(); drawJq(); renderCables(); update();
 (async()=>{
   const c=window.claude;
-  if(!c||!c.use){ $('btn-ia').disabled=true; $('ia-off').hidden=false; return; }
-  [sample,downloads]=await Promise.all([c.use('sample'),c.use('downloads')]);
+  if(!c||!c.use){ $('btn-ia').disabled=true; $('ia-off').hidden=false; iniciaPasta(); return; }
+  [sample,downloads]=await Promise.all([c.use('sample'),c.use('downloads')]); iniciaPasta();
   if(!sample){ $('btn-ia').disabled=true; $('btn-motif').disabled=true; $('btn-jq').disabled=true; $('ia-off').hidden=false; }
 })();
 </script>
