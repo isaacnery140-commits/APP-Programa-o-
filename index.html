@@ -116,6 +116,10 @@ section label{font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer;box-shadow:inset 0 -3px 6px rgba(0,0,0,.25),inset 0 3px 5px rgba(255,255,255,.25)}
 .chip[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.medidas{border:1px solid var(--accent);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+.medidas summary{cursor:pointer}
+.medidas[open] summary{margin-bottom:6px}
+.medidas>*:not(summary){margin-bottom:8px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -148,6 +152,33 @@ details.more>*:not(summary){margin-bottom:10px}
             <option value="acrilico">Acrílico</option><option value="la">Lã</option><option value="modal">Modal</option><option value="poliester">Poliéster</option>
             <option value="algodao">Algodão</option><option value="viscose">Viscose</option></select></label>
         </div>
+        <details class="medidas" id="med-box" open>
+          <summary><span class="tt">Medidas da peça (cm) — calcula tudo sozinho</span></summary>
+          <div class="row">
+            <label for="md-ag">Agulhas por cm<input id="md-ag" type="number" min="1" max="20" step="0.1" value="6"></label>
+            <label for="md-cr">Passadas por cm<input id="md-cr" type="number" min="1" max="30" step="0.1" value="6"></label>
+          </div>
+          <div class="row">
+            <label for="md-larg">Largura da peça<input id="md-larg" type="number" min="5" step="0.5" value="50"></label>
+            <label for="md-comp">Comprimento total<input id="md-comp" type="number" min="5" step="0.5" value="60"></label>
+            <label for="md-barra">Altura da barra<input id="md-barra" type="number" min="1" step="0.5" value="5"></label>
+          </div>
+          <div class="row">
+            <label for="md-cava">Altura da cava<input id="md-cava" type="number" min="0" step="0.5" value="20"></label>
+            <label for="md-cent">Cava: entra de cada lado<input id="md-cent" type="number" min="0" step="0.5" value="4"></label>
+          </div>
+          <div class="row">
+            <label for="md-dtipo">Decote<select id="md-dtipo"><option value="">Sem decote</option><option value="redondo" selected>Redondo</option><option value="V">V</option></select></label>
+            <label for="md-dlarg">Largura do decote<input id="md-dlarg" type="number" min="0" step="0.5" value="16"></label>
+            <label for="md-dprof">Profundidade do decote<input id="md-dprof" type="number" min="0" step="0.5" value="8"></label>
+          </div>
+          <div class="row">
+            <label for="md-cint">Cintura (largura, 0 = sem)<input id="md-cint" type="number" min="0" step="0.5" value="0"></label>
+            <label for="md-hcint">Altura da cintura (desde a barra)<input id="md-hcint" type="number" min="0" step="0.5" value="15"></label>
+          </div>
+          <div class="actions"><button type="button" id="md-calc">Calcular tudo pelas medidas</button><span class="status hint" id="md-st"></span></div>
+          <p class="hint">Preenche largura, comprimento, voltas da barra, cava, decote, acinturado e a volta da gola. Depois dá para ajustar à mão cada campo abaixo.</p>
+        </details>
         <label for="f-nome"><span class="lt tt">Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
         <div class="row">
           <label for="f-larg"><span class="lt tt">Largura (agulhas)</span><input id="f-larg" type="number" min="10" max="1000" value="51"></label>
@@ -1547,6 +1578,63 @@ function golaInfo(){
 }
 $('gl-tipo').addEventListener('change',()=>{ const t=$('gl-tipo').value; if(t==='careca'){ $('gl-alt').value=3; $('gl-per').value=52; $('gl-rib').value='1x1'; } if(t==='garrafinha'){ $('gl-alt').value=18; $('gl-per').value=50; $('gl-rib').value='2x2'; } golaInfo(); simular(); });
 ['gl-rib','gl-alt','gl-per'].forEach(id=>$(id).addEventListener('input',()=>{ golaInfo(); simular(); }));
+
+// ---- medidas da peca (cm) -> todos os campos ----
+// distribui 'total' agulhas de diminuicao em 'R' carreiras: devolve passos "carreiras-agulhas-vezes"
+function passosAuto(total, R, primeiro){
+  total=Math.round(total); if(total<=0) return '';
+  const out=[]; let rest=total;
+  if(primeiro && rest>4){ const k=Math.min(7,Math.max(2,Math.round(rest*.3))); out.push(`2-${k}-1`); rest-=k; R-=2; }
+  R=Math.max(2,R);
+  let a=Math.max(1,Math.ceil(rest*2/R)); if(a>7) a=7;               // agulhas por diminuicao (a cada 2+ carreiras)
+  const n=Math.floor(rest/a), r=rest-n*a;
+  if(n>0){ let cada=Math.max(2,Math.floor(R/(n+(r?1:0)))); if(cada%2) cada--; out.push(`${cada}-${a}-${n}`); if(r) out.push(`${cada}-${r}-1`); }
+  else if(r) out.push(`2-${r}-1`);
+  return out.join(', ');
+}
+function calcularMedidas(){
+  const ag=+$('md-ag').value||6, cr=+$('md-cr').value||6, cm=x=>Math.max(0,+$(x).value||0);
+  const larg=cm('md-larg'), comp=cm('md-comp'), barra=cm('md-barra'), cava=cm('md-cava'), cent=cm('md-cent'), dt=$('md-dtipo').value, dl=cm('md-dlarg'), dp=cm('md-dprof'), cint=cm('md-cint'), hc=cm('md-hcint');
+  let W=Math.round(larg*ag); if(W%2===0) W++;
+  // barra: inicio fixo (~7 carreiras de ribana fora do laco) + 4 carreiras por volta
+  const rep=Math.max(1,Math.min(99,Math.round((barra*cr-7)/4)));
+  const corpo=Math.max(10,Math.round((comp-barra)*cr));
+  $('f-larg').value=W; $('f-rib').value=rep; $('fx-antes').value=0; $('fx-depois').value=0;
+  // cava
+  const cavaRows=Math.round(cava*cr), cavaAg=Math.round(cent*ag);
+  $('fc-on').checked=cava>0&&cavaAg>0;
+  if($('fc-on').checked){ $('fc-ini').value=Math.max(0,corpo-cavaRows); $('fc-pas').value=passosAuto(cavaAg,Math.round(cavaRows*.45),true); $('fc-bor').value=2; }
+  // decote
+  $('fd-on').checked=!!dt&&dl>0&&dp>0;
+  if($('fd-on').checked){
+    const dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
+    $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
+    if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
+    else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
+    $('fd-bor').value=2;
+  }
+  // acinturado
+  $('ct-on').checked=cint>0&&cint<larg&&hc>2;
+  if($('ct-on').checked){
+    const dimAg=Math.round((larg-cint)*ag/2), hRows=Math.round(hc*cr), sobe=Math.max(4,Math.round(((comp-barra)-cava)*cr)-hRows-Math.round(3*cr));
+    $('ct-ini').value=Math.round(2*cr); $('ct-dim').value=passosAuto(dimAg,Math.max(4,hRows-Math.round(4*cr)),false);
+    $('ct-ret').value=Math.round(3*cr); $('ct-aum').value=passosAuto(dimAg,sobe,false); $('ct-modo').value='16';
+  }
+  // carreiras retas acima: o que falta para o comprimento total
+  update();
+  const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma);
+  $('fa-acima').value=Math.max(0,corpo-fim);
+  if(!($('fc-on').checked||$('fd-on').checked||$('ct-on').checked)) $('f-carr').value=corpo;
+  // gola: volta do decote (frente meia elipse + costas)
+  if(dl>0&&dp>0){ const a=dl/2, b=dp, meia=Math.PI*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b)))/2; $('gl-per').value=Math.round((meia+dl+4)*2)/2; }
+  // simulacao na mesma densidade
+  $('sm-ag').value=Math.round(ag*10); $('sm-cr').value=Math.round(cr*10);
+  update(); golaInfo(); simular();
+  const sp2=readSpec();
+  $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
+}
+$('md-calc').addEventListener('click',calcularMedidas);
+$('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
 
