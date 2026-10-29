@@ -179,6 +179,8 @@ section label{font-size:14px}
 .rel-ajuda ol{margin:6px 0 6px 18px;padding:0}
 .rel-ajuda li{margin:3px 0}
 .rel-aj li{list-style:none;margin-left:-18px}
+.rel-passos{margin:6px 0;padding-left:18px;font-size:12px;color:var(--muted)}
+.rel-passos li{margin:2px 0}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -691,7 +693,7 @@ details.more>*:not(summary){margin-bottom:10px}
     <img id="rel-prev" alt="Print anexado" hidden>
     <label class="chk" for="rel-sim"><input type="checkbox" id="rel-sim" checked> Incluir a imagem da simulação e as medidas/configurações atuais</label>
     <div class="actions"><button type="button" id="rel-envia">Enviar relato</button><button type="button" class="ghost" id="rel-copia">Copiar texto para o chat</button><span class="status hint" id="rel-st"></span></div>
-    <div class="rel-ajuda" id="rel-ajuda" hidden aria-live="polite"><span class="tt">Ajuda com base no manual do Raynen</span><div id="rel-ajuda-txt"></div></div>
+    <div class="rel-ajuda" id="rel-ajuda" hidden aria-live="polite"><span class="tt" id="rel-ajuda-tt">Resolvendo pelo manual do Raynen</span><ol class="rel-passos" id="rel-passos"></ol><div id="rel-ajuda-txt" style="white-space:pre-wrap"></div><div class="actions"><button type="button" id="rel-baixa" hidden>Baixar o programa corrigido</button><button type="button" class="ghost" id="rel-desfaz" hidden>Desfazer as mudanças</button></div></div>
     <div class="rel-lista"><span class="tt">Relatos enviados</span><ul class="mlist" id="rel-list"></ul></div>
   </div>
 </div>
@@ -1894,35 +1896,67 @@ const CONHECE_APP=`Como o app gera o programa Raynen (BMP 8-bit 1024x2048, de ba
 - Códigos: 1 malha frente, 2 malha trás, 4/5 carregado, 8/9/10 sem conexão, 16 agulha sem ponto (aumento), 17 soltar, 61-67/71-77/81-87/91-97 transferência com deslocamento (diminuições), 100 transferir p/ trás, 110 transferir p/ frente, 28/29 e 48/49 tranças.
 - Cava e decote por diminuição com transferência; no decote a peça divide e cada lado tece com um guia-fio, 2 carreiras de cada lado. Decote polo = carcela de 9 agulhas igual ao 25009F, com 3 carreiras de transferência e deslocamento (linha 208).
 - Cada guia-fio precisa terminar com passadas pares (senão o Raynen avisa W002). Largura ímpar evita W021 na última coluna.`;
+// catalogo dos campos que a IA pode mudar: id, nome que aparece na tela, valor e opcoes
+const NAO_MEXE=/^(md-ag|md-cr|sm-|rel-|ml-|pad-|hist-|fi-|reg-|aviso)/;
+function rotulo(el){ const l=el.closest('label')||document.querySelector(`label[for="${el.id}"]`); let t=l?l.cloneNode(true):null; if(t){ t.querySelectorAll('input,select,textarea,small').forEach(x=>x.remove()); } return (t?t.textContent:el.id).replace(/\s+/g,' ').trim().slice(0,70); }
+function catalogo(){ return campos().filter(el=>!NAO_MEXE.test(el.id)).map(el=>{ const o={id:el.id,campo:rotulo(el),valor:el.type==='checkbox'?el.checked:el.value};
+  if(el.tagName==='SELECT') o.opcoes=[...el.options].slice(0,40).map(x=>x.value+'='+x.textContent.trim().slice(0,30)); if(el.disabled) o.bloqueado=true; return o; }); }
+function estadoPrograma(){
+  const chk=RAYNEN.check(readSpec()); let res=null; try{ const o=last; if(o) res={agulhas:o.width,carreiras_total:o.rows,carreiras_corpo:o.bodyRows,passadas_por_guia_fio:o.passes,forma:o.forma}; }catch(e){}
+  return {erros:chk.erros, avisos:chk.avisos.map(a=>a.txt), programa:res, ponto:$('f-tipo').value, sistemas:sisLista(), erros_internos:(window.__erros||[]).slice(-5).map(e=>e.msg)};
+}
+function mudaCampo(id,valor){
+  const el=$(id); if(!el||NAO_MEXE.test(id)||!campos().includes(el)) return {ok:false,erro:`campo ${id} não existe ou não pode ser mudado`};
+  const antes=el.type==='checkbox'?el.checked:el.value;
+  if(el.type==='checkbox') el.checked=valor===true||valor==='true'||valor===1||valor==='1';
+  else if(el.tagName==='SELECT'){ const v=String(valor); if(![...el.options].some(o=>o.value===v)) return {ok:false,erro:`opção ${v} não existe em ${id}`}; el.value=v; }
+  else el.value=String(valor);
+  if(id==='f-s1'||id==='f-s2'||id==='f-s3') sisMostra();
+  el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true}));
+  try{ update(); }catch(e){}
+  return {ok:true,campo:rotulo(el),antes,depois:el.type==='checkbox'?el.checked:el.value};
+}
+let desfazer=null;
 async function ajudaRelato(r,ref){
-  const box=$('rel-ajuda'), out=$('rel-ajuda-txt');
-  if(!sample){ box.hidden=false; out.textContent='A ajuda automática não está disponível nesta visualização. O relato ficou salvo para o Claude resolver.'; return; }
-  box.hidden=false; out.textContent='Procurando no manual do Raynen…';
-  const ctl=new AbortController();
-  const ped=`Você é o assistente técnico do app "Programação Feng Fan" da fábrica A casa do Malharista (máquinas retilíneas Feng Fan, software Raynen). Um programador relatou um problema. Ajude a resolver, em português do Brasil, com palavras simples.
-Use a ferramenta buscar_manual (termos em INGLÊS, o manual é em inglês) para achar o que o manual do Raynen diz; cite o capítulo/trecho quando usar.
-Responda neste formato curto (no máximo ~180 palavras):
-1. O que provavelmente é
-2. Como resolver no app (diga o campo exato do app)
-3. Como conferir no Raynen (passo do manual)
-Se parecer defeito do próprio app (o app gerou algo errado), diga isso claramente na última linha: "Parece erro do aplicativo: ficou registrado para o Claude corrigir."
+  const box=$('rel-ajuda'), out=$('rel-ajuda-txt'), passos=$('rel-passos'); box.hidden=false; passos.textContent=''; $('rel-baixa').hidden=true; $('rel-desfaz').hidden=true;
+  const passo=t=>{ const li=document.createElement('li'); li.textContent=t; passos.appendChild(li); };
+  if(!sample){ $('rel-ajuda-tt').textContent='Resolver sozinho'; out.textContent='A IA não está disponível nesta visualização. O relato ficou salvo para o Claude resolver.'; return; }
+  $('rel-ajuda-tt').textContent='Resolvendo pelo manual do Raynen…'; out.textContent='';
+  desfazer=fotoPrograma(); let mudou=0;
+  const ped=`Você é o técnico de programação do app "Programação Feng Fan" (fábrica A casa do Malharista, máquinas retilíneas Feng Fan, software Raynen). Um programador relatou um problema no programa que o app gerou. RESOLVA você mesmo, mudando os campos do app com as ferramentas, e confira o resultado.
+Ferramentas: ler_programa (estado atual: erros, avisos, passadas por guia-fio), ler_campos (todos os campos do app com id, nome, valor e opções), mudar_campo (muda 1 campo e gera o programa de novo), buscar_manual (manual do Raynen em INGLÊS, passe termos em inglês).
+Regras: não mude "agulhas por cm" nem "passadas por cm". Mude só o necessário. Depois de mudar, chame ler_programa para conferir que os erros sumiram. Se o problema for do próprio aplicativo (código) e não dá para resolver mudando campos, não invente: diga isso.
+No fim escreva em português simples, curto (até 120 palavras): o que era, o que você mudou (nome do campo: antes → depois) e o que conferir no Raynen. A ÚLTIMA linha deve ser exatamente uma destas: "RESULTADO: RESOLVIDO" ou "RESULTADO: NAO_RESOLVIDO" ou "RESULTADO: ERRO_DO_APP".
 
 ${CONHECE_APP}
 
 RELATO: ${r.texto||'(sem texto, veja o print)'}
-AVISOS NA TELA DO APP: ${r.avisos||'nenhum'}
-ERROS INTERNOS DO APP: ${(r.erros||[]).map(e=>e.msg).join(' | ')||'nenhum'}
-CONFIGURAÇÃO DO PROGRAMA: ${(r.spec||'').slice(0,6000)}`;
-  const opts={signal:ctl.signal, modelTier:'default', cache:false, onText:({text})=>{ out.textContent=text; },
-    tools:[{name:'buscar_manual',description:'Busca trechos do manual do software Raynen (em inglês). Passe palavras-chave em inglês, ex.: "yarn nozzle compile error", "savings 201 loop", "degree segment".',inputSchema:{type:'object',properties:{termos:{type:'string'}},required:['termos']},execute:async({termos})=>buscaManual(termos)}]};
+AVISOS NA TELA QUANDO RELATOU: ${r.avisos||'nenhum'}`;
+  const tools=[
+    {name:'ler_programa',description:'Estado do programa atual: erros e avisos do app, agulhas, carreiras, passadas por guia-fio, formas.',inputSchema:{type:'object',properties:{}},execute:async()=>{ passo('Conferindo o programa'); return estadoPrograma(); }},
+    {name:'ler_campos',description:'Lista os campos do app (id, nome na tela, valor atual e opções).',inputSchema:{type:'object',properties:{}},execute:async()=>{ passo('Lendo os campos do app'); return catalogo(); }},
+    {name:'mudar_campo',description:'Muda o valor de um campo do app pelo id e gera o programa de novo. Para caixa de marcar use true/false; para lista use o valor da opção.',inputSchema:{type:'object',properties:{id:{type:'string'},valor:{type:'string'}},required:['id','valor']},execute:async({id,valor})=>{ const x=mudaCampo(id,valor); if(x.ok){ mudou++; passo(`Mudou ${x.campo}: ${x.antes} → ${x.depois}`); } return Object.assign(x,{depois_estado:estadoPrograma()}); }},
+    {name:'buscar_manual',description:'Busca trechos do manual do Raynen (em inglês). Passe palavras-chave em inglês.',inputSchema:{type:'object',properties:{termos:{type:'string'}},required:['termos']},execute:async({termos})=>{ passo('Procurando no manual: '+termos); return buscaManual(termos); }}];
+  const opts={modelTier:'complex', cache:false, tools, onText:({text})=>{ out.textContent=text.replace(/RESULTADO:.*$/m,'').trim(); }};
   try{
     const lim=sample.limits?await sample.limits().catch(()=>null):null;
     if(lim&&lim.images&&r.print){ const bl=await (await fetch(r.print)).blob(); opts.images=[bl]; }
-    const res=await sample(ped,opts); const txt=(res&&res.text||'').trim();
-    out.textContent=txt||'Não consegui uma resposta agora. O relato ficou salvo para o Claude resolver.';
-    if(txt){ try{ if(ref&&ref.update) await ref.update({ajuda:txt.slice(0,6000)}); else { const o=lsLoad(); const it=(o.problemas||[]).find(x=>x.id===r.id); if(it){ it.ajuda=txt; lsSave(o); } } }catch(e){} }
-  }catch(e){ out.textContent=e.code==='rate_limited'?'Muitos pedidos agora; tente de novo em alguns minutos. O relato ficou salvo para o Claude.':e.code==='not_granted'?'A ajuda automática precisa de permissão. O relato ficou salvo para o Claude.':'Não consegui a ajuda agora ('+(e.message||e.code)+'). O relato ficou salvo para o Claude.'; }
+    const res=await sample(ped,opts); const txt=(res&&res.text||'').trim(), m=txt.match(/RESULTADO:\s*(RESOLVIDO|NAO_RESOLVIDO|ERRO_DO_APP)/i), resu=m?m[1].toUpperCase():'NAO_RESOLVIDO', limpo=txt.replace(/RESULTADO:.*$/m,'').trim();
+    out.textContent=limpo||'Não consegui uma resposta agora.';
+    const semErro=!RAYNEN.check(readSpec()).erros.length;
+    let upd={ajuda:limpo.slice(0,6000)};
+    if(resu==='RESOLVIDO'&&semErro){
+      $('rel-ajuda-tt').textContent='✓ Resolvido pelo app';
+      if(mudou){ await salvaHistorico(true); $('rel-desfaz').hidden=false; }
+      $('rel-baixa').hidden=false;
+      upd=Object.assign(upd,{status:'resolvido',resposta:'Resolvido pelo app: '+limpo.split('\n').filter(Boolean)[0].slice(0,200),por:'app',resolvido:Date.now()});
+    } else if(resu==='ERRO_DO_APP'){ $('rel-ajuda-tt').textContent='Parece erro do aplicativo'; out.textContent+='\n\nFicou registrado para o Claude corrigir. O app te avisa quando puder baixar de novo.'; upd.status='aberto'; }
+    else { $('rel-ajuda-tt').textContent='Não consegui resolver sozinho'; out.textContent+='\n\nFicou registrado para o Claude resolver. O app te avisa quando puder baixar de novo.'; }
+    try{ if(ref&&ref.update) await ref.update(upd); else { const o=lsLoad(); const it=(o.problemas||[]).find(x=>x.id===r.id); if(it){ Object.assign(it,upd); lsSave(o); RELATOS=o.problemas; renderRelatos(); checaResolvidos(); } } }catch(e){}
+  }catch(e){ $('rel-ajuda-tt').textContent='Não consegui resolver agora'; out.textContent=(e.code==='rate_limited'?'Muitos pedidos agora; tente de novo em alguns minutos.':e.code==='not_granted'?'A IA precisa de permissão para resolver.':'Erro: '+(e.message||e.code))+' O relato ficou salvo para o Claude.'; }
 }
+$('rel-baixa').addEventListener('click',()=>{ relFecha(); if(!$('btn-dl').disabled) $('btn-dl').click(); });
+$('rel-desfaz').addEventListener('click',()=>{ if(desfazer){ abrePrograma(desfazer); $('rel-desfaz').hidden=true; $('rel-ajuda-txt').textContent+='\n\nMudanças desfeitas: o programa voltou como estava antes.'; } });
 // baixar de novo o programa do relato resolvido
 async function baixaDeNovo(nome){
   const h=HIST.find(x=>idHist(x.nome)===idHist(nome));
@@ -1954,7 +1988,7 @@ function fichaDados(){
   if(!last) return null;
   const o=last, s=o.spec, gs=golaInfo(), go=gs?RAYNEN.build(gs):null;
   const md=typeof MODELOS!=='undefined'&&pecaAtual?MODELOS[padMod]:null;
-  const desc=$('fi-desc').value.trim()||[md?md.nome:'', md?ROT_PUB[padPub]:'', md?nomeTam(padSel):''].filter(Boolean).join(' · ')||'—';
+  const desc=$('fi-desc').value.trim()||[md?md.nome:'', md?ROT_PUB[padPub]:'', md?nomeTam(padSel):''].filter(Boolean).join(' · ')||'';
   const ponto=$('f-tipo').selectedOptions[0]?.textContent||'';
   const dc=s.forma&&s.forma.decote.ativo?(s.forma.decote.tipo==='polo'?'decote polo (carcela)':`decote ${s.forma.decote.tipo}`):'';
   const usados=enderecosUsados(o); if(go) enderecosUsados(go).forEach(v=>usados.add(v));
@@ -1986,10 +2020,11 @@ function fichaHTML(){
   const corDe=g=>{ const sis=d.sis||[]; const k=sis.includes(g)?0:null; return k===0?d.cores[0]:null; };
   let gtab=''; for(let g=1;g<=8;g++){ const p=d.guias.get(g), txt=p?[...p].join(' + '):'', c=p&&(p.has('CORPO')||p.has('BARRA')||p.has('GOLA'))?d.cores[0]:null;
     gtab+=`<tr${p?' class="u"':''}><td class="n">${g}</td><td>${c?`<span class="sw" style="background:${c}"></span>`:''}${escH(txt)}${c&&p&&nomeCor(c)[0]!=='#'?` <span class="leg">(${escH(nomeCor(c))})</span>`:''}</td><td class="v"></td><td></td><td class="v"></td></tr>`; }
-  const linhaEnd=n=>{ const r=R[n]||{}, u=d.usados.has(n), ds=r.desc||ENDERECOS[n]||''; return `<tr${u?' class="u"':''}><td class="n">#${String(n).padStart(2,'0')}</td><td class="v">${escH(r.reg||'')}</td><td class="v">${escH(r.pux||'')}</td><td class="v">${escH(r.vel||'')}</td><td>${escH(ds)}${u?' ✓':''}</td></tr>`; };
+  const linhaEnd=n=>{ const u=d.usados.has(n), r=u?(R[n]||{}):{}, ds=u?(r.desc||ENDERECOS[n]||''):''; return `<tr${u?' class="u"':''}><td class="n">#${String(n).padStart(2,'0')}</td><td class="v">${escH(r.reg||'')}</td><td class="v">${escH(r.pux||'')}</td><td class="v">${escH(r.vel||'')}</td><td>${escH(ds)}${u?' ✓':''}</td></tr>`; };
+  const nEnd=[...d.usados].length;
   let e1='',e2=''; for(let n=1;n<=16;n++) e1+=linhaEnd(n); for(let n=17;n<=32;n++) e2+=linhaEnd(n);
-  const eco=(lista,chave)=>{ let h=''; for(let i=0;i<8;i++){ const x=lista[i], pad=(E[chave]||[])[i]||{}; const v=x?x.valor:(pad.valor||''), ds=x?x.desc:(pad.desc||''); h+=`<tr${x?' class="u"':''}><td class="n">#${String(i+1).padStart(2,'0')}</td><td class="v">${escH(v)}</td><td>${escH(ds)}</td></tr>`; } return h; };
-  const progs=d.programas.map(x=>`<tr${x.arq?' class="u"':''}><td class="n">${x.p}</td><td>${x.n}</td><td>${escH(x.arq)}</td><td>${escH(x.med)}</td><td class="v"></td><td class="v"></td><td class="v"></td><td class="v"></td></tr>`).join('');
+  const eco=(lista,chave)=>{ let h=''; for(let i=0;i<8;i++){ const x=lista[i], pad=(E[chave]||[])[i]||{}; const v=x?x.valor:'', ds=x?x.desc:''; h+=`<tr${x?' class="u"':''}><td class="n">#${String(i+1).padStart(2,'0')}</td><td class="v">${escH(v)}</td><td>${escH(ds)}</td></tr>`; } return h; };
+  const progs=d.programas.map(x=>`<tr${x.arq?' class="u"':''}><td class="n">${x.arq?x.p:''}</td><td>${x.arq?x.n:''}</td><td>${escH(x.arq)}</td><td>${escH(x.med)}</td><td class="v"></td><td class="v"></td><td class="v"></td><td class="v"></td></tr>`).join('');
   return `<div class="fx">
   <div class="cab">${logo?`<img src="${logo}" alt="A casa do Malharista">`:'<b>A casa do Malharista</b>'}
     <div class="id"><div><b>ID Modelo</b>${escH(d.nome)}</div><div><b>Programador</b>${escH(d.prog)||'&nbsp;'}</div><div><b>Data</b>${escH(d.data)}</div>
@@ -2099,7 +2134,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas e ajuda do manual no Relatar problema';
+const APP_VERSAO='2026-10-29d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, e o Relatar problema agora tenta resolver sozinho pelo manual';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2162,7 +2197,7 @@ $('rel-envia').addEventListener('click',async()=>{
     const r=await montaRelato(); r.programa=readSpec().nome; salvaHistorico(true); let ref=null;
     if(db){ ref=await db.collection('problemas').add(r); }
     else { const o=lsLoad(); o.problemas=(o.problemas||[]); r.id=String(Date.now()); delete r.sim; o.problemas.push(r); if(!lsSave(o)) throw new Error('sem espaço no navegador'); RELATOS=o.problemas; renderRelatos(); }
-    st.textContent=db?'Enviado. Veja abaixo a ajuda do manual. Se não resolver, no chat diga "veja os relatos do app" que o Claude corrige e o app te avisa quando puder baixar de novo.':'Salvo só neste navegador. Use "Copiar texto para o chat" e cole no chat.';
+    st.textContent=db?'Enviado. O app está tentando resolver sozinho (veja abaixo). Se não conseguir, fica para o Claude e o app te avisa quando puder baixar de novo.':'Salvo só neste navegador. Use "Copiar texto para o chat" e cole no chat.';
     $('rel-txt').value=''; $('rel-img').value=''; relPrint=null; $('rel-prev').hidden=true;
     ajudaRelato(r,ref);
   }catch(e){ st.textContent='Não consegui enviar: '+(e.code==='not_granted'?'sem permissão para gravar.':e.message)+' Use "Copiar texto para o chat".'; }
