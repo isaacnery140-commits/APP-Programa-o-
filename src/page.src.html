@@ -572,10 +572,9 @@ details.more>*:not(summary){margin-bottom:10px}
 
       <section aria-labelledby="h-pasta">
         <h2 id="h-pasta">Pasta do programador</h2>
-        <p class="hint" id="store-hint">Carregando o armazenamento…</p>
+        <p class="hint" id="store-hint" style="display:none">Carregando o armazenamento…</p>
         <div class="cable">
           <div class="cable-head"><span>Meus módulos</span><span class="hint" id="mm-count"></span></div>
-          <p class="hint">Abra a pasta do computador com os módulos de vocês em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP), um módulo por arquivo (o app pega o desenho e corta a parte vazia). Se tiver o .opt com o mesmo nome, os guia-fios de cada carreira também entram.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="mm-dir" type="file" webkitdirectory multiple hidden></label>
             <label class="btnfile ghost">Escolher arquivos<input id="mm-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
@@ -586,7 +585,6 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="cable">
           <div class="cable-head"><span>Bases de programas</span><span class="hint" id="bs-count"></span></div>
-          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa e salve: o app guarda o programa inteiro. Em "Tipo de barra", ao escolher a base ela vira o programa principal (nome, largura, carreiras e ponto vêm dela). A linha clara marca até onde vai o início + barra, que é o que fica se você trocar o ponto do corpo em Tipo de ponto.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="bs-dir" type="file" webkitdirectory multiple hidden></label>
             <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
@@ -621,7 +619,7 @@ details.more>*:not(summary){margin-bottom:10px}
       <section aria-labelledby="h-sim">
         <div class="bedbar">
           <h2 id="h-sim">Simulação no manequim</h2>
-          <span class="hint" id="sim-med"></span>
+          <span class="hint" id="sim-med" style="display:none"></span>
         </div>
         <div class="row">
           <label for="sm-ag">Agulhas / 10 cm<input id="sm-ag" type="number" min="5" max="120" value="28"></label>
@@ -654,7 +652,6 @@ details.more>*:not(summary){margin-bottom:10px}
         <div class="bed" id="perto-box" hidden style="max-height:640px;background:#000"><canvas id="perto-cv" width="10" height="10" aria-label="Simulação da malha vista de perto"></canvas></div>
 
         <div class="sim" id="man-box"><canvas id="sim-cv" width="1000" height="1280" aria-label="Simulação da peça vestida no manequim"></canvas></div>
-        <p class="hint">Simulação aproximada da frente da peça vestida, em escala pela densidade (agulhas e carreiras por 10 cm medidas na amostra lavada). Meia malha aparece como V, malha trás como ondinha e carregado mais aberto. Use para conferir tamanho, forma e desenho; o caimento real depende do fio e da densidade.</p>
       </section>
 
       <section aria-labelledby="h-ficha">
@@ -1550,7 +1547,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29i', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29j', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2577,7 +2574,7 @@ function iniciar3D(){
   const pg=gl.createProgram(); gl.attachShader(pg,sh(gl.VERTEX_SHADER,V3VS)); gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,V3FS)); gl.linkProgram(pg);
   const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),t:gl.getAttribLocation(pg,'t'),o:gl.getAttribLocation(pg,'o')}; ['mv','pr','tx','useTx','alphaT','rough','cor','rep','pele'].forEach(k=>loc[k]=gl.getUniformLocation(pg,k));
   const bar=document.createElement('div'); bar.className='v3-bar';
-  bar.innerHTML='<button type="button" data-v="0">Frente</button><button type="button" data-v="-35">3/4</button><button type="button" data-v="90">Lado</button><button type="button" data-v="180">Costas</button><button type="button" data-z="-1" aria-label="Aproximar">＋</button><button type="button" data-z="1" aria-label="Afastar">－</button><button type="button" data-a="1" aria-pressed="false">Girar sozinho</button><span class="hint">Arraste para girar · roda do mouse ou pinça para aproximar</span>';
+  bar.innerHTML='<button type="button" data-v="0">Frente</button><button type="button" data-v="-35">3/4</button><button type="button" data-v="90">Lado</button><button type="button" data-v="180">Costas</button><button type="button" data-z="-1" aria-label="Aproximar">＋</button><button type="button" data-z="1" aria-label="Afastar">－</button><button type="button" data-a="1" aria-pressed="false">Girar sozinho</button>';
   box.insertBefore(bar,cv.nextSibling);
   V3={gl,pg,loc,cv,bar,ext32,malhas:[],rotY:-.35,rotX:.06,dist:1,auto:false,alvoY:-30,altura:100};
   const ajusta=()=>{ const w=box.clientWidth||600, h=Math.round(Math.min(w*1.25,820)), dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+'px'; desenha3D(); };
