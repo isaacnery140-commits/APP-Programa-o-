@@ -2267,7 +2267,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29g', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29h', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -3269,17 +3269,18 @@ const M4={
   rotY(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); },
   trans(x,y,z){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
 };
-const V3VS=`attribute vec3 p;attribute vec3 n;attribute vec2 t;uniform mat4 mv,pr;varying vec3 vn,vp;varying vec2 vt;
-void main(){ vec4 q=mv*vec4(p,1.0); vp=q.xyz; vn=mat3(mv)*n; vt=t; gl_Position=pr*q; }`;
-const V3FS=`precision mediump float;varying vec3 vn,vp;varying vec2 vt;uniform sampler2D tx;uniform float useTx,alphaT,rough,pele;uniform vec3 cor;uniform vec2 rep;
+const V3VS=`attribute vec3 p;attribute vec3 n;attribute vec2 t;attribute float o;uniform mat4 mv,pr;varying vec3 vn,vp;varying vec2 vt;varying float vo;
+void main(){ vec4 q=mv*vec4(p,1.0); vp=q.xyz; vn=mat3(mv)*n; vt=t; vo=o; gl_Position=pr*q; }`;
+const V3FS=`precision mediump float;varying vec3 vn,vp;varying vec2 vt;varying float vo;uniform sampler2D tx;uniform float useTx,alphaT,rough,pele;uniform vec3 cor;uniform vec2 rep;
 void main(){ vec4 b=useTx>0.5?texture2D(tx,vt*rep):vec4(cor,1.0); if(b.a<alphaT) discard;
- vec3 N=normalize(vn); if(!gl_FrontFacing) N=-N; vec3 V=normalize(-vp);
+ vec3 V=normalize(-vp); vec3 N=normalize(vn); float dentro=1.0; if(dot(N,V)<0.0){ N=-N; dentro=0.45; }
  vec3 L1=normalize(vec3(-0.45,0.62,0.65)), L2=normalize(vec3(0.6,0.25,-0.75));
  float h=0.5+0.5*N.y; vec3 amb=mix(vec3(0.42,0.40,0.37),vec3(0.62,0.62,0.63),h);
  float d1=max(dot(N,L1),0.0), d2=max(dot(N,L2),0.0)*0.35;
  float sp=pow(max(dot(N,normalize(L1+V)),0.0),mix(48.0,10.0,rough))*(1.0-rough)*0.45;
  float rim=pow(1.0-max(dot(N,V),0.0),3.0)*0.12;
- vec3 c=b.rgb*(amb*0.75+vec3(1.0,0.98,0.95)*d1*0.78+d2)+vec3(sp)+vec3(rim);
+ float sheen=pow(1.0-max(dot(N,V),0.0),2.0)*0.08*useTx;
+ vec3 c=(b.rgb*(amb*0.75+vec3(1.0,0.98,0.95)*d1*0.78+d2)+vec3(sp)+vec3(rim)+vec3(sheen))*vo*dentro;
  gl_FragColor=vec4(c,1.0); }`;
 function tem3D(){ try{ const c=document.createElement('canvas'); return !!(c.getContext('webgl')||c.getContext('experimental-webgl')); }catch(e){ return false; } }
 function iniciar3D(){
@@ -3291,7 +3292,7 @@ function iniciar3D(){
   const ext32=gl.getExtension('OES_element_index_uint');
   const sh=(t,s)=>{ const o=gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o); if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
   const pg=gl.createProgram(); gl.attachShader(pg,sh(gl.VERTEX_SHADER,V3VS)); gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,V3FS)); gl.linkProgram(pg);
-  const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),t:gl.getAttribLocation(pg,'t')}; ['mv','pr','tx','useTx','alphaT','rough','cor','rep','pele'].forEach(k=>loc[k]=gl.getUniformLocation(pg,k));
+  const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),t:gl.getAttribLocation(pg,'t'),o:gl.getAttribLocation(pg,'o')}; ['mv','pr','tx','useTx','alphaT','rough','cor','rep','pele'].forEach(k=>loc[k]=gl.getUniformLocation(pg,k));
   const bar=document.createElement('div'); bar.className='v3-bar';
   bar.innerHTML='<button type="button" data-v="0">Frente</button><button type="button" data-v="-35">3/4</button><button type="button" data-v="90">Lado</button><button type="button" data-v="180">Costas</button><button type="button" data-z="-1" aria-label="Aproximar">＋</button><button type="button" data-z="1" aria-label="Afastar">－</button><button type="button" data-a="1" aria-pressed="false">Girar sozinho</button><span class="hint">Arraste para girar · roda do mouse ou pinça para aproximar</span>';
   box.insertBefore(bar,cv.nextSibling);
@@ -3315,7 +3316,7 @@ function iniciar3D(){
   ajusta(); return V3;
 }
 function desenha3D(){ if(!V3) return; const {gl,pg,loc,cv}=V3;
-  gl.viewport(0,0,cv.width,cv.height); gl.clearColor(.922,.910,.890,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+  gl.viewport(0,0,cv.width,cv.height); gl.clearColor(.905,.895,.875,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
   gl.useProgram(pg);
   const d=V3.altura*2.15*V3.dist, pr=M4.persp(28*Math.PI/180,cv.width/Math.max(1,cv.height),2,4000);
   const mv=M4.mul(M4.trans(0,0,-d),M4.mul(M4.rotX(V3.rotX),M4.mul(M4.rotY(V3.rotY),M4.trans(0,-V3.alvoY,0))));
@@ -3324,11 +3325,12 @@ function desenha3D(){ if(!V3) return; const {gl,pg,loc,cv}=V3;
     gl.bindBuffer(gl.ARRAY_BUFFER,m.bp); gl.enableVertexAttribArray(loc.p); gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
     gl.bindBuffer(gl.ARRAY_BUFFER,m.bn); gl.enableVertexAttribArray(loc.n); gl.vertexAttribPointer(loc.n,3,gl.FLOAT,false,0,0);
     gl.bindBuffer(gl.ARRAY_BUFFER,m.bt); gl.enableVertexAttribArray(loc.t); gl.vertexAttribPointer(loc.t,2,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bo); gl.enableVertexAttribArray(loc.o); gl.vertexAttribPointer(loc.o,1,gl.FLOAT,false,0,0);
     gl.uniform1f(loc.useTx,m.tex?1:0); gl.uniform1f(loc.alphaT,m.alphaT||0); gl.uniform1f(loc.rough,m.rough==null?.8:m.rough); gl.uniform3fv(loc.cor,m.cor||[.8,.8,.8]); gl.uniform2fv(loc.rep,m.rep||[1,1]);
     if(m.tex){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,m.tex); gl.uniform1i(loc.tx,0); }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.bi); gl.drawElements(gl.TRIANGLES,m.ni,m.i32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0); });
 }
-function limpa3D(){ if(!V3) return; const gl=V3.gl; V3.malhas.forEach(m=>{ [m.bp,m.bn,m.bt,m.bi].forEach(b=>gl.deleteBuffer(b)); }); (V3.texs||[]).forEach(t=>gl.deleteTexture(t)); V3.malhas=[]; V3.texs=[]; }
+function limpa3D(){ if(!V3) return; const gl=V3.gl; V3.malhas.forEach(m=>{ [m.bp,m.bn,m.bt,m.bi,m.bo].forEach(b=>gl.deleteBuffer(b)); }); (V3.texs||[]).forEach(t=>gl.deleteTexture(t)); V3.malhas=[]; V3.texs=[]; }
 // textura: canvas -> WebGL (repetida precisa de potencia de 2)
 function tex3D(canvas,rep){ const gl=V3.gl; let c=canvas; const mip=!!rep;
   if(rep){ const p2=v=>Math.min(rep==='mip'?4096:1024,Math.pow(2,Math.round(Math.log2(Math.max(8,v))))); const k=document.createElement('canvas'); k.width=p2(canvas.width); k.height=p2(canvas.height); k.getContext('2d').drawImage(canvas,0,0,k.width,k.height); c=k; }
@@ -3345,7 +3347,8 @@ function malha3D(pos,uv,idx,mat){ const gl=V3.gl, nv=pos.length/3, nor=new Float
   if(mat.normalFora) for(let i=0;i<nv;i++){ const o=mat.normalFora(pos[i*3],pos[i*3+1],pos[i*3+2]); if(o[0]*nor[i*3]+o[1]*nor[i*3+1]+o[2]*nor[i*3+2]<0){ nor[i*3]*=-1; nor[i*3+1]*=-1; nor[i*3+2]*=-1; } }
   const i32=nv>65535; if(i32&&!V3.ext32) return;
   const buf=(arr,t)=>{ const b=gl.createBuffer(); gl.bindBuffer(t,b); gl.bufferData(t,arr,gl.STATIC_DRAW); return b; };
-  V3.malhas.push({bp:buf(new Float32Array(pos),gl.ARRAY_BUFFER),bn:buf(nor,gl.ARRAY_BUFFER),bt:buf(new Float32Array(uv),gl.ARRAY_BUFFER),bi:buf(i32?new Uint32Array(idx):new Uint16Array(idx),gl.ELEMENT_ARRAY_BUFFER),ni:idx.length,i32,
+  const ao=new Float32Array(nv); for(let i=0;i<nv;i++) ao[i]=mat.ao?Math.max(.2,Math.min(1,mat.ao(pos[i*3],pos[i*3+1],pos[i*3+2]))):1;
+  V3.malhas.push({bo:buf(ao,gl.ARRAY_BUFFER),bp:buf(new Float32Array(pos),gl.ARRAY_BUFFER),bn:buf(nor,gl.ARRAY_BUFFER),bt:buf(new Float32Array(uv),gl.ARRAY_BUFFER),bi:buf(i32?new Uint32Array(idx):new Uint16Array(idx),gl.ELEMENT_ARRAY_BUFFER),ni:idx.length,i32,
     tex:mat.tex||null,cor:mat.cor,rep:mat.rep,alphaT:mat.alphaT,rough:mat.rough}); }
 // grade (linhas x colunas) a partir de uma funcao f(j,i) -> {p:[x,y,z], t:[u,v]}
 function grade3D(nj,ni,f,mat){ const pos=[],uv=[],idx=[]; for(let j=0;j<nj;j++) for(let i=0;i<ni;i++){ const q=f(j,i); pos.push(...q.p); uv.push(...q.t); }
@@ -3358,89 +3361,115 @@ function esfera3D(C,rx,ry,rz,mat,fi0,fi1,eixo){ const n=36,m=24; grade3D(m+1,n+1
     if(eixo){ const [a,b]=eixo; const q=[x,y,z]; x=q[0]; const yy=q[1]*Math.cos(a)-q[0]*Math.sin(a)*0, xx=q[0]*Math.cos(a)-q[1]*Math.sin(a), y2=q[0]*Math.sin(a)+q[1]*Math.cos(a); x=xx; y=y2; }
     return {p:[C[0]+rx*x,-C[1]+ry*y,(C[2]||0)+rz*z],t:[i/n,j/m]}; },Object.assign({normalFora:(x,y,z)=>[x-C[0],y+C[1],z-(C[2]||0)]},mat)); }
 function recorte(src,u0,u1,v0,v1){ const w=Math.max(8,Math.round((u1-u0)*src.width)), h=Math.max(8,Math.round((v1-v0)*src.height)), c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(src,u0*src.width,v0*src.height,w,h,0,0,w,h); return c; }
-function costasDe(src,P){ P=Math.max(2,P||8); const c=document.createElement('canvas'); c.width=src.width; c.height=src.height; const x=c.getContext('2d'); x.drawImage(src,0,0);
+function preenche(src,P,manterMeio){ P=Math.max(2,P||8); const c=document.createElement('canvas'); c.width=src.width; c.height=src.height; const x=c.getContext('2d'); x.drawImage(src,0,0);
   const im=x.getImageData(0,0,c.width,c.height), D=im.data, W=c.width, H=c.height, a=(X,Y)=>D[(Y*W+X)*4+3];
-  for(let y=H-1;y>=0;y--){ let l=-1,r=-1; for(let X=0;X<W;X++) if(a(X,y)>128){ if(l<0) l=X; r=X; } if(l<0) continue;
-    for(let X=l;X<=r;X++) if(a(X,y)<250){ let yy=y+1; while(yy<H&&a(X,yy)<250) yy++; let off=Math.ceil((yy-y)/P)*P+P; while(y+off<H&&a(X,y+off)<250) off+=P; if(y+off<H){ const s=((y+off)*W+X)*4, t=(y*W+X)*4; for(let k=0;k<4;k++) D[t+k]=D[s+k]; } } }
+  for(let y=H-1;y>=0;y--){ let l=-1,r=-1; for(let X=0;X<W;X++) if(a(X,y)>128){ if(l<0) l=X; r=X; }
+    for(let X=0;X<W;X++){ if(a(X,y)>=250) continue; if(manterMeio&&l>=0&&X>l&&X<r) continue;
+      let yy=y+1; while(yy<H&&a(X,yy)<250) yy++; let off=Math.ceil((yy-y)/P)*P+P; while(y+off<H&&a(X,y+off)<250) off+=P; if(y+off<H){ const s=((y+off)*W+X)*4, t=(y*W+X)*4; for(let k=0;k<4;k++) D[t+k]=D[s+k]; } } }
+  // o que sobrou (colunas sem malha embaixo): copia do lado, na mesma carreira
+  if(!manterMeio) for(let y=0;y<H;y++) for(let X=0;X<W;X++){ if(a(X,y)>=128) continue; for(let k=1;k<60;k++){ const o=k*P; let s=-1; if(X+o<W&&a(X+o,y)>=250) s=X+o; else if(X-o>=0&&a(X-o,y)>=250) s=X-o; if(s>=0){ const q=(y*W+s)*4, t=(y*W+X)*4; for(let kk=0;kk<4;kk++) D[t+kk]=D[q+kk]; break; } } }
   x.putImageData(im,0,0); return c; }
 function montar3D(){
   const v=iniciar3D(); if(!v) return false; limpa3D();
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
   const pf=perfilManequim(busto), capa=$('sm-man').value, pub=$('sm-pub').value, ip=infoPeca(), base=corCapa(capa).map(x=>x/255), enq=$('sm-enq').value;
-  const pele={cor:base,rough:capa.startsWith('pele')?.55:.9}, zf=.74;
-  const bustZ=(x,y)=>pf.seio*2.4*Math.exp(-(((Math.abs(x)-pf.B*.5)**2)/(2*4.2**2)+((y-pf.by)**2)/(2*4.4**2)));
-  // tronco (aneis de elipse; o topo segue a linha do ombro)
-  const yFim=pf.fim, nA=Math.ceil(yFim/.8)+1, nT=72;
+  const ehPele=capa.startsWith('pele'), pele={cor:base,rough:ehPele?.5:(capa==='preto'?.25:.85)}, zf=.74;
   const sst=t=>{ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
+  const bustZ=(x,y)=>pf.seio*2.4*Math.exp(-(((Math.abs(x)-pf.B*.5)**2)/(2*4.2**2)+((y-pf.by)**2)/(2*4.4**2)));
   const prof=(y,x,a)=>zf*a*(.55+.45*sst(y/16))*(1-.22*Math.max(0,Math.abs(x)/a-.7)/.3*(1-sst(y/16)));
-  const pt=(y,th,a)=>{ const x=a*Math.cos(th), yy=Math.max(y,pf.ombro(x)*(1-Math.min(1,y/9))), s=Math.sin(th); return [x,-yy,prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s:0)]; };
-  grade3D(nA,nT+1,(j,i)=>{ const y=Math.min(yFim,j*.8), a=pf.hw(Math.min(y,pf.fim))*(y>pf.fim-2?Math.sqrt(Math.max(.05,1-((y-(pf.fim-2))/4.2)**2)):1), th=Math.PI*2*i/nT; return {p:pt(y,th,a),t:[0,0]}; },Object.assign({normalFora:(x,y,z)=>[x,0,z]},pele));
+  // tronco do manequim
+  const yFim=pf.fim, nA=Math.ceil(yFim/.8)+1, nT=72;
+  const rPesc=pf.pesc*1.45;
+  const fechaB=(x,yy,top)=>1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-rPesc-.3)/2.5);
+  const zBody=(x,yy)=>{ const a=pf.hw(Math.min(Math.max(yy,0),pf.fim)); if(Math.abs(x)>=a) return 0; const top=pf.ombro(x)*(1-Math.min(1,yy/9)); return (prof(yy,x,a)*Math.sqrt(1-(x/a)**2)+bustZ(x,yy))*Math.max(.04,fechaB(x,yy,top)); };
+  const pt=(y,th,a)=>{ const x=a*Math.cos(th), top=pf.ombro(x)*(1-Math.min(1,y/9)), yy=Math.max(y,top), s=Math.sin(th); return [x,-yy,(prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s:0))*Math.max(.04,fechaB(x,yy,top))]; };
+  grade3D(nA,nT+1,(j,i)=>{ const y=Math.min(yFim,j*.8), a=pf.hw(Math.min(y,pf.fim))*(y>pf.fim-2?Math.sqrt(Math.max(.05,1-((y-(pf.fim-2))/4.2)**2)):1); return {p:pt(y,th0(i),a),t:[0,0]}; },Object.assign({normalFora:(x,y,z)=>[x,0,z]},pele));
+  function th0(i){ return Math.PI*2*i/nT; }
   // pescoco, cabeca, cabelo
   const e=Math.max(.75,pf.e), hR=[7.6*(pub==='inf'?.95:1)*(pub==='masc'?1.05:1)*Math.max(.82,e*1.05),11.4*(pub==='masc'?1.03:1)*Math.max(.8,e*1.02)], hC=[0,-7*e-hR[1]*.82,0];
-  tubo3D([0,1.5],[0,hC[1]+hR[1]*.5],pf.pesc*1.05,pf.pesc*.98,pele,28);
+  tubo3D([0,1.5],[0,hC[1]+hR[1]*.5],rPesc*1.04,rPesc*.95,pele,32);
   esfera3D(hC,hR[0],hR[1],hR[0]*1.08,pele);
-  const cab={cor:[.17,.11,.085],rough:.7};
-  esfera3D([0,hC[1]-hR[1]*.06,-.35],hR[0]*1.06,hR[1]*1.03,hR[0]*1.15,cab,0,Math.PI*.44);
-  if(pub==='fem') esfera3D([0,hC[1]-hR[1]*.55,-hR[0]*.8],hR[0]*.55,hR[0]*.5,hR[0]*.5,cab);
+  if(ehPele){ const cab={cor:[.17,.11,.085],rough:.7}; esfera3D([0,hC[1]-hR[1]*.06,-.35],hR[0]*1.06,hR[1]*1.03,hR[0]*1.15,cab,0,Math.PI*.44); if(pub==='fem') esfera3D([0,hC[1]-hR[1]*.55,-hR[0]*.8],hR[0]*.55,hR[0]*.5,hR[0]*.5,cab); }
   // bracos e maos
-  const arms=bracos(pf,ip);
-  arms.forEach(a=>{ const S=[a.S[0],a.S[1]-.8,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0], H=[a.Hn[0],a.Hn[1],.8];
-    if(ip.manga==='sem'||!simAuth) esfera3D([S[0],S[1]+.4,0],a.r[0]*1.02,a.r[0]*.7,a.r[0]*.95,pele); tubo3D(S,E,a.r[0],a.r[1],pele); esfera3D(E,a.r[1],a.r[1],a.r[1],pele);
+  const arms=bracos(pf,ip), vestido=simAuth&&last&&last.sim&&last.sim.cursos.length, comManga=vestido&&ip.manga!=='sem';
+  arms.forEach(a=>{ const S=[a.S[0],a.S[1]+.6+(comManga?a.r[0]*1.3:0),0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0], H=[a.Hn[0],a.Hn[1],.8];
+    if(!comManga) esfera3D([S[0],S[1]-.2,0],a.r[0]*1.02,a.r[0]*.75,a.r[0]*.95,pele); tubo3D(S,E,a.r[0],a.r[1],pele); esfera3D(E,a.r[1],a.r[1],a.r[1],pele);
     tubo3D(E,W,a.r[1],a.r[2],pele); esfera3D(W,a.r[2],a.r[2],a.r[2],pele); esfera3D([(W[0]+H[0])/2,(W[1]+H[1])/2,.3],a.r[3]*.95,a.r[3]*2.1,a.r[3]*.62,pele); });
   if(enq==='inteiro') [-1,1].forEach(sg=>{ const H0=[sg*pf.Q*.42,pf.fim-6,0], K=[sg*pf.Q*.36,pf.fim+44*pf.e,.5], A=[sg*pf.Q*.31,pf.fim+84*pf.e,0];
     tubo3D(H0,K,pf.Q*.48,pf.Q*.28,pele); esfera3D(K,pf.Q*.28,pf.Q*.28,pf.Q*.28,pele); tubo3D(K,A,pf.Q*.28,pf.Q*.17,pele); });
   const topo=hC[1]-hR[1], baixo=enq==='inteiro'?pf.fim+86*pf.e:pf.fim+2;
   if(enq==='detalhe'){ v.altura=26; v.alvoY=-16; } else { v.altura=(baixo-topo)*.98; v.alvoY=-(topo+baixo)/2; }
   const fim=()=>{ v.ajusta(); return true; };
-  if(!simAuth||!last||!last.sim||!last.sim.cursos.length){ $('sim-med').textContent=simAuth?'Sem programa para simular.':'Manequim sem a peça. Clique em “Simular a peça” para vestir. Arraste para girar.'; return fim(); }
-  // ---- a peca: frente e costas em volta do corpo, com a malha do programa ----
+  if(!vestido){ $('sim-med').textContent=simAuth?'Sem programa para simular.':'Manequim sem a peça. Clique em “Simular a peça” para vestir. Arraste para girar.'; return fim(); }
+  // ---- a peca ----
   const sim=last.sim, Wn=sim.cols, Hn=sim.cursos.length, wcm=Wn/ag*10, hcm=Hn/cr*10;
   let sx=Math.max(3,Math.min(12,Math.floor(3200/Wn))), sy=Math.max(3,Math.round(sx*ag/cr)); while(Hn*sy>4096&&sx>3){ sx--; sy=Math.max(2,Math.round(sx*ag/cr)); }
-  const cores=[1,2,3,4].map(k=>$('sm-c'+k).value), tx=texturaPeca(sim,sx,sy,cores), fib=fibraAtual(), rough=Math.max(.45,1.05-fib.brilho*.35);
-  const tF=tex3D(tx,'mip'), tB=tex3D(costasDe(tx,2*sy),'mip');
-  const hwG=(()=>{ const m=[]; let maxA=0; for(let k=0;k<=Math.ceil(hcm*2)+4;k++){ const y=k/2, real=pf.hw(Math.min(y,pf.fim)); maxA=y>14?Math.max(maxA,real):real; m.push((y>14?(.55*maxA+.45*real):real)+.5); } return y=>m[Math.max(0,Math.min(m.length-1,Math.round(y*2)))]; })();
-  const nL=Math.ceil(hcm/.5)+1, nG=96;
+  const cores=[1,2,3,4].map(k=>$('sm-c'+k).value), tx=texturaPeca(sim,sx,sy,cores), fib=fibraAtual(), rough=Math.max(.55,1.08-fib.brilho*.32);
+  // frente: so fica aberto o decote; as laterais da cava sao preenchidas (a manga encaixa por cima). costas: tudo fechado
+  const dc0=last.spec&&last.spec.forma&&last.spec.forma.decote, gs0=golaSpec(), golaFecha=!!gs0&&!(dc0&&dc0.ativo&&dc0.tipo==='polo');   // careca/garrafinha: a ribana cobre o decote
+  const tF=tex3D(preenche(tx,2*sy,!golaFecha),'mip'), tB=tex3D(preenche(tx,2*sy,false),'mip');
+  const armR=arms[0].r[0], yAx=Math.max(10,ip.cava*Math.max(.7,pf.e)), larOmbro=pf.O+armR*1.02;
+  // largura da peca: no ombro cobre a cabeca do braco; da axila para baixo cai do peito sem entrar na cintura
+  const hwG=(()=>{ const m=[]; let maxA=0; for(let k=0;k<=Math.ceil(hcm*2)+4;k++){ const y=k/2, real=pf.hw(Math.min(y,pf.fim)); maxA=y>14?Math.max(maxA,real):real;
+      let a=(y>14?(.55*maxA+.45*real):real)+.55; if(y>pf.fim) a=Math.max(a,m.length?m[m.length-1]:a); if(y<yAx) a=Math.max(a,larOmbro*(1-sst((y-3)/(yAx-3)))+a*sst((y-3)/(yAx-3))); m.push(a+(y>hcm-4?(y-(hcm-4))*.08:0)); }
+      const s=m.map((_,k)=>{ let t=0,n=0; for(let q=-8;q<=8;q++){ const i=Math.max(0,Math.min(m.length-1,k+q)), w=1-Math.abs(q)/9; t+=m[i]*w; n+=w; } return t/n; });
+      const f=y=>{ const k=Math.max(0,Math.min(s.length-1.001,y*2)), i=Math.floor(k), r=k-i; return s[i]*(1-r)+s[Math.min(s.length-1,i+1)]*r; }; return f; })();
+  const yOmb=pf.ombro(pf.O), topoP=x=>{ const ax=Math.abs(x); return ax<=pf.O?pf.ombro(x):yOmb+((ax-pf.O)**2)*.2; };
+  const hwS=(()=>{ const m=[]; for(let k=0;k<=Math.ceil(pf.fim*2)+4;k++) m.push(pf.hw(Math.min(k/2,pf.fim))); const s=m.map((_,k)=>{ let t=0,n=0; for(let q=-10;q<=10;q++){ const i=Math.max(0,Math.min(m.length-1,k+q)), w=1-Math.abs(q)/11; t+=m[i]*w; n+=w; } return t/n; }); return y=>{ const k=Math.max(0,Math.min(s.length-1.001,y*2)), i=Math.floor(k), r=k-i; return s[i]*(1-r)+s[Math.min(s.length-1,i+1)]*r; }; })();
+  const profG=(y,x,a)=>{ const corpo=Math.max(hwS(Math.max(y,0)),pf.hw(Math.min(Math.max(y,0),pf.fim))); return Math.min(zf*a,prof(y,0,corpo)+.9)*(1-.2*Math.max(0,Math.abs(x)/a-.75)*(1-sst(y/14))); };
+  const cur=sim.cursos, Hc=cur.length, meioCol=Math.floor(Wn/2), gap=[];
+  for(let r=Hc-1;r>=0;r--){ const T=cur[r].typ; let c0=meioCol; while(c0>0&&!T[c0]) c0--; let c1=meioCol; while(c1<Wn-1&&!T[c1]) c1++; gap.push(T[meioCol]?0:Math.max(0,(c1-c0)/2)*10/ag); }
+  const meiaAb=y=>{ const k=Math.max(0,Math.min(gap.length-1,Math.round(y*cr/10))); return gap[k]; };
+  const abPesc=golaFecha?pf.pesc*1.45+.5:Math.max(pf.pesc*1.45+.6,meiaAb(.5)+.3);
+  const nL=Math.ceil(hcm/.5)+1, nG=110;
+  const aoP=(x,y,z)=>{ const yy=-y, ax=Math.abs(x), a=hwG(yy); let o=1; o*=1-.28*Math.exp(-((yy-yAx)**2)/(2*4**2))*sst((ax-pf.B*.7)/(pf.B*.3)); o*=1-.12*Math.exp(-((ax-a)**2)/4); o*=1-.1*Math.exp(-((yy-hcm)**2)/1.5); return o; };
   const peca=(lado,tex)=>grade3D(nL,nG+1,(j,i)=>{ const y=Math.min(hcm,j*.5), a=hwG(y), th=lado==='F'?Math.PI*i/nG:Math.PI+Math.PI*i/nG, x=a*Math.cos(th), s=Math.sin(th);
-      const top=pf.ombro(x)*(1-Math.min(1,y/16)), yy=Math.max(y,top), z=prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s*.92+.25:-.25);
+      const top=topoP(x)*(1-Math.min(1,y/16))-.6, yy=Math.max(y-.6,top), fecha=1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-abPesc)/2.5), zo=(profG(yy,x,a)*Math.abs(s)+(s>0?bustZ(x,yy)*s*.92:0))*Math.max(.04,fecha), z=Math.sign(s||1)*Math.max(zo,zBody(x,yy)*(s>0?1:1)+.55*Math.max(.15,fecha));
       const u=lado==='F'?.5-Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI:.5+Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI;
-      return {p:[x,-yy,z],t:[u,Math.max(0,Math.min(1,(yy-top)/hcm))]}; },{tex,alphaT:.45,rough,normalFora:(x,y,z)=>[x,0,z]});
+      return {p:[x,-yy,z],t:[u,Math.max(0,Math.min(1,(yy-top-.6)/hcm))]}; },{tex,alphaT:.45,rough,normalFora:(x,y,z)=>[x,0,z],ao:aoP});
   peca('F',tF); peca('B',tB);
-  // mangas: tubo de malha em volta do braco + cabeca da manga que encaixa no ombro (sem degrau na emenda)
+  // mangas: tubo de malha que sai de dentro do ombro da peca (a emenda fica escondida, como numa camiseta de verdade)
   if(ip.manga!=='sem'){
     const bf=Math.min(.25,Math.max(.04,(+$('md-barra').value||5)/hcm));
     const tCorpo=tex3D(recorte(tx,.3,.7,.56,.74),true), tRib=tex3D(recorte(tx,.3,.7,1-bf*.95,.995),true);
     const cCirc=wcm*.4, cAlt=hcm*.18, rAlt=Math.max(1,hcm*bf*.95);
     arms.forEach(a=>{
-      const Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, rTop=Math.max(a.r[0]+.75,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.98,ip.mlarg/Math.PI):Math.max(a.r[2]+.5,ip.punho/Math.PI);
-      const S=[a.S[0],a.S[1]-.8,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0], L1=Math.hypot(E[0]-S[0],E[1]-S[1],1), L2=Math.hypot(W[0]-E[0],W[1]-E[1],1);
+      const Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, rTop=Math.max(a.r[0]+.9,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.97,ip.mlarg/Math.PI):Math.max(a.r[2]+.5,ip.punho/Math.PI);
+      const S=[a.S[0]+a.sg*.3,topoP(a.S[0])+rTop*.6,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0];
+      const L1=Math.hypot(E[0]-S[0],E[1]-S[1],1), L2=Math.hypot(W[0]-E[0],W[1]-E[1],1), Lt=Ls-(S[1]-a.S[1]);
       const at=t=>t<=L1?[0,1,2].map(k=>S[k]+(E[k]-S[k])*t/L1):[0,1,2].map(k=>E[k]+(W[k]-E[k])*Math.min(1,(t-L1)/L2));
-      const rAt=t=>rTop+(rEnd-rTop)*Math.min(1,t/Ls), ribL=ip.manga==='curta'?1.6:Math.max(2,ip.mpunho), Lc=Ls-ribL;
-      const voltas=Math.max(1,Math.round(2*Math.PI*rTop/cCirc));
-      const pedaco=(t0,t1,tex,altTex)=>{ const n=Math.max(1,Math.ceil((t1-t0)/2.5)); for(let k=0;k<n;k++){ const ta=t0+(t1-t0)*k/n, tb=t0+(t1-t0)*(k+1)/n; tubo3D(at(ta),at(tb),rAt(ta),rAt(tb),{tex,rough,rep:[voltas,1]},40,ta/altTex,tb/altTex); } };
-      pedaco(0,Lc,tCorpo,cAlt); pedaco(Lc,Ls,tRib,rAlt);
-      // cabeca da manga: meia esfera achatada no ombro, com a mesma malha
-      esfera3D([S[0],S[1]+.2,0],rTop*1.01,rTop*.62,rTop*.95,{tex:tCorpo,rough,rep:[voltas,.6]},0,Math.PI*.5);
+      const rAt=t=>rTop+(rEnd-rTop)*Math.min(1,t/Lt), ribL=ip.manga==='curta'?1.6:Math.max(2,ip.mpunho), Lc=Lt-ribL;
+      const voltas=Math.max(1,Math.round(2*Math.PI*rTop/cCirc)), aoM=(x,y,z)=>{ const ins=(x*a.sg<a.S[0]*a.sg+1)?.82:1; return ins*(1-.15*Math.exp(-((-y-S[1])**2)/6)); };
+      const pedaco=(t0,t1,tex,altTex)=>{ const n=Math.max(1,Math.ceil((t1-t0)/2.5)); for(let k=0;k<n;k++){ const ta=t0+(t1-t0)*k/n, tb=t0+(t1-t0)*(k+1)/n; tubo3D(at(ta),at(tb),rAt(ta),rAt(tb),{tex,rough,rep:[voltas,1],ao:aoM},48,ta/altTex,tb/altTex); } };
+      pedaco(0,Lc,tCorpo,cAlt); pedaco(Lc,Lt,tRib,rAlt);
+      // cabeça da manga: domo achatado que fecha a emenda com o ombro
+      esfera3D([S[0]-a.sg*rTop*.15,S[1],S[2]],rTop*1.02,rTop*.62,rTop*.98,{tex:tCorpo,rough,rep:[voltas,1],ao:aoM});
+      // borda da manga (espessura do tecido)
+      const Pe=at(Lt); tubo3D([Pe[0],Pe[1]-.05,Pe[2]],[Pe[0],Pe[1]+.25,Pe[2]],rAt(Lt),rAt(Lt)-.35,{tex:tRib,rough,rep:[voltas,.2]},48);
     });
   }
-  // gola (ribana)
-  const rr=hexRgb($('sm-c1').value), rib=document.createElement('canvas'); rib.width=64; rib.height=16; { const x=rib.getContext('2d'); for(let i=0;i<64;i+=4){ x.fillStyle=`rgb(${rr.map(q=>Math.min(255,q*1.08)|0)})`; x.fillRect(i,0,2,16); x.fillStyle=`rgb(${rr.map(q=>q*.6|0)})`; x.fillRect(i+2,0,2,16); } }
+  // gola (ribana na cor do fio)
+  const rr=hexRgb($('sm-c1').value), rib=document.createElement('canvas'); rib.width=64; rib.height=16; { const x=rib.getContext('2d'); for(let i=0;i<64;i+=4){ x.fillStyle=`rgb(${rr.map(q=>q*.86|0)})`; x.fillRect(i,0,2,16); x.fillStyle=`rgb(${rr.map(q=>q*.6|0)})`; x.fillRect(i+2,0,2,16); } }
   const tG=tex3D(rib,true), dcp=last.spec&&last.spec.forma&&last.spec.forma.decote, gs=golaSpec();
-  const zCorpo=(x,y,off)=>{ const yy=Math.max(0,y), a=hwG(yy); return prof(yy,x,a)*Math.sqrt(Math.max(0,1-(x/a)**2))+bustZ(x,yy)*.92+(off||0); };
+  const zCorpo=(x,y,off)=>{ const yy=Math.max(-1,y), a=hwG(Math.max(0,yy)); return Math.max(profG(Math.max(0,yy),x,a)*Math.sqrt(Math.max(0,1-(x/a)**2))+bustZ(x,yy)*.92, zBody(x,yy)+.55)+(off||0); };
   if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
-    const colar=+dcp.colar||0, yC=Math.max(2.5,(last.spec.carreiras-((colar||(dcp.inicio+(+dcp.calt||60)))-1))*10/cr), w=Math.max(4,Math.min(ip.galt||7,8)), nr=pf.pesc+.35, xv=Math.max(.9,(+dcp.carcela||9)*10/ag/2);
-    // pe de gola em volta do pescoco
-    tubo3D([0,-2.2,-.5],[0,.6,-.4],nr+.55,nr+1.05,{tex:tG,rough,rep:[10,1]},40);
-    [-1,1].forEach(sg=>{ const N=30; grade3D(N+1,2,(j,i)=>{ const t=j/N;
-        const xi=sg*(nr+(xv-nr)*Math.pow(t,.85)), yi=-.4+(yC+.4)*Math.pow(t,1.15), xo=sg*(nr+w*.62+(xv+w*.42-(nr+w*.62))*t+Math.sin(Math.PI*t)*w*.22), yo=-1+(yC+w*.78+1)*Math.pow(t,1.05);
-        const x=i?xo:xi, y=i?yo:yi; return {p:[x,-y,zCorpo(x,y,i?.55:.9)],t:[i,t*6]}; },{tex:tG,rough,rep:[1,1],normalFora:()=>[0,0,1]}); });
-    if(!dcp.fecha) [yC+2,yC+5].forEach(y=>esfera3D([0,y,zCorpo(0,y,.7)],.55,.55,.2,{cor:[.92,.9,.85],rough:.35}));
+    const colar=+dcp.colar||0, yC=Math.max(2.5,(last.spec.carreiras-((colar||(dcp.inicio+(+dcp.calt||60)))-1))*10/cr), w=Math.max(4,Math.min(ip.galt||7,8)), nr=pf.pesc*1.45+.3, xv=Math.max(.9,(+dcp.carcela||9)*10/ag/2);
+    { const rx=Math.max(nr+.4,meiaAb(.6)+.25), N=48; grade3D(N+1,2,(j,i)=>{ const th=Math.PI*(1.12+.76*j/N), x=rx*Math.cos(th), z=Math.max(rx*.62,nr)*Math.sin(th)-.2, y=i?-1.6:.6; return {p:[x*(i?.94:1),-y,z*(i?.94:1)],t:[j/N*12,i]}; },{tex:tG,rough,rep:[1,1],ao:()=>1,normalFora:(x,y,z)=>[x,0,z]}); }
+    [-1,1].forEach(sg=>{ const N=36; grade3D(N+1,3,(j,i)=>{ const t=j/N, f=i/2;
+        const yi=-.3+(yC+.3)*Math.pow(t,1.05), xi=sg*Math.max(xv,meiaAb(Math.max(0,yi))+.3), xo=xi+sg*w*(.9-.38*t), yo=yi+w*(.08+.62*Math.pow(t,1.3));
+        const x=xi+(xo-xi)*f, y=Math.max(yi+(yo-yi)*f,topoP(x)-.9), lift=.75+.45*Math.sin(Math.PI*f)*(1-t*.5);
+        return {p:[x,-y,zCorpo(x,y,lift)],t:[f*1.5,t*w*1.6]}; },{tex:tG,rough,rep:[1,1],normalFora:()=>[0,0,1],ao:(x,y,z)=>.92}); });
+    if(!dcp.fecha) [yC+2,yC+5].forEach(y=>esfera3D([0,y,zCorpo(0,y,.55)],.5,.5,.18,{cor:[.9,.88,.84],rough:.3}));
   } else if(gs){
-    if(gs.tipoGola==='garrafinha'){ const alto=Math.min(gs.alturaCm/2,11); tubo3D([0,.5,-.3],[0,-alto+.5,-.3],pf.pesc+1.6,pf.pesc+1.25,{tex:tG,rough,rep:[12,1]},48);
-      tubo3D([0,-alto+1.4,-.3],[0,-alto+.4,-.3],pf.pesc+1.9,pf.pesc+1.7,{tex:tG,rough,rep:[12,1]},48); }
-    else { const ab=aberturaDecote(), h=Math.max(1,gs.alturaCm), N=64; grade3D(N+1,2,(j,i)=>{ const th=Math.PI*2*j/N, ca=Math.cos(th), sa=Math.sin(th), fr=sa>=0;
-        const rx=(ab.rx+.3)-(i?h:0), ry=fr?Math.max(.4,(ab.ry+.3)-(i?h*1.1:0)):1.6+(i?.0:0), x=rx*ca, y=fr?ry*sa:-ry*(-sa)*.7-(i?h*.35:0);
-        const z=fr?zCorpo(x,Math.max(0,y),.55):-(zf*hwG(0)*Math.sqrt(Math.max(0,1-(x/hwG(0))**2)))-.45;
-        return {p:[x,-Math.max(y,fr?pf.ombro(x)*.85:-9),z],t:[j/N*10,i]}; },{tex:tG,rough,rep:[1,1]}); }
+    const nr=pf.pesc*1.45, zc=-.2;
+    if(gs.tipoGola==='garrafinha'){ const alto=Math.min(gs.alturaCm/2,11,7*Math.max(.75,pf.e)*.85);
+      tubo3D([0,1.6,zc],[0,.2,zc],nr+2.0,nr+1.15,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,.6,z-zc]},64);          // base que assenta no ombro
+      tubo3D([0,.2,zc],[0,-alto+.6,zc],nr+1.15,nr+.95,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,0,z-zc]},64);
+      tubo3D([0,-alto+1.9,zc],[0,-alto+.5,zc],nr+1.4,nr+1.15,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,0,z-zc]},64);   // dobra
+      esfera3D([0,-alto+.5,zc],nr+1.27,.35,nr+1.27,{tex:tG,rough,rep:[18,1]},0,Math.PI);
+    } else { const h=Math.max(1.5,Math.min(gs.alturaCm,4));
+      tubo3D([0,1.2,zc+.3],[0,1.2-h,zc],nr+1.2+h*.7,nr+.6,{tex:tG,rough,rep:[20,1],normalFora:(x,y,z)=>[x,.8,z-zc]},72);
+      esfera3D([0,1.2-h,zc],nr+.68,.32,nr+.68,{tex:tG,rough,rep:[20,1]},0,Math.PI); }
   }
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${Wn} agulhas × ${Hn} carreiras) · arraste para girar`;
   return fim();
