@@ -150,6 +150,13 @@ section label{font-size:14px}
 .rel-lista li small{display:block;color:var(--muted)}
 .rel-ok{color:var(--ok);font-weight:600}
 @media (max-width:600px){.rel-fab{padding:9px 12px;font-size:13px}}
+.aviso-topo{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;max-width:min(680px,calc(100% - 32px));background:var(--ok);color:#fff;border-radius:10px;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 28px rgba(0,0,0,.25);font-weight:600}
+.aviso-topo[hidden]{display:none}
+.aviso-topo button{background:#fff;color:#1b5e20;border:0;border-radius:6px;padding:6px 12px;font-weight:700}
+.aviso-topo button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.7)}
+.aviso-bt{display:flex;gap:8px;margin-left:auto}
+.rel-badge{display:inline-block;margin-left:8px;background:#fff;color:var(--ok);border-radius:999px;padding:1px 8px;font-size:12px}
+.rel-novo{outline:2px solid var(--ok);border-radius:6px;padding:4px}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -634,7 +641,8 @@ details.more>*:not(summary){margin-bottom:10px}
 </div>
 
 
-<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema</button>
+<div class="aviso-topo" id="aviso-topo" role="status" aria-live="polite" hidden><span id="aviso-txt"></span><span class="aviso-bt"><button type="button" id="aviso-ver">Ver</button><button type="button" class="ghost" id="aviso-ok">Ok, vi</button></span></div>
+<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema<span class="rel-badge" id="rel-badge" hidden></span></button>
 <div class="rel-back" id="rel-back" hidden>
   <div class="rel-box" role="dialog" aria-modal="true" aria-labelledby="rel-tt">
     <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
@@ -1830,6 +1838,24 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// ---- avisos: problema resolvido e programa atualizado
+const APP_VERSAO='2026-10-29b', APP_NOVIDADES='aviso quando um problema relatado for resolvido e quando o programa for atualizado';
+function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
+function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
+let avisoAcao=null;
+function mostraAviso(txt,acao){ $('aviso-txt').textContent=txt; avisoAcao=acao||null; $('aviso-ver').hidden=!acao; $('aviso-topo').hidden=false; }
+$('aviso-ok').addEventListener('click',()=>{ $('aviso-topo').hidden=true; if(avisoAcao&&avisoAcao.vistos) relMarcaVistos(avisoAcao.vistos); atualizaBadge(); });
+$('aviso-ver').addEventListener('click',()=>{ $('aviso-topo').hidden=true; relAbre(); if(avisoAcao&&avisoAcao.vistos) setTimeout(()=>relMarcaVistos(avisoAcao.vistos),1500); });
+function novosResolvidos(){ const v=new Set(relVistos()); return RELATOS.filter(r=>r.status==='resolvido'&&r.id&&!v.has(r.id)); }
+function atualizaBadge(){ const n=novosResolvidos().length; $('rel-badge').hidden=!n; $('rel-badge').textContent=n?`${n} resolvido${n>1?'s':''} ✓`:''; }
+function checaResolvidos(){
+  const nv=novosResolvidos(); atualizaBadge(); if(!nv.length) return;
+  const r=nv[0];
+  mostraAviso(nv.length===1?`✓ Problema resolvido: "${(r.texto||'').slice(0,60)}"${r.resposta?' — '+r.resposta.slice(0,120):''}`:`✓ ${nv.length} problemas que você relatou foram resolvidos.`, {vistos:nv.map(x=>x.id)});
+}
+(function checaVersao(){ let ant=null; try{ ant=localStorage.getItem('app_versao'); localStorage.setItem('app_versao',APP_VERSAO); }catch(e){}
+  if(ant&&ant!==APP_VERSAO) mostraAviso(`Programa atualizado: ${APP_NOVIDADES}.`); })();
+
 // ---- relatar problema: o relato (texto, print, simulação, configuração e erros) fica no banco do app para o Claude ler e resolver
 let relPrint=null, RELATOS=[];
 function reduzImagem(src,max,q){ return new Promise((ok,no)=>{ const im=new Image(); im.onload=()=>{ const k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k)); const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',q)); }; im.onerror=()=>no(new Error('não consegui ler a imagem')); im.src=src; }); }
@@ -1852,7 +1878,8 @@ async function montaRelato(){
 function renderRelatos(){
   const ul=$('rel-list'); ul.textContent='';
   if(!RELATOS.length){ const li=document.createElement('li'); li.textContent='Nenhum relato ainda.'; ul.appendChild(li); return; }
-  RELATOS.slice().sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); const sp=document.createElement('span');
+  const novos=new Set(novosResolvidos().map(r=>r.id));
+  RELATOS.slice().sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); if(novos.has(r.id)) li.className='rel-novo'; const sp=document.createElement('span');
     const b=document.createElement('b'); b.textContent=(r.texto||'(sem texto)').slice(0,90); sp.appendChild(b);
     const sm=document.createElement('small'); sm.textContent=`${new Date(r.criado).toLocaleString('pt-BR')} · `; const st=document.createElement('span'); st.textContent=r.status==='resolvido'?'resolvido ✓':'aberto'; if(r.status==='resolvido') st.className='rel-ok'; sm.appendChild(st); sp.appendChild(sm);
     if(r.resposta){ const rs=document.createElement('small'); rs.textContent='Resposta: '+r.resposta; sp.appendChild(rs); }
@@ -2946,11 +2973,11 @@ async function iniciaPasta(){
     $('store-hint').textContent='O que vocês salvarem aqui fica guardado no app para toda a equipe que abrir este link.';
     db.collection('modulos').onSnapshot(s=>setMeus(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
     db.collection('bases').onSnapshot(s=>setBases(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
-    db.collection('problemas').onSnapshot(s=>{ RELATOS=s.docs.map(d=>Object.assign({id:d.id},d.data())); if(!$('rel-back').hidden) renderRelatos(); },()=>{});
+    db.collection('problemas').onSnapshot(s=>{ RELATOS=s.docs.map(d=>Object.assign({id:d.id},d.data())); if(!$('rel-back').hidden) renderRelatos(); checaResolvidos(); },()=>{});
     db.collection('moldes').onSnapshot(s=>setMoldes(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
   } else {
     $('store-hint').textContent='Salvo só neste navegador (o armazenamento da equipe não está disponível nesta visualização).';
-    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]); RELATOS=o.problemas||[];
+    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]); RELATOS=o.problemas||[]; checaResolvidos();
   }
 }
 
