@@ -1,5 +1,5 @@
 p=open('page.src.html').read(); g=open('gen.js').read(); t=open('template.json').read()
 g=g.replace("if (typeof module !== 'undefined') module.exports = RAYNEN;",'')
-p=(p.replace('/*GEN*/',g).replace('/*TEMPLATE*/',t).replace('/*LIBRARY*/',open('library.json').read()).replace('/*JQEX*/',open('jq_example.json').read()).replace('/*LOGO*/',open('logo.b64').read()).replace('/*RMODS*/',open('raynen_mods.json').read())
+p=(p.replace('/*GEN*/',g).replace('/*TEMPLATE*/',t).replace('/*LIBRARY*/',open('library.json').read()).replace('/*JQEX*/',open('jq_example.json').read()).replace('/*LOGO*/',open('logo.b64').read()).replace('/*RMODS*/',open('raynen_mods.json').read()).replace('/*MANUAL*/',open('manual_chunks.json').read())
    .replace('*{box-sizing:border-box}','*{box-sizing:border-box}\n[hidden]{display:none!important}',1))
 open('programador-raynen.html','w').write(p); print(len(p))
