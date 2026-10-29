@@ -56,6 +56,17 @@ const RAYNEN = (function () {
     return n;
   }
   const yarnOf = (s, idx) => idx <= 1 ? s.guiaFio : (s.fios[idx - 2] || s.guiaFio);
+  // sistemas no corpo: 1 a 3 guia-fios tecendo o corpo, alternando carreira a carreira (25009F: 4 e 5)
+  function sistemas(s) {
+    const p = s.ponto, c = Array.isArray(s.corpo) ? s.corpo.map(x => Math.round(+x)).filter(x => x >= 1 && x <= 16).slice(0, 3) : [];
+    if (!c.length || p.tipo === 'jacquard' || p.tipo === 'base') return null;
+    if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) return null;   // ponto com listras/varios fios usa A/B/C/D
+    return c;
+  }
+  const yarnRow = (s, br, sis) => sis && br.f === 1 ? sis[(br.r != null ? br.r : 0) % sis.length] : yarnOf(s, br.f);
+  // carreira onde o decote divide: multipla de 2 x sistemas (cada guia-fio volta ao lado de saida)
+  const passoDiv = s => 2 * ((sistemas(s) || [1]).length);
+  const splitRow = (s, inicio) => { const q = passoDiv(s); return q * Math.floor((inicio - 1) / q); };
 
   // linhas do corpo: [{v:(i)=>codigo, f:indice do guia-fio 1..4}]
   function bodyRows(s, N) {
@@ -104,8 +115,9 @@ const RAYNEN = (function () {
     const p = s.ponto; let N = s.carreiras, note = null;
     if (p.tipo === 'jacquard') { if (N % 2) { N++; note = `Jacquard com ${s.carreiras} carreiras (ímpar): vou usar ${N} para os guia-fios voltarem ao lado de saída.`; } return { N, note }; }
     const h = p.tipo === 'motivo' && Array.isArray(p.fios) ? p.fios.length : 1;
-    for (let k = 0; k < 4 * Math.max(1, h); k++) {
-      const cnt = {}; bodyRows(s, N + k).forEach(r => { cnt[r.f] = (cnt[r.f] || 0) + 1; });
+    const sis = sistemas(s);
+    for (let k = 0; k < 4 * Math.max(1, h) * (sis ? sis.length : 1); k++) {
+      const cnt = {}; bodyRows(s, N + k).forEach(r => { const y = yarnRow(s, r, sis); cnt[y] = (cnt[y] || 0) + 1; });
       if (Object.values(cnt).every(c => c % 2 === 0)) {
         if (k) note = `Corpo com ${s.carreiras} carreiras: algum guia-fio terminaria do lado errado (W002). Vou usar ${N + k}.`;
         return { N: N + k, note };
@@ -288,7 +300,7 @@ const RAYNEN = (function () {
     if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
-      if (p.tipo !== 'jacquard' && s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
+      { const ss = sistemas(s); if (p.tipo !== 'jacquard' && !(ss && ss.length > 1) && s.fios[0] === (ss ? ss[0] : s.guiaFio)) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do guia-fio do corpo.'); }
       if (dc.tipo === 'redondo' && !(dc.meio >= 2 && dc.meio < W / 2)) erros.push('Decote redondo: agulhas do meio entre 2 e metade da largura.');
       if (dc.tipo === 'polo') {
         if (p.tipo === 'jacquard') erros.push('Decote polo (carcela): ainda não funciona no jacquard. Use um ponto de um guia-fio.');
@@ -298,7 +310,7 @@ const RAYNEN = (function () {
         avisos.push({ tipo: 'nota', txt: `Decote polo (como o 25009F): na carreira ${dc.inicio} a peça divide no meio, as ${cb} agulhas do meio tecem a carcela dos dois lados (esquerda na frente, direita atrás), depois 3 carreiras de transferência com deslocamento de ${cb} agulhas (lado direito vai ${cb} agulhas para a direita) e cada lado segue com a sua carcela em ribana dupla por ${+dc.calt || 0} carreiras.${(+dc.colar || 0) > 0 ? ` O decote da gola começa na carreira ${dc.colar} (${dc.passos}).` : ''} Confira a transferência (linha de deslocamento) na simulação do Raynen.` });
       }
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F.` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
@@ -308,7 +320,7 @@ const RAYNEN = (function () {
     const evD = new Map(evDec(dc));
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0;
-    const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
+    const split = dc.ativo ? splitRow(s, dc.inicio) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
     const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
     const evWd = new Map(evs.cintD), evWa = new Map(evs.cintA), ct = s.forma.cintura || {};
@@ -334,7 +346,7 @@ const RAYNEN = (function () {
       if (b + k > W - 1) return [a, b]; for (let i = b + 1; i <= b + k; i++) row[i] = 16; return [a, b + k];
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
-    const yA = s.guiaFio, yB = s.fios[0];
+    const sisC = sistemas(s), yA = sisC ? sisC[0] : s.guiaFio, yB = sisC && sisC.length > 1 ? sisC[1] : s.fios[0];
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -426,7 +438,7 @@ const RAYNEN = (function () {
     if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1;
   }
   function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
-    const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
+    const sisS = sistemas(s) || [], yarnIdx = y => sisS.includes(y) || y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
     const map = new Map(), order = [];
     rowsList.forEach(r => {
       let cIdx = r.cor ? null : yarnIdx(r.yarn); if (!r.cor && !cIdx) return;   // fio de descarte nao entra
@@ -450,12 +462,12 @@ const RAYNEN = (function () {
     if (s0.ponto.tipo === 'base') return buildBase(s0);
     let { N } = planRows(s0);
     if (s0.forma && s0.forma.decote.ativo && s0.ponto.tipo !== 'jacquard') {   // cada lado do decote com passadas pares
-      const sp = 2 * Math.floor((s0.forma.decote.inicio - 1) / 2); if ((N - sp) % 2) N++;
+      const sp = splitRow(s0, s0.forma.decote.inicio); if ((N - sp) % 2) N++;
     }
     const EX = s0.forma ? extraLado(s0.forma) : 0, W0 = s0.largura;          // aumentos: largura inicial W0, maxima W0 + 2*EX
     const PB = s0.forma ? carcelaAg(s0.forma.decote) : 0;   // polo: o lado direito anda PB agulhas para a direita
     const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX + PB });
-    const body = bodyRows(s, N);
+    const body = bodyRows(s, N), sisB = sistemas(s);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
@@ -501,7 +513,7 @@ const RAYNEN = (function () {
       const o = tmpl.slice();
       if (br.jq) {
         o[COL_YARN] = 0; o[COL_216] = s.ponto.cores; o[COL_216 + 1] = s.ponto.avesso;
-      } else o[COL_YARN] = yarnOf(s, br.f);
+      } else o[COL_YARN] = yarnRow(s, br, sisB);
       bO.set(o, k0 * WO);
     });
     // cava / decote (formas) ou o corpo como esta
@@ -628,6 +640,6 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;

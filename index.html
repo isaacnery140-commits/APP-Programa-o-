@@ -135,6 +135,10 @@ section label{font-size:14px}
 .alerta{display:block;margin:8px 0 0;padding:7px 10px;border-radius:6px;border:1px solid #d9a400;background:#fff5d1;color:#6b4e00;font-weight:600;font-size:13px}
 @media (prefers-color-scheme:dark){.alerta{background:#3a2f0a;color:#ffd866;border-color:#8a6d00}}
 .rapport-ed[hidden],.cable-head[hidden]{display:none}
+.sis{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.sis-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.sis-row label{width:96px}
+.sis-bt{display:flex;gap:6px}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -481,13 +485,23 @@ details.more>*:not(summary){margin-bottom:10px}
           <p class="hint glx">Como na ficha de processo do Raynen (golas são acessórios): a gola sai como um programa separado (NOME_GOLA) no mesmo .zip, em ribana com início tubular e fio de descarte no fim para cerzir (remalhar) no decote. A garrafinha sai com o dobro da altura, para dobrar.</p>
         </div>
 
-        <details class="more">
+        <details class="more" open>
           <summary>Guia-fios</summary>
+          <div class="sis">
+            <span class="tt">Guia-fios do corpo (sistemas)</span><small class="dica">quantos sistemas tecem o corpo, alternando carreira a carreira (padrão: 2 sistemas, guia-fios 4 e 5, como no 25009F)</small>
+            <div class="sis-row">
+              <label for="f-s1">Sistema 1<input id="f-s1" type="number" min="1" max="16" value="4"></label>
+              <label for="f-s2" id="lbl-s2">Sistema 2<input id="f-s2" type="number" min="1" max="16" value="5"></label>
+              <label for="f-s3" id="lbl-s3" hidden>Sistema 3<input id="f-s3" type="number" min="1" max="16" value="6"></label>
+              <span class="sis-bt"><button type="button" class="ghost" id="sis-menos" aria-label="Tirar um sistema">− sistema</button><button type="button" class="ghost" id="sis-mais" aria-label="Pôr mais um sistema">+ sistema</button></span>
+            </div>
+            <span class="hint" id="sis-info"></span>
+          </div>
           <div class="row">
-            <label for="f-guia">Guia-fio A (corpo)<input id="f-guia" type="number" min="1" max="16" value="3"></label>
-            <label for="f-gb">Guia-fio B<input id="f-gb" type="number" min="1" max="16" value="5"></label>
-            <label for="f-gc">Guia-fio C<input id="f-gc" type="number" min="1" max="16" value="4"></label>
-            <label for="f-gd">Guia-fio D<input id="f-gd" type="number" min="1" max="16" value="6"></label>
+            <label for="f-guia">Guia-fio A<small class="dica">cor 1 do jacquard e pontos com listras</small><input id="f-guia" type="number" min="1" max="16" value="3"></label>
+            <label for="f-gb">Guia-fio B<small class="dica">cor 2 / lado direito do decote com 1 sistema</small><input id="f-gb" type="number" min="1" max="16" value="5"></label>
+            <label for="f-gc">Guia-fio C<small class="dica">cor 3 do jacquard</small><input id="f-gc" type="number" min="1" max="16" value="4"></label>
+            <label for="f-gd">Guia-fio D<small class="dica">cor 4 do jacquard</small><input id="f-gd" type="number" min="1" max="16" value="6"></label>
           </div>
         </details>
         <details class="more">
@@ -564,7 +578,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <label for="sm-tam">Tamanho do manequim<select id="sm-tam"><option value="78">PP (busto 78)</option><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option><option value="116">XG (busto 116)</option></select></label>
         </div>
         <div class="row">
-          <label for="sm-man">Capa do manequim<select id="sm-man"><option value="linho">Linho bege</option><option value="preto">Preto</option><option value="branco">Branco</option><option value="cinza">Cinza</option></select></label>
+          <label for="sm-man">Pele / manequim<select id="sm-man"><option value="pele1">Pele clara</option><option value="pele2" selected>Pele morena</option><option value="pele3">Pele negra</option><option value="linho">Manequim linho bege</option><option value="preto">Preto</option><option value="branco">Branco</option><option value="cinza">Cinza</option></select></label>
           <label for="sm-c1">Cor do fio A<input id="sm-c1" type="color" value="#e9e3d3"></label>
           <label for="sm-c2">Cor do fio B<input id="sm-c2" type="color" value="#3d42a0"></label>
           <label for="sm-c3">Cor do fio C<input id="sm-c3" type="color" value="#b8913f"></label>
@@ -578,8 +592,8 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="actions">
           <div class="tabs" role="tablist">
-            <button type="button" role="tab" id="tab-man" aria-selected="true">Manequim</button>
-            <button type="button" role="tab" id="tab-perto" aria-selected="false">Malha de perto</button>
+            <button type="button" role="tab" id="tab-man" aria-selected="true">Peça completa (vestida)</button>
+            <button type="button" role="tab" id="tab-perto" aria-selected="false">Simulação do pano</button>
           </div>
           <label for="sm-pt" id="lbl-smpt" hidden style="flex-direction:row;align-items:center;gap:8px">Tamanho do ponto<input id="sm-pt" type="range" min="8" max="34" value="18" style="width:140px"></label>
         </div>
@@ -667,6 +681,17 @@ const RAYNEN = (function () {
     return n;
   }
   const yarnOf = (s, idx) => idx <= 1 ? s.guiaFio : (s.fios[idx - 2] || s.guiaFio);
+  // sistemas no corpo: 1 a 3 guia-fios tecendo o corpo, alternando carreira a carreira (25009F: 4 e 5)
+  function sistemas(s) {
+    const p = s.ponto, c = Array.isArray(s.corpo) ? s.corpo.map(x => Math.round(+x)).filter(x => x >= 1 && x <= 16).slice(0, 3) : [];
+    if (!c.length || p.tipo === 'jacquard' || p.tipo === 'base') return null;
+    if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) return null;   // ponto com listras/varios fios usa A/B/C/D
+    return c;
+  }
+  const yarnRow = (s, br, sis) => sis && br.f === 1 ? sis[(br.r != null ? br.r : 0) % sis.length] : yarnOf(s, br.f);
+  // carreira onde o decote divide: multipla de 2 x sistemas (cada guia-fio volta ao lado de saida)
+  const passoDiv = s => 2 * ((sistemas(s) || [1]).length);
+  const splitRow = (s, inicio) => { const q = passoDiv(s); return q * Math.floor((inicio - 1) / q); };
 
   // linhas do corpo: [{v:(i)=>codigo, f:indice do guia-fio 1..4}]
   function bodyRows(s, N) {
@@ -715,8 +740,9 @@ const RAYNEN = (function () {
     const p = s.ponto; let N = s.carreiras, note = null;
     if (p.tipo === 'jacquard') { if (N % 2) { N++; note = `Jacquard com ${s.carreiras} carreiras (ímpar): vou usar ${N} para os guia-fios voltarem ao lado de saída.`; } return { N, note }; }
     const h = p.tipo === 'motivo' && Array.isArray(p.fios) ? p.fios.length : 1;
-    for (let k = 0; k < 4 * Math.max(1, h); k++) {
-      const cnt = {}; bodyRows(s, N + k).forEach(r => { cnt[r.f] = (cnt[r.f] || 0) + 1; });
+    const sis = sistemas(s);
+    for (let k = 0; k < 4 * Math.max(1, h) * (sis ? sis.length : 1); k++) {
+      const cnt = {}; bodyRows(s, N + k).forEach(r => { const y = yarnRow(s, r, sis); cnt[y] = (cnt[y] || 0) + 1; });
       if (Object.values(cnt).every(c => c % 2 === 0)) {
         if (k) note = `Corpo com ${s.carreiras} carreiras: algum guia-fio terminaria do lado errado (W002). Vou usar ${N + k}.`;
         return { N: N + k, note };
@@ -899,7 +925,7 @@ const RAYNEN = (function () {
     if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
-      if (p.tipo !== 'jacquard' && s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
+      { const ss = sistemas(s); if (p.tipo !== 'jacquard' && !(ss && ss.length > 1) && s.fios[0] === (ss ? ss[0] : s.guiaFio)) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do guia-fio do corpo.'); }
       if (dc.tipo === 'redondo' && !(dc.meio >= 2 && dc.meio < W / 2)) erros.push('Decote redondo: agulhas do meio entre 2 e metade da largura.');
       if (dc.tipo === 'polo') {
         if (p.tipo === 'jacquard') erros.push('Decote polo (carcela): ainda não funciona no jacquard. Use um ponto de um guia-fio.');
@@ -909,7 +935,7 @@ const RAYNEN = (function () {
         avisos.push({ tipo: 'nota', txt: `Decote polo (como o 25009F): na carreira ${dc.inicio} a peça divide no meio, as ${cb} agulhas do meio tecem a carcela dos dois lados (esquerda na frente, direita atrás), depois 3 carreiras de transferência com deslocamento de ${cb} agulhas (lado direito vai ${cb} agulhas para a direita) e cada lado segue com a sua carcela em ribana dupla por ${+dc.calt || 0} carreiras.${(+dc.colar || 0) > 0 ? ` O decote da gola começa na carreira ${dc.colar} (${dc.passos}).` : ''} Confira a transferência (linha de deslocamento) na simulação do Raynen.` });
       }
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F.` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
@@ -919,7 +945,7 @@ const RAYNEN = (function () {
     const evD = new Map(evDec(dc));
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0;
-    const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
+    const split = dc.ativo ? splitRow(s, dc.inicio) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
     const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
     const evWd = new Map(evs.cintD), evWa = new Map(evs.cintA), ct = s.forma.cintura || {};
@@ -945,7 +971,7 @@ const RAYNEN = (function () {
       if (b + k > W - 1) return [a, b]; for (let i = b + 1; i <= b + k; i++) row[i] = 16; return [a, b + k];
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
-    const yA = s.guiaFio, yB = s.fios[0];
+    const sisC = sistemas(s), yA = sisC ? sisC[0] : s.guiaFio, yB = sisC && sisC.length > 1 ? sisC[1] : s.fios[0];
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -1037,7 +1063,7 @@ const RAYNEN = (function () {
     if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1;
   }
   function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
-    const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
+    const sisS = sistemas(s) || [], yarnIdx = y => sisS.includes(y) || y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
     const map = new Map(), order = [];
     rowsList.forEach(r => {
       let cIdx = r.cor ? null : yarnIdx(r.yarn); if (!r.cor && !cIdx) return;   // fio de descarte nao entra
@@ -1061,12 +1087,12 @@ const RAYNEN = (function () {
     if (s0.ponto.tipo === 'base') return buildBase(s0);
     let { N } = planRows(s0);
     if (s0.forma && s0.forma.decote.ativo && s0.ponto.tipo !== 'jacquard') {   // cada lado do decote com passadas pares
-      const sp = 2 * Math.floor((s0.forma.decote.inicio - 1) / 2); if ((N - sp) % 2) N++;
+      const sp = splitRow(s0, s0.forma.decote.inicio); if ((N - sp) % 2) N++;
     }
     const EX = s0.forma ? extraLado(s0.forma) : 0, W0 = s0.largura;          // aumentos: largura inicial W0, maxima W0 + 2*EX
     const PB = s0.forma ? carcelaAg(s0.forma.decote) : 0;   // polo: o lado direito anda PB agulhas para a direita
     const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX + PB });
-    const body = bodyRows(s, N);
+    const body = bodyRows(s, N), sisB = sistemas(s);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
@@ -1112,7 +1138,7 @@ const RAYNEN = (function () {
       const o = tmpl.slice();
       if (br.jq) {
         o[COL_YARN] = 0; o[COL_216] = s.ponto.cores; o[COL_216 + 1] = s.ponto.avesso;
-      } else o[COL_YARN] = yarnOf(s, br.f);
+      } else o[COL_YARN] = yarnRow(s, br, sisB);
       bO.set(o, k0 * WO);
     });
     // cava / decote (formas) ou o corpo como esta
@@ -1239,7 +1265,7 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 
 
@@ -1390,7 +1416,7 @@ function readSpec(){
   if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; }
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
-    fios:[num('f-gb'),num('f-gc'),num('f-gd')],
+    fios:[num('f-gb'),num('f-gc'),num('f-gd')], corpo:sisLista(),
     forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
@@ -1401,6 +1427,7 @@ function readSpec(){
 function writeSpec(s){
   $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
   if(Array.isArray(s.fios)){ $('f-gb').value=s.fios[0]||5; $('f-gc').value=s.fios[1]||4; $('f-gd').value=s.fios[2]||6; }
+  if(Array.isArray(s.corpo)&&s.corpo.length){ sisN=Math.min(3,s.corpo.length); s.corpo.slice(0,3).forEach((g,i)=>{ $('f-s'+(i+1)).value=g; }); sisMostra(); }
   $('f-ponto').value = s.ponto.tipo==='motivo' ? (s.ponto.nome||'Ponto personalizado') : (LABEL[s.ponto.tipo]||'Meia malha');
   if(s.ponto.tipo==='motivo'){ const e=libByName(s.ponto.nome||''); $('f-tipo').value=e?'biblioteca':'ia'; libSel=e?LIB.indexOf(e):-1; renderMods(); }
   else $('f-tipo').value = LABEL[s.ponto.tipo] ? s.ponto.tipo : 'meia';
@@ -1674,14 +1701,14 @@ function ficha(){
     ...(s.base?[`  1-${last.start}  base do programador: ${$('f-barra').selectedOptions[0].textContent}`]:[`  1-14  início do 25009F (descarte guia-fio 7, soltura, início tubular)`,`  15-25 barra: ribana ${s.barra||'2x2'}, laço de ${s.ribanaRep} voltas`]),
     `  ${last.start+1}-${last.rows} corpo, densidade segmento 8`,
     `Ponto: ${s.ponto.tipo==='base'?`programa da base "${$('f-barra').selectedOptions[0].textContent}" como está (corpo das carreiras ${last.start+1} a ${last.rows})`:s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
-  const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
+  const gf=[s.guiaFio,...s.fios], sisF=RAYNEN.sistemas(s); l.push((sisF?`Corpo: ${sisF.length} sistema(s), guia-fios ${sisF.join(' e ')} alternando carreira a carreira. `:'')+'Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
   { const gs=golaInfo(); if(gs) l.push(`Gola ${gs.tipoGola}: programa ${gs.nome} (${gs.largura} agulhas, ribana ${gs.ponto.nome.slice(7)}, ${gs.alturaCm} cm${gs.tipoGola==='garrafinha'?' para dobrar':''}, volta do decote ${gs.perCm} cm), início tubular do 25009F e 8 carreiras de fio de descarte (guia-fio 7) no fim para cerzir.`); }
   if(last.forma){ const f=s.forma, fi=last.forma;
     if(f.cintura&&f.cintura.ativo) l.push(`Acinturado: diminui ${f.cintura.dim}, ${f.cintura.retas} carreiras retas na cintura, aumenta ${f.cintura.aum} (${f.cintura.modo==='16'?'cor 16':'transferência'}); carreiras do corpo ${fi.cintura.join(', ')}`);
     if(f.aumento.ativo) l.push(`Aumento antes da cava: passos ${f.aumento.passos}, borda ${f.aumento.borda}; nas carreiras do corpo ${fi.aumento.join(', ')} (largura ${fi.larguraInicial} → ${s.largura})`);
     if(f.aumento2.ativo) l.push(`Aumento depois do decote (${f.aumento2.onde==='decote'?'borda do decote':'laterais'}): passos ${f.aumento2.passos}, borda ${f.aumento2.borda}; nas carreiras do corpo ${fi.aumento2.join(', ')}`);
     if(f.cava.ativo) l.push(`Cava: começa na carreira ${f.cava.inicio} do corpo, passos ${f.cava.passos}, borda ${f.cava.borda}; diminuições nas carreiras do corpo ${fi.cava.join(', ')}`);
-    if(f.decote.ativo) l.push(`Decote ${f.decote.tipo}${f.decote.tipo==='redondo'?` (${f.decote.meio} agulhas no meio, presas)`:''}: divide na carreira ${fi.divisao} do corpo, passos ${f.decote.passos}, borda ${f.decote.borda}; lado esquerdo guia-fio ${s.guiaFio}, direito ${s.fios[0]}`); }
+    if(f.decote.ativo) l.push(`Decote ${f.decote.tipo}${f.decote.tipo==='redondo'?` (${f.decote.meio} agulhas no meio, presas)`:''}: divide na carreira ${fi.divisao} do corpo, passos ${f.decote.passos}, borda ${f.decote.borda}; lado esquerdo guia-fio ${(RAYNEN.sistemas(s)||[s.guiaFio])[0]}, direito ${(RAYNEN.sistemas(s)||[]).length>1?RAYNEN.sistemas(s)[1]:s.fios[0]}${f.decote.tipo==='polo'?`; carcela de ${f.decote.carcela} agulhas (25009F)`:''}`); }
   if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
   s.trancas.forEach((t,k)=>l.push(`Trança ${k+1}: agulhas ${t.agulha}-${t.agulha+2*t.grupo-1} (${t.grupo}+${t.grupo}), cruza a cada ${t.intervalo} carreiras, ${t.lateral} agulha(s) de malha trás de cada lado, códigos ${k%2?'48/49':'28/29'}${t.sentido==='dir'?' invertidos':''}`));
   if(last.crosses.length) l.push(`Cruzamentos (trança 1): carreiras ${last.crosses.join(', ')}`);
@@ -1774,6 +1801,19 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// ---- sistemas tecendo o corpo (1 a 3 guia-fios alternando carreira a carreira)
+let sisN=2;
+function sisLista(){ return [1,2,3].slice(0,sisN).map(k=>Math.max(1,Math.min(16,parseInt($('f-s'+k).value,10)||(k+3)))); }
+function sisMostra(){
+  $('lbl-s2').hidden=sisN<2; $('lbl-s3').hidden=sisN<3; $('sis-menos').disabled=sisN<=1; $('sis-mais').disabled=sisN>=3;
+  const l=sisLista();
+  $('sis-info').textContent=sisN===1?`1 sistema: só o guia-fio ${l[0]} tece o corpo.`:`${sisN} sistemas: guia-fios ${l.join(', ').replace(/, (\d+)$/,' e $1')} tecem o corpo, alternando carreira a carreira.`+(sisN>1?` No decote: lado esquerdo ${l[0]}, lado direito ${l[1]}.`:'');
+}
+$('sis-mais').addEventListener('click',()=>{ if(sisN<3){ sisN++; sisMostra(); update(); } });
+$('sis-menos').addEventListener('click',()=>{ if(sisN>1){ sisN--; sisMostra(); update(); } });
+['f-s1','f-s2','f-s3'].forEach(id=>$(id).addEventListener('input',()=>{ sisMostra(); update(); }));
+sisMostra();
+
 // ---- Medidas padrões (tricô)
 const PADROES_PUB={
  fem:{
@@ -1898,7 +1938,7 @@ function aplicaMedidas(k, aviso){
 }
 $('pad-usar').addEventListener('click',()=>{
   const k=Object.assign({},pecaPadrao(padSel)); if(!$('pad-cint').checked) k.cint=0;
-  $('sm-tam').value=String(PADROES[padSel].busto);
+  pecaAtual=k; $('sm-pub').value=padPub; $('sm-tam').value=String(PADROES[padSel].busto);
   aplicaMedidas(k,`${MODELOS[padMod].nome} ${ROT_PUB[padPub].toLowerCase()} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`);
   $('md-st').textContent+=` Modelo: ${MODELOS[padMod].nome}, ${nomeTam(padSel)}.`;
 });
@@ -1932,6 +1972,7 @@ $('ml-usar').addEventListener('click',()=>{
   const o=leMolde(), falta=['larg','comp'].filter(k=>!(o[k]>0));
   if(falta.length){ $('ml-st').textContent='Preencha pelo menos a largura e o comprimento do molde.'; return; }
   const ombro=o.ombro>0?o.ombro:o.larg, cent=Math.max(0,meio((o.larg-ombro)/2));
+  pecaAtual={manga:o.mcomp>0?(o.mcomp<25?'curta':'longa'):'sem', mc:o.mcomp||0, mlarg:o.mlarg||meio(o.larg*.33), punho:o.mpunho||meio(o.larg*.2), cabeca:meio((o.cava||18)*.7), mpunho:o.barra||5, polo:o.dtipo==='polo'?{alt:o.galt||7}:null};
   aplicaMedidas({larg:o.larg, comp:o.comp, barra:o.barra||0, cava:o.cava||0, cent, dtipo:o.dtipo, dl:o.dlarg||0, dp:o.dprof||0, cint:o.cint||0, hcint:o.hcint||15, gola:o.gola, galt:o.galt||0},
     `Molde ${o.nome?'"'+o.nome+'" ':''}preenchido nas Medidas da peça.`);
   $('md-st').textContent+=o.ombro>0?'':' (sem a largura nos ombros a cava fica reta)';
@@ -1988,6 +2029,7 @@ Responda APENAS com um objeto JSON neste formato:
  "ribanaRep": inteiro (voltas da barra: repetições do laço da ribana; padrão 12; cada volta = 4 carreiras),
  "guiaFio": inteiro (guia-fio A, padrão 3),
  "fios": [B, C, D] (guia-fios extras, padrão [5,4,6]),
+ "corpo": [guia-fios dos sistemas que tecem o corpo, 1 a 3, padrão [4,5]],
  "ponto": {"tipo": "meia" | "links" | "quadriculado" | "biblioteca" | "personalizado" | "jacquard", "bx": inteiro, "by": inteiro, "nome": string (nome do ponto; para "biblioteca" use exatamente um nome da lista), "descricao": string (detalhes do ponto ou do desenho do jacquard), "cores": 2-4 (jacquard), "modo": "repetir" | "centro" (jacquard)},
  "trancas": [{"agulha": inteiro (1ª agulha da trança, contando da esquerda a partir de 1), "grupo": 2 ou 3 (2 = trança de 4 agulhas, 3 = trança de 6), "intervalo": inteiro (carreiras entre cruzamentos, padrão 6), "lateral": inteiro (agulhas de malha trás de cada lado, padrão 2), "sentido": "esq" | "dir"}],
  "forma": {"cava": {"ativo": bool, "inicio": inteiro (carreira do corpo onde começa a cava), "passos": "carreiras-agulhas-vezes separados por vírgula, ex. 2-3-1, 2-2-2, 2-1-4", "borda": 2},
@@ -2321,7 +2363,7 @@ function iluminar(n, brilho, exp){
   return {d, sp:Math.pow(Math.max(0,rz),exp)*brilho};
 }
 function pintaManequim(D, Wc, Hc, cx, y0, s, pf, capa){
-  const base={linho:[222,211,190],preto:[38,38,42],branco:[236,234,229],cinza:[150,150,152]}[capa]||[222,211,190];
+  const base=corCapa(capa), pele=capa.startsWith('pele');
   const ymax=Math.min(Hc-1,Math.ceil(y0+(pf.fim+2.2)*s));
   for(let Y=Math.max(0,Math.floor(y0-7*s)); Y<=ymax; Y++){
     const ycm=(Y+.5-y0)/s; let a, da;
@@ -2336,12 +2378,12 @@ function pintaManequim(D, Wc, Hc, cx, y0, s, pf, capa){
       // volume do busto
       const bz=pf.seio*Math.exp(-(((Math.abs(xc)-pf.B*.52)**2)/(2*4.6**2)+((ycm-pf.by)**2)/(2*4.4**2)));
       n[0]+=Math.sign(xc)*bz*.12*Math.sign(Math.abs(xc)-pf.B*.52); n[1]+=bz*.25*Math.sign(ycm-pf.by)*Math.min(1,Math.abs(ycm-pf.by)/3);
-      const {d,sp}=iluminar(n,capa==='preto'?.35:.18,capa==='preto'?18:10);
-      let f=.32+.78*d;
+      const {d,sp}=iluminar(n,capa==='preto'?.35:pele?.1:.18,capa==='preto'?18:pele?14:10);
+      let f=pele?.38+.72*d:.32+.78*d;
       const nx=Math.abs(xc)/a;
-      if(Math.abs(nx-.46)<.012||Math.abs(xc)<.07) f*=.82;                 // costuras princesa e do centro
-      if(pf.seio&&ycm>27.6&&ycm<28.2&&nx<.7) f*=.85;                              // costura sob o busto
-      const hs=Math.sin(X*12.9898+Y*78.233)*43758.5453, ru=1+((hs-Math.floor(hs))-.5)*.07+(((X+Y)&1)?.012:-.012);   // trama do linho
+      if(!pele&&(Math.abs(nx-.46)<.012||Math.abs(xc)<.07)) f*=.82;                 // costuras princesa e do centro
+      if(!pele&&pf.seio&&ycm>27.6&&ycm<28.2&&nx<.7) f*=.85;                              // costura sob o busto
+      const hs=Math.sin(X*12.9898+Y*78.233)*43758.5453, ru=pele?1+((hs-Math.floor(hs))-.5)*.015:1+((hs-Math.floor(hs))-.5)*.07+(((X+Y)&1)?.012:-.012);   // trama do linho
       const o=(Y*Wc+X)*4;
       D[o]=Math.min(255,base[0]*f*ru+sp*255); D[o+1]=Math.min(255,base[1]*f*ru+sp*255); D[o+2]=Math.min(255,base[2]*f*ru+sp*255); D[o+3]=255;
     }
@@ -2399,7 +2441,7 @@ function desenhaGola(ctx, cx, y0, s, pf, g, hex){
     ctx.strokeStyle=tom(1.0); ctx.lineWidth=s*.3; ctx.beginPath(); ctx.ellipse(cx,yc,rxi*s,ryi*s,0,0,Math.PI); ctx.stroke();   // borda tubular
     ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=s*.12; ctx.beginPath(); ctx.ellipse(cx,yc,rxo*s,ryo*s,0,0,Math.PI); ctx.stroke(); // costura
   } else {
-    const alto=Math.min(g.alturaCm/2,11), R=4.3, yt=y0-(alto-2)*s, ybase=yc+.6*s;
+    const alto=Math.min(g.alturaCm/2,11,typeof queixoCm==='number'?Math.max(3,-queixoCm-1):99), R=Math.max(4.3,pf.pesc+.9), yt=y0-(alto-2)*s, ybase=yc+.6*s;
     // base: ribana preenchendo a abertura do decote ate o tubo
     ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,yc+.4*s,(ab.rx+.4)*s,(ab.ry+.4)*s,0,0,Math.PI); ctx.fill();
     faixa(ab.rx+.4,ab.ry+.4,R+.3,1.4,ybase);
@@ -2422,6 +2464,150 @@ function desenhaGola(ctx, cx, y0, s, pf, g, hex){
   }
   ctx.restore();
 }
+
+function corCapa(c){ return {linho:[222,211,190],preto:[38,38,42],branco:[236,234,229],cinza:[150,150,152],pele1:[236,196,170],pele2:[192,137,102],pele3:[112,74,52]}[c]||[222,211,190]; }
+// ---- peca completa vestida: cabeca, bracos, pernas, mangas e gola ----
+// cilindro afunilado (capsula) de P0 a P1 em cm, raios r0 -> r1, pintado com luz de cilindro
+function pintaCapsula(D,Wc,Hc,cx,y0,s,P0,P1,r0,r1,base,pele,mask,clip){
+  const dx=P1[0]-P0[0], dy=P1[1]-P0[1], L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, rm=Math.max(r0,r1);
+  const X0=Math.max(0,Math.floor(cx+(Math.min(P0[0],P1[0])-rm)*s)), X1=Math.min(Wc-1,Math.ceil(cx+(Math.max(P0[0],P1[0])+rm)*s));
+  const Y0=Math.max(0,Math.floor(y0+(Math.min(P0[1],P1[1])-rm)*s)), Y1=Math.min(Hc-1,Math.ceil(y0+(Math.max(P0[1],P1[1])+rm)*s));
+  for(let Y=Y0;Y<=Y1;Y++) for(let X=X0;X<=X1;X++){
+    if(clip&&clip((X+.5-cx)/s,(Y+.5-y0)/s)) continue;
+    const px=(X+.5-cx)/s-P0[0], py=(Y+.5-y0)/s-P0[1];
+    let t=(px*ux+py*uy)/L; const tc=Math.max(0,Math.min(1,t)), r=r0+(r1-r0)*tc;
+    const qx=px-ux*tc*L, qy=py-uy*tc*L, d=qx*(-uy)+qy*ux, dist=Math.hypot(qx,qy); if(dist>r) continue;
+    const k=Math.max(-1,Math.min(1,d/r)), nz=Math.sqrt(Math.max(0,1-(dist/r)**2));
+    const kk=Math.max(-1,Math.min(1,dist>0?(qx*(-uy)+qy*ux)/r:0)), n=[kk*.95,0,Math.sqrt(Math.max(0,1-kk*kk))*1.15], nl=Math.hypot(...n)||1;
+    const {d:dd,sp}=iluminar([n[0]/nl,n[1]/nl,n[2]/nl],pele?.1:.18,pele?14:10);
+    const f=(pele?.38:.32)+(pele?.72:.78)*dd, o=(Y*Wc+X)*4;
+    D[o]=Math.min(255,base[0]*f+sp*255); D[o+1]=Math.min(255,base[1]*f+sp*255); D[o+2]=Math.min(255,base[2]*f+sp*255); D[o+3]=255;
+    if(mask) mask[Y*Wc+X]=1;
+  }
+}
+// cabeca de vitrine (oval com luz de esfera)
+function pintaCabeca(D,Wc,Hc,cx,y0,s,C,rx,ry,base,pele){
+  const X0=Math.max(0,Math.floor(cx+(C[0]-rx)*s)), X1=Math.min(Wc-1,Math.ceil(cx+(C[0]+rx)*s)), Y0=Math.max(0,Math.floor(y0+(C[1]-ry)*s)), Y1=Math.min(Hc-1,Math.ceil(y0+(C[1]+ry)*s));
+  for(let Y=Y0;Y<=Y1;Y++) for(let X=X0;X<=X1;X++){
+    const ex=((X+.5-cx)/s-C[0])/rx, eyR=((Y+.5-y0)/s-C[1])/ry, egg=eyR>0?1-.13*eyR:1;   // queixo mais estreito
+    const xx=ex/egg, rr=xx*xx+eyR*eyR; if(rr>1) continue;
+    const nz=Math.sqrt(1-rr), {d,sp}=iluminar([xx,eyR*.9,nz*1.1].map((v,i,a)=>v/Math.hypot(...a)),pele?.1:.2,12);
+    const f=(pele?.38:.32)+(pele?.72:.78)*d, o=(Y*Wc+X)*4;
+    D[o]=Math.min(255,base[0]*f+sp*255); D[o+1]=Math.min(255,base[1]*f+sp*255); D[o+2]=Math.min(255,base[2]*f+sp*255); D[o+3]=255;
+  }
+}
+// medidas da manga e da gola para a peca completa (do modelo escolhido nas medidas padroes)
+let pecaAtual=null, queixoCm=null;
+function infoPeca(){
+  const k=pecaAtual||(typeof pecaPadrao==='function'?pecaPadrao(padSel):null);
+  const d=typeof PADROES!=='undefined'?PADROES[padSel]:null;
+  return {manga:k?k.manga:'longa', mc:k?k.mc:46, mlarg:k?k.mlarg:16, punho:k?k.punho:10, cabeca:k?k.cabeca:13, mpunho:k?k.mpunho:5,
+    braco:d?d.braco:28, cava:d?d.cava:18, mangaCorpo:d?d.manga:43, galt:k&&k.polo?k.polo.alt:7};
+}
+// geometria do braco: ombro, cotovelo, punho e mao (cm, origem no centro do pescoco na linha do ombro)
+function bracos(pf,ip){
+  const e=pf.e, La=(ip.cava+ip.mangaCorpo)*.94, ang=9*Math.PI/180, rb=ip.braco/(2*Math.PI);
+  return [-1,1].map(sg=>{
+    const S=[sg*(pf.O-.6),3.2*e+.8], E=[S[0]+sg*Math.sin(ang)*La*.47,S[1]+Math.cos(ang)*La*.47], Wr=[E[0]+sg*Math.sin(ang*.55)*La*.53,E[1]+Math.cos(ang*.55)*La*.53];
+    const Hn=[Wr[0]+sg*.5,Wr[1]+8.5*Math.max(.7,e)];
+    return {sg,S,E,Wr,Hn,r:[rb*1.02,rb*.78,rb*.58,rb*.55]};
+  });
+}
+// manga: tubo de malha em volta do braco, com a textura do ponto e punho/barra de ribana
+function pintaManga(D,Wc,Hc,cx,y0,s,arm,ip,tex,cores,clip){
+  const {T,tw,th,wcm,hcm,bf,fib}=tex;
+  const Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, ribL=ip.manga==='curta'?1.6:Math.max(2,ip.mpunho);
+  const segs=[[arm.S,arm.E,arm.r[0],arm.r[1]],[arm.E,arm.Wr,arm.r[1],arm.r[2]]];
+  const L1=Math.hypot(arm.E[0]-arm.S[0],arm.E[1]-arm.S[1]), L2=Math.hypot(arm.Wr[0]-arm.E[0],arm.Wr[1]-arm.E[1]);
+  const rTop=Math.max(arm.r[0]+.6,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.98,ip.mlarg/Math.PI):Math.max(arm.r[2]+.45,ip.punho/Math.PI);
+  const rAt=t=>{ const q=Math.min(1,t/Ls); return ip.manga==='curta'?rTop+(rEnd-rTop)*q:rTop+(rEnd-rTop)*Math.pow(q,1.15); };
+  const pt=(seg,t)=>[seg[0][0]+(seg[1][0]-seg[0][0])*t,seg[0][1]+(seg[1][1]-seg[0][1])*t];
+  const xs=[arm.S[0],arm.E[0],arm.Wr[0]], ys=[arm.S[1],arm.E[1],arm.Wr[1]], rm=rTop+1;
+  const X0=Math.max(0,Math.floor(cx+(Math.min(...xs)-rm)*s)), X1=Math.min(Wc-1,Math.ceil(cx+(Math.max(...xs)+rm)*s));
+  const Y0=Math.max(0,Math.floor(y0+(Math.min(...ys)-rm)*s)), Y1=Math.min(Hc-1,Math.ceil(y0+(arm.S[1]+Ls+rm)*s));
+  const elb=L1;
+  for(let Y=Y0;Y<=Y1;Y++) for(let X=X0;X<=X1;X++){
+    const P=[(X+.5-cx)/s,(Y+.5-y0)/s]; if(clip&&clip(P[0],P[1]+.5)) continue;
+    // posicao ao longo do braco (t em cm desde o ombro) e distancia ao eixo
+    let best=null;
+    for(let k=0;k<2;k++){ const [A,B]=segs[k], dx=B[0]-A[0], dy=B[1]-A[1], L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+      const px=P[0]-A[0], py=P[1]-A[1], tt=(px*ux+py*uy), tc=Math.max(k===0?-rTop:0,Math.min(L,tt)), d=(px-ux*tc)*(-uy)+(py-uy*tc)*ux, dist=Math.hypot(px-ux*tc,py-uy*tc);
+      const t=(k?L1:0)+tc; if(!best||dist<best.dist) best={t,d,dist,uy,cap:tt<0}; }
+    const {t,d,dist}=best; if(t>Ls) continue;
+    const r=rAt(Math.max(0,t)); if(dist>r) continue;
+    const k=Math.max(-1,Math.min(1,d/r)), phi=Math.asin(k), arc=phi*r;
+    const rib=t>Ls-ribL;
+    // amostra a textura: corpo da peca (faixa de baixo, sem formas) ou a barra (ribana)
+    const pu=.3+(((.2+arc/wcm)%.4)+.4)%.4;
+    const pv=rib?Math.min(.999,1-bf+((Ls-t)/hcm)%Math.max(.001,bf*.9)):.55+((t/hcm)%.2+.2)%.2;
+    const fx=pu*tw-.5, fy=pv*th-.5, ix=Math.max(0,Math.min(tw-2,Math.floor(fx))), iy=Math.max(0,Math.min(th-2,Math.floor(fy))), ax=fx-ix, ay=fy-iy;
+    const i00=(iy*tw+ix)*4, i10=i00+4, i01=i00+tw*4, i11=i01+4;
+    const al=T[i00+3]*(1-ax)*(1-ay)+T[i10+3]*ax*(1-ay)+T[i01+3]*(1-ax)*ay+T[i11+3]*ax*ay;
+    const bl=c=>al>40?(T[i00+c]*(1-ax)*(1-ay)+T[i10+c]*ax*(1-ay)+T[i01+c]*(1-ax)*ay+T[i11+c]*ax*ay)*255/Math.max(1,al):cores[c];
+    const nz=Math.sqrt(Math.max(0,1-k*k)), n=[k*.95,(best.cap?-.4:0),nz*1.15], nl=Math.hypot(...n);
+    const il=iluminar([n[0]/nl,n[1]/nl,n[2]/nl],fib.brilho-.85,fib.brilho>1.3?14:8);
+    const dob=Math.exp(-((t-elb)**2)/(2*3.2**2))*(.5+.5*Math.sin(t*1.7+k*2))*(ip.manga==='curta'?0:1);   // dobrinhas no cotovelo
+    const axila=Math.max(0,1-t/6)*Math.max(0,-k*arm.sg)*.35;
+    const luz=Math.max(.18,(.3+.82*il.d)*(1-.2*dob)*(1-axila)*(rib?.93:1)), spc=il.sp*110;
+    const o=(Y*Wc+X)*4; D[o]=Math.min(255,bl(0)*luz+spc); D[o+1]=Math.min(255,bl(1)*luz+spc); D[o+2]=Math.min(255,bl(2)*luz+spc); D[o+3]=255;
+  }
+  // costura do ombro (cava) e linha do punho
+  return {Ls,rTop};
+}
+// gola polo: duas abas de ribana que deitam em volta do pescoco e descem ate a carcela formando o V
+function desenhaGolaPolo(ctx,cx,y0,s,pf,hex,ab,alt){
+  const rgb=hexRgb(hex), tom=f=>`rgb(${Math.min(255,rgb[0]*f)|0},${Math.min(255,rgb[1]*f)|0},${Math.min(255,rgb[2]*f)|0})`;
+  const nr=pf.pesc+.5, w=Math.min(alt,8)*.95, yv=ab.ry, xv=Math.max(1.2,ab.carc||1.4);
+  ctx.save(); ctx.lineJoin='round';
+  for(const sg of [-1,1]){
+    // borda de dentro: atras do pescoco -> lado do pescoco -> desce ate o topo da carcela
+    const N=36, inner=[], outer=[];
+    for(let i=0;i<=N;i++){ const t=i/N;
+      let x,y;
+      if(t<.45){ const a=t/.45*Math.PI/2; x=sg*nr*Math.sin(a)*1.05; y=-1.6*Math.cos(a)+.2; }
+      else { const q=(t-.45)/.55; x=sg*(nr*1.05+(xv-nr*1.05)*q); y=.2+yv*Math.pow(q,1.25); }
+      inner.push([x,y]);
+      // borda de fora: deita sobre o ombro/peito, a ponta desce e abre
+      const ww=w*(t<.45?.55+.45*(t/.45):1), ang=t<.45?-Math.PI/2+(t/.45)*Math.PI/2*1.1:Math.PI*.18*(1-(t-.45)/.55)+.05;
+      outer.push([x+sg*ww*Math.cos(ang)*.95,y+ww*Math.sin(ang)*.55+ (t>.45?ww*.55*((t-.45)/.55):0)]);
+    }
+    const P=a=>[cx+a[0]*s,y0+a[1]*s];
+    ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); inner.forEach((q,i)=>{ const [X,Y]=P([q[0],q[1]+.5]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); for(let i=N;i>=0;i--){ const [X,Y]=P([outer[i][0]+sg*.3,outer[i][1]+.7]); ctx.lineTo(X,Y); } ctx.closePath(); ctx.fill();
+    // ribana: faixas do pescoco ate a borda
+    const nr2=Math.max(40,Math.round(N*3));
+    for(let i=0;i<nr2;i++){ const t0=i/nr2*N, t1=(i+1)/nr2*N, a0=Math.floor(t0), a1=Math.min(N,Math.floor(t1)+1);
+      const lerp=(A,u)=>{ const j=Math.min(N-1,Math.floor(u)), f=u-j; return [A[j][0]+(A[j+1][0]-A[j][0])*f,A[j][1]+(A[j+1][1]-A[j][1])*f]; };
+      const i0=lerp(inner,t0), i1=lerp(inner,Math.min(N-.001,t1)), o0=lerp(outer,t0), o1=lerp(outer,Math.min(N-.001,t1));
+      const frente=i%2===0, tm=(t0+t1)/2/N, luz=(frente?1.08:.7)*(.78+.3*Math.sin(tm*Math.PI))*(sg<0?1:.94);
+      ctx.fillStyle=tom(luz); ctx.beginPath(); ctx.moveTo(...P(i0)); ctx.lineTo(...P(i1)); ctx.lineTo(...P(o1)); ctx.lineTo(...P(o0)); ctx.closePath(); ctx.fill();
+    }
+    // borda dupla (acabamento) e costura
+    ctx.strokeStyle=tom(1.15); ctx.lineWidth=Math.max(1,s*.35); ctx.beginPath(); outer.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=Math.max(.6,s*.12); ctx.beginPath(); inner.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
+  }
+  ctx.restore();
+}
+function desenhaBotoes(ctx,cx,y0,s,y1,y2,hex){
+  const rgb=hexRgb(hex), esc=(rgb[0]+rgb[1]+rgb[2])/3>128;
+  for(const y of [y1,y2]){ const X=cx, Y=y0+y*s, r=Math.max(2,.55*s);
+    ctx.fillStyle='rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(X+.15*s,Y+.2*s,r,0,Math.PI*2); ctx.fill();
+    const g=ctx.createRadialGradient(X-r*.3,Y-r*.3,r*.1,X,Y,r); g.addColorStop(0,esc?'#6b625a':'#f2eee6'); g.addColorStop(1,esc?'#2e2925':'#b9b2a6');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(X,Y,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.45)'; for(const [dx,dy] of [[-.3,-.3],[.3,-.3],[-.3,.3],[.3,.3]]){ ctx.beginPath(); ctx.arc(X+dx*r*.8,Y+dy*r*.8,Math.max(.6,r*.13),0,Math.PI*2); ctx.fill(); }
+  }
+}
+function desenhaCabelo(ctx,cx,y0,s,C,rx,ry,pub,fase){
+  ctx.save(); ctx.fillStyle='#2b1d16';
+  if(pub==='fem'){
+    if(fase==='atras'){ ctx.beginPath(); ctx.ellipse(cx+(C[0])*s,y0+(C[1]-ry*.82)*s,rx*.62*s,ry*.42*s,0,0,Math.PI*2); ctx.fill(); }   // coque
+    else { const g=ctx.createLinearGradient(cx-rx*s,0,cx+rx*s,0); g.addColorStop(0,'#1f1510'); g.addColorStop(.4,'#4a3326'); g.addColorStop(1,'#1c130e'); ctx.fillStyle=g;
+      ctx.beginPath(); ctx.ellipse(cx,y0+(C[1]-ry*.12)*s,rx*1.04*s,ry*.98*s,0,Math.PI*1.02,Math.PI*1.98); ctx.closePath(); ctx.fill(); }
+  } else if(fase!=='atras'){
+    const g=ctx.createLinearGradient(cx-rx*s,0,cx+rx*s,0); g.addColorStop(0,'#1f1510'); g.addColorStop(.45,'#3d2a1f'); g.addColorStop(1,'#1a110c'); ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(cx,y0+(C[1]-ry*.2)*s,rx*1.03*s,ry*.86*s,0,Math.PI*1.04,Math.PI*1.96); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
 function simular(){
   if(typeof simModo!=='undefined' && simModo==='perto'){ simularPerto(); return; }
   const cv=$('sim-cv'), ctx=cv.getContext('2d'), Wc=cv.width, Hc=cv.height;
@@ -2429,16 +2615,33 @@ function simular(){
   if(!last||!last.sim||!last.sim.cursos.length){ ctx.fillStyle='#5b665f'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem programa para simular.',Wc/2,Hc/2); $('sim-med').textContent=''; return; }
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
   const sim=last.sim, W=sim.cols, H=sim.cursos.length, wcm=W/ag*10, hcm=H/cr*10;
-  const pf=perfilManequim(busto);
-  const enq=$('sm-enq').value, perto=enq!=='inteiro', altV=enq==='detalhe'?30:perto?Math.max(30,Math.min(pf.fim,hcm)+6):Math.max(pf.fim,hcm+6)+38;
-  const s=enq==='detalhe'?Math.min((Hc-40)/34,(Wc-20)/(pf.O*2.3)):Math.min((Hc-40)/(altV+(perto?8:0)), (Wc-30)/(Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2))));
-  const cx=Wc/2, y0=26+8*s;
+  const pf=perfilManequim(busto), capa=$('sm-man').value, pessoa=capa.startsWith('pele'), pub=$('sm-pub').value, ip=infoPeca(), cores=hexRgb($('sm-c1').value);
+  const enq=$('sm-enq').value, perto=enq!=='inteiro';
+  const topo=pessoa&&enq!=='detalhe'?Math.round(27*Math.max(.75,pf.e)):8;          // espaco para a cabeca
+  const altV=enq==='detalhe'?30:perto?Math.max(30,Math.min(pf.fim,hcm)+6)+(topo-8):Math.max(pf.fim,hcm+6)+(pessoa?24:38)+(topo-8);
+  const larg=Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2), pessoa?(pf.O+9)*2.3:0);
+  const s=enq==='detalhe'?Math.min((Hc-40)/34,(Wc-20)/(pf.O*2.3)):Math.min((Hc-40)/(altV+(perto?8:0)), (Wc-30)/larg);
+  const cx=Wc/2, y0=26+topo*s;
   // fundo de estudio
   const bg=ctx.createRadialGradient(Wc*.5,Hc*.35,Hc*.1,Wc*.5,Hc*.5,Hc*.8); bg.addColorStop(0,'#f4f2ee'); bg.addColorStop(1,'#cfcac1'); ctx.fillStyle=bg; ctx.fillRect(0,0,Wc,Hc);
-  desenhaSuporte(ctx,cx,y0,s,pf);
-  { const im=ctx.getImageData(0,0,Wc,Hc); pintaManequim(im.data,Wc,Hc,cx,y0,s,pf,$('sm-man').value); ctx.putImageData(im,0,0); }
+  const base0=corCapa(capa), arms=pessoa?bracos(pf,ip):[];
+  const yOmb=pf.ombro(pf.O), acimaOmbro=(x,y)=>{ const ax=Math.abs(x); return y<(ax<=pf.O?pf.ombro(x):yOmb+(ax-pf.O)**2*.32)-.2; };
+  const hR=[7.6*(pub==='inf'?.95:1)*(pub==='masc'?1.05:1)*Math.max(.82,pf.e*1.05), 11.4*(pub==='masc'?1.03:1)*Math.max(.8,pf.e*1.02)], hC=[0,-7*Math.max(.75,pf.e)-hR[1]*.82];
+  if(pessoa) desenhaCabelo(ctx,cx,y0,s,hC,hR[0],hR[1],pub,'atras'); else desenhaSuporte(ctx,cx,y0,s,pf);
+  { const im=ctx.getImageData(0,0,Wc,Hc), D=im.data;
+    if(pessoa&&enq==='inteiro'){ for(const sg of [-1,1]){ const H0=[sg*pf.Q*.42,pf.fim-9], K=[sg*pf.Q*.36,pf.fim+44*pf.e], A=[sg*pf.Q*.31,pf.fim+84*pf.e];
+      pintaCapsula(D,Wc,Hc,cx,y0,s,H0,K,pf.Q*.5,pf.Q*.28,base0,true); pintaCapsula(D,Wc,Hc,cx,y0,s,K,A,pf.Q*.28,pf.Q*.17,base0,true); } }
+    pintaManequim(D,Wc,Hc,cx,y0,s,pf,capa);
+    if(pessoa){
+      pintaCapsula(D,Wc,Hc,cx,y0,s,[0,-1],[0,hC[1]+hR[1]*.55],pf.pesc*1.08,pf.pesc*1.02,base0,true);   // pescoco
+      pintaCabeca(D,Wc,Hc,cx,y0,s,hC,hR[0],hR[1],base0,true);
+      arms.forEach(a=>{ pintaCapsula(D,Wc,Hc,cx,y0,s,a.S,a.E,a.r[0],a.r[1],base0,true,null,acimaOmbro); pintaCapsula(D,Wc,Hc,cx,y0,s,a.E,a.Wr,a.r[1],a.r[2],base0,true); pintaCapsula(D,Wc,Hc,cx,y0,s,a.Wr,a.Hn,a.r[3],a.r[3]*.85,base0,true); });
+    }
+    ctx.putImageData(im,0,0); }
+  if(pessoa) desenhaCabelo(ctx,cx,y0,s,hC,hR[0],hR[1],pub,'frente');
+  queixoCm=pessoa?hC[1]+hR[1]*.95:null;
   desenhaSuporte.tampa=true;
-  { const gw=ctx.createLinearGradient(cx-3.4*s,0,cx+3.4*s,0); gw.addColorStop(0,'#6b4a2b'); gw.addColorStop(.45,'#c39a64'); gw.addColorStop(1,'#5a3d22'); ctx.fillStyle=gw; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.4*s,1.1*s,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d9b27a'; ctx.beginPath(); ctx.ellipse(cx-.4*s,y0-7.2*s,2.6*s,.7*s,0,0,Math.PI*2); ctx.fill(); }
+  if(!pessoa){ const gw=ctx.createLinearGradient(cx-3.4*s,0,cx+3.4*s,0); gw.addColorStop(0,'#6b4a2b'); gw.addColorStop(.45,'#c39a64'); gw.addColorStop(1,'#5a3d22'); ctx.fillStyle=gw; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.4*s,1.1*s,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d9b27a'; ctx.beginPath(); ctx.ellipse(cx-.4*s,y0-7.2*s,2.6*s,.7*s,0,0,Math.PI*2); ctx.fill(); }
   // textura no tamanho de tela (com suavizacao do navegador) para amostrar
   const sx=Math.max(6,Math.min(18,Math.floor(4200/W))), sy=Math.max(4,Math.round(sx*ag/cr));
   const tx=texturaPeca(sim,sx,sy,[1,2,3,4].map(k=>$('sm-c'+k).value));
@@ -2490,7 +2693,23 @@ function simular(){
   const base=ctx.getImageData(0,0,Wc,Hc), BD=base.data;
   for(let i=0;i<mask.length;i++) if(mask[i]){ const o=i*4; BD[o]=O[o]; BD[o+1]=O[o+1]; BD[o+2]=O[o+2]; BD[o+3]=255; }
   ctx.putImageData(base,0,0);
-  { const gs=golaSpec(); if(gs) desenhaGola(ctx,cx,y0,s,pf,gs,$('sm-c1').value); }
+  // mangas por cima do corpo da peca
+  if(pessoa&&ip.manga!=='sem'){
+    const im=ctx.getImageData(0,0,Wc,Hc); const bf=Math.min(.25,Math.max(.03,(+$('md-barra').value||5)/hcm));
+    arms.forEach(a=>pintaManga(im.data,Wc,Hc,cx,y0,s,a,ip,{T,tw,th,wcm,hcm,bf,fib},cores,acimaOmbro)); ctx.putImageData(im,0,0);
+    // costura da cava (linha suave no ombro)
+    ctx.save(); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=Math.max(.6,s*.15);
+    arms.forEach(a=>{ const r=Math.max(a.r[0]+.6,ip.mlarg/Math.PI); ctx.beginPath(); ctx.ellipse(cx+a.S[0]*s,y0+(a.S[1]+r*.35)*s,r*.95*s,r*1.05*s,a.sg*.2,a.sg<0?-.15*Math.PI:.15*Math.PI-Math.PI*.0,Math.PI*(a.sg<0?.55:1.15)); ctx.stroke(); });
+    ctx.restore();
+  }
+  const dcp=last.spec&&last.spec.forma&&last.spec.forma.decote;
+  if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
+    const ab=aberturaDecote(), ip2=infoPeca();
+    const yTop=Math.max(2,(last.spec.carreiras-(dcp.inicio-1))*10/cr), yC=Math.max(1.5,(last.spec.carreiras-((+dcp.colar||dcp.inicio)-1))*10/cr);
+    if(yTop-yC>3) desenhaBotoes(ctx,cx,y0,s,yC+(yTop-yC)*.35,yC+(yTop-yC)*.75,$('sm-c1').value);
+    desenhaGolaPolo(ctx,cx,y0,s,pf,$('sm-c1').value,{ry:yC+.3,carc:(+dcp.carcela||9)*10/ag/2},ip2.galt||7);
+  }
+  else { const gs=golaSpec(); if(gs) desenhaGola(ctx,cx,y0,s,pf,gs,$('sm-c1').value); }
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${W} agulhas × ${H} carreiras)`;
 }
 
