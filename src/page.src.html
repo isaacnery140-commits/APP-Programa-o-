@@ -119,6 +119,7 @@ section label{font-size:14px}
 .medidas summary{cursor:pointer}
 .medidas[open] summary{margin-bottom:6px}
 .medidas>*:not(summary){margin-bottom:8px}
+.dica{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;margin-top:-2px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -154,26 +155,26 @@ details.more>*:not(summary){margin-bottom:10px}
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
           <div class="row">
-            <label for="md-ag">Agulhas por cm<input id="md-ag" type="number" min="1" max="20" step="0.1" value="6"></label>
-            <label for="md-cr">Passadas por cm<input id="md-cr" type="number" min="1" max="30" step="0.1" value="6"></label>
+            <label for="md-ag">Agulhas por cm<small class="dica">quantas agulhas dão 1 cm de largura</small><input id="md-ag" type="number" min="1" max="20" step="0.1" value="6"></label>
+            <label for="md-cr">Passadas por cm<small class="dica">quantas carreiras dão 1 cm de altura</small><input id="md-cr" type="number" min="1" max="30" step="0.1" value="6"></label>
           </div>
           <div class="row">
-            <label for="md-larg">Largura da peça<input id="md-larg" type="number" min="5" step="0.5" value="50"></label>
-            <label for="md-comp">Comprimento total<input id="md-comp" type="number" min="5" step="0.5" value="60"></label>
-            <label for="md-barra">Altura da barra<input id="md-barra" type="number" min="1" step="0.5" value="5"></label>
+            <label for="md-larg">Largura da peça<small class="dica">de uma lateral à outra</small><input id="md-larg" type="number" min="5" step="0.5" value="50"></label>
+            <label for="md-comp">Comprimento total<small class="dica">da barra até o ombro</small><input id="md-comp" type="number" min="5" step="0.5" value="60"></label>
+            <label for="md-barra">Altura da barra<small class="dica">só a ribana do começo</small><input id="md-barra" type="number" min="1" step="0.5" value="5"></label>
           </div>
           <div class="row">
-            <label for="md-cava">Altura da cava<input id="md-cava" type="number" min="0" step="0.5" value="20"></label>
-            <label for="md-cent">Cava: entra de cada lado<input id="md-cent" type="number" min="0" step="0.5" value="4"></label>
+            <label for="md-cava">Altura da cava<small class="dica">do começo da cava até o ombro</small><input id="md-cava" type="number" min="0" step="0.5" value="20"></label>
+            <label for="md-cent">Cava: entra de cada lado<small class="dica">quanto estreita em cada lateral</small><input id="md-cent" type="number" min="0" step="0.5" value="4"></label>
           </div>
           <div class="row">
-            <label for="md-dtipo">Decote<select id="md-dtipo"><option value="">Sem decote</option><option value="redondo" selected>Redondo</option><option value="V">V</option></select></label>
-            <label for="md-dlarg">Largura do decote<input id="md-dlarg" type="number" min="0" step="0.5" value="16"></label>
-            <label for="md-dprof">Profundidade do decote<input id="md-dprof" type="number" min="0" step="0.5" value="8"></label>
+            <label for="md-dtipo">Decote<small class="dica">formato da abertura</small><select id="md-dtipo"><option value="">Sem decote</option><option value="redondo" selected>Redondo</option><option value="V">V</option></select></label>
+            <label for="md-dlarg">Largura do decote<small class="dica">abertura de um lado ao outro</small><input id="md-dlarg" type="number" min="0" step="0.5" value="16"></label>
+            <label for="md-dprof">Profundidade do decote<small class="dica">do ombro até o fundo do decote</small><input id="md-dprof" type="number" min="0" step="0.5" value="8"></label>
           </div>
           <div class="row">
-            <label for="md-cint">Cintura (largura, 0 = sem)<input id="md-cint" type="number" min="0" step="0.5" value="0"></label>
-            <label for="md-hcint">Altura da cintura (desde a barra)<input id="md-hcint" type="number" min="0" step="0.5" value="15"></label>
+            <label for="md-cint">Cintura (largura, 0 = sem)<small class="dica">largura da frente na cintura; 0 = peça reta</small><input id="md-cint" type="number" min="0" step="0.5" value="0"></label>
+            <label for="md-hcint">Altura da cintura (desde a barra)<small class="dica">do fim da barra até a parte mais fina</small><input id="md-hcint" type="number" min="0" step="0.5" value="15"></label>
           </div>
           <div class="actions"><button type="button" id="md-calc">Calcular tudo pelas medidas</button><span class="status hint" id="md-st"></span></div>
           <p class="hint">Preenche largura, comprimento, voltas da barra, cava, decote, acinturado e a volta da gola. Depois dá para ajustar à mão cada campo abaixo.</p>
