@@ -416,7 +416,7 @@ const RAYNEN = (function () {
           const mp = lado === 'D' ? new Map([[s.guiaFio, s.fios[1]], [s.fios[0], s.fios[2]]]) : null;
           ina = bI.slice(cc * W, cc * W + W).map((v, i) => row[i] ? (mp && mp.has(v) ? mp.get(v) : v) : 0);
         } else o[COL_YARN] = yarn;
-        out.push({ c: cc, g: row, o, ina, lado });
+        out.push({ c: cc, g: row, o, ina, lado, sh: lado === 'D' ? desl : 0 });
       }
       c += 2; if (polo && poloFase < 2) poloFase++;
     }
@@ -545,9 +545,9 @@ const RAYNEN = (function () {
       while (y < S0) {
         const L = opt[y * WO + COL_LOOP];
         if (L > 1) { let e = y; while (e + 1 < S0 && opt[(e + 1) * WO + COL_LOOP] === L) e++;
-          for (let t = 0; t < L; t++) for (let yy = y; yy <= e; yy++) simRows.push({ key: 's' + (rep++), g: grid.subarray(yy * WB + X0, yy * WB + X0 + W), yarn: opt[yy * WO + COL_YARN] });
+          for (let t = 0; t < L; t++) for (let yy = y; yy <= e; yy++) simRows.push({ key: 's' + (rep++), g: grid.subarray(yy * WB + X0, yy * WB + X0 + W - PB), yarn: opt[yy * WO + COL_YARN] });
           y = e + 1; continue; }
-        simRows.push({ key: 's' + (rep++), g: grid.subarray(y * WB + X0, y * WB + X0 + W), yarn: opt[y * WO + COL_YARN] }); y++;
+        simRows.push({ key: 's' + (rep++), g: grid.subarray(y * WB + X0, y * WB + X0 + W - PB), yarn: opt[y * WO + COL_YARN] }); y++;
       } }
     const pj = s.ponto;
     bodyOut.forEach((rw, k) => {
@@ -557,9 +557,9 @@ const RAYNEN = (function () {
       else if (br && br.mod) cor = (i, v) => v === 121 ? 2 : 1;
       else if (pj.tipo === 'jacquard' && pj.metodo === 'expandido' && br && br.course != null) { const f = br.f; cor = (i, v) => v === 8 ? f : 0; }
       else { const f = (br && br.f) || 1; cor = () => f; }   // cor pelo fio do ponto (no decote o lado direito usa outro guia-fio, mas e o mesmo fio)
-      simRows.push({ key, g: rw.g, yarn: rw.o[COL_YARN], cor });
+      simRows.push({ key, g: rw.sh ? rw.g.subarray(rw.sh, rw.sh + W - PB) : rw.g.subarray(0, W - PB), yarn: rw.o[COL_YARN], cor });
     });
-    const sim = simData(s, W, simRows);
+    const sim = simData(s, W - PB, simRows);
     const rows = S0 + bodyOut.length + ND + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {

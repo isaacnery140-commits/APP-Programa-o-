@@ -138,6 +138,17 @@ section label{font-size:14px}
 .sis-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .sis-row label{width:96px}
 .sis-bt{display:flex;gap:6px}
+.rel-fab{position:fixed;right:16px;bottom:16px;z-index:40;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.2);background:var(--warn);color:#fff;border:0;font-weight:700}
+.rel-back{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+.rel-back[hidden]{display:none}
+.rel-box{background:var(--panel);color:var(--ink);border-radius:10px;max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.rel-head{display:flex;justify-content:space-between;align-items:center}
+.rel-box textarea{width:100%;font:inherit}
+#rel-prev{max-width:100%;max-height:200px;object-fit:contain;border:1px solid var(--line);border-radius:6px}
+.rel-lista{border-top:1px solid var(--line);padding-top:8px}
+.rel-lista li small{display:block;color:var(--muted)}
+.rel-ok{color:var(--ok);font-weight:600}
+@media (max-width:600px){.rel-fab{padding:9px 12px;font-size:13px}}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -621,7 +632,25 @@ details.more>*:not(summary){margin-bottom:10px}
   </div>
 </div>
 
+
+<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema</button>
+<div class="rel-back" id="rel-back" hidden>
+  <div class="rel-box" role="dialog" aria-modal="true" aria-labelledby="rel-tt">
+    <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
+    <label for="rel-txt">O que deu errado?<small class="dica">ex.: a gola não encaixou na simulação; o Raynen deu erro W002 na carreira 120</small><textarea id="rel-txt" rows="4" placeholder="Descreva o problema"></textarea></label>
+    <label for="rel-img">Anexar print (opcional)<small class="dica">foto da tela do app ou do Raynen</small><input id="rel-img" type="file" accept="image/*"></label>
+    <img id="rel-prev" alt="Print anexado" hidden>
+    <label class="chk" for="rel-sim"><input type="checkbox" id="rel-sim" checked> Incluir a imagem da simulação e as medidas/configurações atuais</label>
+    <div class="actions"><button type="button" id="rel-envia">Enviar relato</button><button type="button" class="ghost" id="rel-copia">Copiar texto para o chat</button><span class="status hint" id="rel-st"></span></div>
+    <div class="rel-lista"><span class="tt">Relatos enviados</span><ul class="mlist" id="rel-list"></ul></div>
+  </div>
+</div>
+
 <script>
+// erros do app guardados para o relato de problemas
+window.__erros=[];
+window.addEventListener('error',e=>{ try{ window.__erros.push({t:new Date().toISOString(),msg:String(e.message||e.error||'erro'),onde:(e.filename||'').slice(-40)+':'+(e.lineno||'')}); if(window.__erros.length>20) window.__erros.shift(); }catch(_){} });
+window.addEventListener('unhandledrejection',e=>{ try{ window.__erros.push({t:new Date().toISOString(),msg:String((e.reason&&(e.reason.message||e.reason))||'promessa rejeitada')}); if(window.__erros.length>20) window.__erros.shift(); }catch(_){} });
 /*GEN*/
 RAYNEN.load(/*TEMPLATE*/);
 
@@ -1155,6 +1184,60 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// ---- relatar problema: o relato (texto, print, simulação, configuração e erros) fica no banco do app para o Claude ler e resolver
+let relPrint=null, RELATOS=[];
+function reduzImagem(src,max,q){ return new Promise((ok,no)=>{ const im=new Image(); im.onload=()=>{ const k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k)); const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',q)); }; im.onerror=()=>no(new Error('não consegui ler a imagem')); im.src=src; }); }
+async function imagemCabe(src,max){ let q=.72, m=max, d=await reduzImagem(src,m,q); while(d.length>140000&&m>400){ m=Math.round(m*.8); q=Math.max(.5,q-.06); d=await reduzImagem(src,m,q); } return d; }
+function specResumo(){
+  try{ const s=readSpec(); const o=JSON.parse(JSON.stringify(s,(k,v)=>k==='base'&&v?{nome:v.nome,w:v.w,h:v.h}:k==='desenho'&&Array.isArray(v)?`[${v.length}x${(v[0]||[]).length}]`:v));
+    o.medidas={}; ['md-ag','md-cr','md-larg','md-comp','md-barra','md-cava','md-cent','md-dtipo','md-dlarg','md-dprof','md-cint','md-hcint'].forEach(id=>{ const el=$(id); if(el) o.medidas[id.slice(3)]=el.value; });
+    o.simulacao={publico:$('sm-pub').value,tamanho:$('sm-tam').value,modelo:typeof padMod!=='undefined'?padMod:'',enquadrar:$('sm-enq').value,aba:typeof simModo!=='undefined'?simModo:''};
+    return JSON.stringify(o).slice(0,24000);
+  }catch(e){ return 'não consegui ler a configuração: '+e.message; }
+}
+function textoRelato(r){ return `RELATO DO APP (${new Date(r.criado).toLocaleString('pt-BR')})\nProblema: ${r.texto}\nAvisos na tela: ${r.avisos||'—'}\nErros do app: ${(r.erros||[]).map(e=>e.msg).join(' | ')||'nenhum'}\nConfiguração: ${r.spec||''}`; }
+async function montaRelato(){
+  const r={texto:$('rel-txt').value.trim(), criado:Date.now(), status:'aberto', resposta:'', versao:document.title,
+    avisos:($('msgs').textContent||'').replace(/\s+/g,' ').slice(0,3000), erros:(window.__erros||[]).slice(-20)};
+  if($('rel-sim').checked){ r.spec=specResumo(); try{ const cv=simModo==='perto'?$('perto-cv'):$('sim-cv'); if(cv&&cv.width>20) r.sim=await imagemCabe(cv.toDataURL('image/png'),700); }catch(e){} }
+  if(relPrint) r.print=relPrint;
+  return r;
+}
+function renderRelatos(){
+  const ul=$('rel-list'); ul.textContent='';
+  if(!RELATOS.length){ const li=document.createElement('li'); li.textContent='Nenhum relato ainda.'; ul.appendChild(li); return; }
+  RELATOS.slice().sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); const sp=document.createElement('span');
+    const b=document.createElement('b'); b.textContent=(r.texto||'(sem texto)').slice(0,90); sp.appendChild(b);
+    const sm=document.createElement('small'); sm.textContent=`${new Date(r.criado).toLocaleString('pt-BR')} · `; const st=document.createElement('span'); st.textContent=r.status==='resolvido'?'resolvido ✓':'aberto'; if(r.status==='resolvido') st.className='rel-ok'; sm.appendChild(st); sp.appendChild(sm);
+    if(r.resposta){ const rs=document.createElement('small'); rs.textContent='Resposta: '+r.resposta; sp.appendChild(rs); }
+    li.appendChild(sp); ul.appendChild(li); });
+}
+function relAbre(){ $('rel-back').hidden=false; $('rel-st').textContent=''; renderRelatos(); setTimeout(()=>$('rel-txt').focus(),30); }
+function relFecha(){ $('rel-back').hidden=true; $('rel-abre').focus(); }
+$('rel-abre').addEventListener('click',relAbre);
+$('rel-fecha').addEventListener('click',relFecha);
+$('rel-back').addEventListener('click',e=>{ if(e.target===$('rel-back')) relFecha(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('rel-back').hidden) relFecha(); });
+$('rel-img').addEventListener('change',async()=>{ const f=$('rel-img').files[0]; relPrint=null; $('rel-prev').hidden=true; if(!f) return;
+  try{ const url=URL.createObjectURL(f); relPrint=await imagemCabe(url,1100); URL.revokeObjectURL(url); $('rel-prev').src=relPrint; $('rel-prev').hidden=false; }catch(e){ $('rel-st').textContent=e.message; } });
+$('rel-envia').addEventListener('click',async()=>{
+  const st=$('rel-st'); if(!$('rel-txt').value.trim()&&!relPrint){ st.textContent='Escreva o problema ou anexe um print.'; $('rel-txt').focus(); return; }
+  $('rel-envia').disabled=true; st.textContent='Enviando…';
+  try{
+    const r=await montaRelato();
+    if(db){ await db.collection('problemas').add(r); }
+    else { const o=lsLoad(); o.problemas=(o.problemas||[]); r.id=String(Date.now()); delete r.sim; o.problemas.push(r); if(!lsSave(o)) throw new Error('sem espaço no navegador'); RELATOS=o.problemas; renderRelatos(); }
+    st.textContent=db?'Enviado. No chat é só dizer "veja os relatos do app" que eu leio e resolvo.':'Salvo só neste navegador. Use "Copiar texto para o chat" e cole no chat.';
+    $('rel-txt').value=''; $('rel-img').value=''; relPrint=null; $('rel-prev').hidden=true;
+  }catch(e){ st.textContent='Não consegui enviar: '+(e.code==='not_granted'?'sem permissão para gravar.':e.message)+' Use "Copiar texto para o chat".'; }
+  finally{ $('rel-envia').disabled=false; }
+});
+$('rel-copia').addEventListener('click',async()=>{
+  const r=await montaRelato(), t=textoRelato(r);
+  try{ await navigator.clipboard.writeText(t); $('rel-st').textContent='Texto copiado. Cole no chat junto com o print.'; }
+  catch(e){ const ta=$('rel-txt'); const old=ta.value; ta.value=t; ta.select(); try{ document.execCommand('copy'); $('rel-st').textContent='Texto copiado. Cole no chat junto com o print.'; }catch(_){ $('rel-st').textContent='Não consegui copiar.'; } ta.value=old; }
+});
+
 // ---- sistemas tecendo o corpo (1 a 3 guia-fios alternando carreira a carreira)
 let sisN=2;
 function sisLista(){ return [1,2,3].slice(0,sisN).map(k=>Math.max(1,Math.min(16,parseInt($('f-s'+k).value,10)||(k+3)))); }
@@ -1908,36 +1991,40 @@ function pintaManga(D,Wc,Hc,cx,y0,s,arm,ip,tex,cores,clip){
   // costura do ombro (cava) e linha do punho
   return {Ls,rTop};
 }
-// gola polo: duas abas de ribana que deitam em volta do pescoco e descem ate a carcela formando o V
+// gola polo: pe de gola atras do pescoco + duas abas de ribana que deitam no peito e terminam no topo da carcela (formam o V)
 function desenhaGolaPolo(ctx,cx,y0,s,pf,hex,ab,alt){
   const rgb=hexRgb(hex), tom=f=>`rgb(${Math.min(255,rgb[0]*f)|0},${Math.min(255,rgb[1]*f)|0},${Math.min(255,rgb[2]*f)|0})`;
-  const nr=pf.pesc+.5, w=Math.min(alt,8)*.95, yv=ab.ry, xv=Math.max(1.2,ab.carc||1.4);
+  const nr=pf.pesc+.25, w=Math.max(4,Math.min(alt,8)), yC=Math.max(2.5,ab.ry), xv=Math.max(.9,ab.carc||1.2);
+  const P=q=>[cx+q[0]*s,y0+q[1]*s];
   ctx.save(); ctx.lineJoin='round';
+  // pe de gola: faixa em volta da base do pescoco, so aparece dos lados (o pescoco fica na frente)
+  ctx.save();
+  const nk=pf.pesc; ctx.beginPath(); ctx.rect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.rect(cx-nk*s,y0-12*s,2*nk*s,12.4*s); ctx.clip('evenodd');
+  const gb=ctx.createLinearGradient(cx-(nr+1.6)*s,0,cx+(nr+1.6)*s,0); gb.addColorStop(0,tom(.55)); gb.addColorStop(.5,tom(1.0)); gb.addColorStop(1,tom(.5));
+  ctx.fillStyle=gb; ctx.beginPath(); ctx.ellipse(cx,y0+.35*s,(nr+1.5)*s,3.1*s,0,Math.PI,2*Math.PI); ctx.lineTo(cx+nr*s,y0+.35*s); ctx.ellipse(cx,y0+.35*s,nr*s,1.3*s,0,2*Math.PI,Math.PI,true); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=tom(.4); ctx.lineWidth=Math.max(.6,s*.12); ctx.beginPath(); ctx.ellipse(cx,y0+.35*s,(nr+1.5)*s,3.1*s,0,Math.PI,2*Math.PI); ctx.stroke();
+  ctx.restore();
   for(const sg of [-1,1]){
-    // borda de dentro: atras do pescoco -> lado do pescoco -> desce ate o topo da carcela
-    const N=36, inner=[], outer=[];
+    const N=40, inner=[], outer=[];
     for(let i=0;i<=N;i++){ const t=i/N;
-      let x,y;
-      if(t<.45){ const a=t/.45*Math.PI/2; x=sg*nr*Math.sin(a)*1.05; y=-1.6*Math.cos(a)+.2; }
-      else { const q=(t-.45)/.55; x=sg*(nr*1.05+(xv-nr*1.05)*q); y=.2+yv*Math.pow(q,1.25); }
-      inner.push([x,y]);
-      // borda de fora: deita sobre o ombro/peito, a ponta desce e abre
-      const ww=w*(t<.45?.55+.45*(t/.45):1), ang=t<.45?-Math.PI/2+(t/.45)*Math.PI/2*1.1:Math.PI*.18*(1-(t-.45)/.55)+.05;
-      outer.push([x+sg*ww*Math.cos(ang)*.95,y+ww*Math.sin(ang)*.55+ (t>.45?ww*.55*((t-.45)/.55):0)]);
-    }
-    const P=a=>[cx+a[0]*s,y0+a[1]*s];
-    ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); inner.forEach((q,i)=>{ const [X,Y]=P([q[0],q[1]+.5]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); for(let i=N;i>=0;i--){ const [X,Y]=P([outer[i][0]+sg*.3,outer[i][1]+.7]); ctx.lineTo(X,Y); } ctx.closePath(); ctx.fill();
-    // ribana: faixas do pescoco ate a borda
-    const nr2=Math.max(40,Math.round(N*3));
-    for(let i=0;i<nr2;i++){ const t0=i/nr2*N, t1=(i+1)/nr2*N, a0=Math.floor(t0), a1=Math.min(N,Math.floor(t1)+1);
-      const lerp=(A,u)=>{ const j=Math.min(N-1,Math.floor(u)), f=u-j; return [A[j][0]+(A[j+1][0]-A[j][0])*f,A[j][1]+(A[j+1][1]-A[j][1])*f]; };
-      const i0=lerp(inner,t0), i1=lerp(inner,Math.min(N-.001,t1)), o0=lerp(outer,t0), o1=lerp(outer,Math.min(N-.001,t1));
-      const frente=i%2===0, tm=(t0+t1)/2/N, luz=(frente?1.08:.7)*(.78+.3*Math.sin(tm*Math.PI))*(sg<0?1:.94);
-      ctx.fillStyle=tom(luz); ctx.beginPath(); ctx.moveTo(...P(i0)); ctx.lineTo(...P(i1)); ctx.lineTo(...P(o1)); ctx.lineTo(...P(o0)); ctx.closePath(); ctx.fill();
-    }
-    // borda dupla (acabamento) e costura
-    ctx.strokeStyle=tom(1.15); ctx.lineWidth=Math.max(1,s*.35); ctx.beginPath(); outer.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
-    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=Math.max(.6,s*.12); ctx.beginPath(); inner.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
+      // borda de dentro: do lado do pescoco desce pela linha do decote ate o topo da carcela
+      const xi=sg*(nr+(xv-nr)*Math.pow(t,.85)), yi=-.6+(yC+.6)*Math.pow(t,1.15)-Math.sin(Math.PI*t)*.4;
+      // borda de fora: deita sobre o ombro e o peito, abre um pouco e termina na ponta da gola
+      const xo=sg*(nr+w*.62+(xv+w*.42-(nr+w*.62))*t+Math.sin(Math.PI*t)*w*.22), yo=-1.1+(yC+w*.78+1.1)*Math.pow(t,1.05);
+      inner.push([xi,yi]); outer.push([xo,yo]); }
+    // sombra da aba sobre a peca
+    ctx.save(); ctx.filter=`blur(${Math.max(1.5,s*.45)}px)`; ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath();
+    inner.forEach((q,i)=>{ const [X,Y]=P([q[0]+sg*.2,q[1]+.6]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); for(let i=N;i>=0;i--){ const [X,Y]=P([outer[i][0]+sg*.35,outer[i][1]+.8]); ctx.lineTo(X,Y); }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+    // ribana: listras do pescoco para fora
+    const M=Math.max(60,Math.round(w*10*1.2)), lerp=(A,u)=>{ const j=Math.min(N-1,Math.floor(u)), f=u-j; return [A[j][0]+(A[j+1][0]-A[j][0])*f,A[j][1]+(A[j+1][1]-A[j][1])*f]; };
+    for(let i=0;i<M;i++){ const u0=i/M*N, u1=Math.min(N-.0001,(i+1)/M*N);
+      const i0=lerp(inner,u0), i1=lerp(inner,u1), o0=lerp(outer,u0), o1=lerp(outer,u1), tm=(u0+u1)/2/N;
+      const frente=i%2===0, luz=(frente?1.06:.74)*(.8+.28*Math.cos((tm-.35)*2.4))*(sg<0?1.02:.95);
+      ctx.fillStyle=tom(luz); ctx.beginPath(); ctx.moveTo(...P(i0)); ctx.lineTo(...P(i1)); ctx.lineTo(...P(o1)); ctx.lineTo(...P(o0)); ctx.closePath(); ctx.fill(); }
+    // acabamento: borda de fora mais grossa (fechada) e costura de dentro
+    ctx.strokeStyle=tom(.62); ctx.lineWidth=Math.max(1,s*.28); ctx.beginPath(); outer.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.lineTo(...P(inner[N])); ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=Math.max(.6,s*.1); ctx.beginPath(); inner.forEach((q,i)=>{ const [X,Y]=P(q); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
   }
   ctx.restore();
 }
@@ -2018,7 +2105,7 @@ function simular(){
       const xc=(X+.5-cx)/s, rr=Math.min(1,Math.abs(xc)/a), phi=Math.asin(rr), kf=phi/(Math.PI/2)*n, k0=Math.floor(kf);
       const ar=(k0>=n?arc[n]:arc[k0]+(arc[Math.min(n,k0+1)]-arc[k0])*(kf-k0))*Math.sign(xc);
       const u=.5+ar/wcm; if(u<0||u>=1) continue;
-      const top=pf.ombro(ar), fd=Math.max(0,1-ycm/16); const v=(ycm-top*fd)/hcm; if(v<0||v>=1||ycm<top) continue;   // so a parte de cima acompanha o ombro
+      const top=pf.ombro(pessoa?xc:ar), fd=Math.max(0,1-ycm/16); const v=(ycm-top*fd)/hcm; if(v<0||v>=1||ycm<top-(pessoa?.15:0)) continue;   // so a parte de cima acompanha o ombro
       // amostragem bilinear (malha lisa, sem serrilhado)
       const fx=u*tw-.5, fy=v*th-.5, ix=Math.max(0,Math.min(tw-2,Math.floor(fx))), iy=Math.max(0,Math.min(th-2,Math.floor(fy))), ax=Math.min(1,Math.max(0,fx-ix)), ay=Math.min(1,Math.max(0,fy-iy));
       const i00=(iy*tw+ix)*4, i10=i00+4, i01=i00+tw*4, i11=i01+4;
@@ -2051,10 +2138,6 @@ function simular(){
   if(pessoa&&ip.manga!=='sem'){
     const im=ctx.getImageData(0,0,Wc,Hc); const bf=Math.min(.25,Math.max(.03,(+$('md-barra').value||5)/hcm));
     arms.forEach(a=>pintaManga(im.data,Wc,Hc,cx,y0,s,a,ip,{T,tw,th,wcm,hcm,bf,fib},cores,acimaOmbro)); ctx.putImageData(im,0,0);
-    // costura da cava (linha suave no ombro)
-    ctx.save(); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=Math.max(.6,s*.15);
-    arms.forEach(a=>{ const r=Math.max(a.r[0]+.6,ip.mlarg/Math.PI); ctx.beginPath(); ctx.ellipse(cx+a.S[0]*s,y0+(a.S[1]+r*.35)*s,r*.95*s,r*1.05*s,a.sg*.2,a.sg<0?-.15*Math.PI:.15*Math.PI-Math.PI*.0,Math.PI*(a.sg<0?.55:1.15)); ctx.stroke(); });
-    ctx.restore();
   }
   const dcp=last.spec&&last.spec.forma&&last.spec.forma.decote;
   if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
@@ -2217,10 +2300,11 @@ async function iniciaPasta(){
     $('store-hint').textContent='O que vocês salvarem aqui fica guardado no app para toda a equipe que abrir este link.';
     db.collection('modulos').onSnapshot(s=>setMeus(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
     db.collection('bases').onSnapshot(s=>setBases(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
+    db.collection('problemas').onSnapshot(s=>{ RELATOS=s.docs.map(d=>Object.assign({id:d.id},d.data())); if(!$('rel-back').hidden) renderRelatos(); },()=>{});
     db.collection('moldes').onSnapshot(s=>setMoldes(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
   } else {
     $('store-hint').textContent='Salvo só neste navegador (o armazenamento da equipe não está disponível nesta visualização).';
-    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]);
+    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]); RELATOS=o.problemas||[];
   }
 }
 
