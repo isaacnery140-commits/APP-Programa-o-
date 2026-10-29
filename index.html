@@ -1764,6 +1764,7 @@ const MODELOS={
  regata:   {nome:'Regata', pubs:['fem','masc','inf'], desc:'sem manga; cava mais funda e mais cavada, decote maior com acabamento fino', comp:d=>d.comp-2, folga:1.5, cavaAdd:3, centAdd:1.5, dlAdd:3, dpAdd:3, gola:'careca', galt:1, manga:'sem'},
  sueter:   {nome:'Suéter (gola careca)', pubs:['fem','masc','inf'], desc:'mais folgado e um pouco mais comprido, manga longa com punho', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, gola:'careca', manga:'longa'},
  suetervV: {nome:'Suéter gola V', pubs:['fem','masc'], desc:'folgado, decote em V fundo', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, dtipo:'V', dpV:d=>meio(d.cava+3), dlAdd:2, gola:'', manga:'longa'},
+ polov:    {nome:'Polo gola V (tricô)', pubs:['fem','masc'], desc:'polo de tricô com decote em V e gola polo (tira de ribana com pontas), manga curta, folga levemente solta', comp:d=>d.comp, folga:2.5, dtipo:'V', dpV:d=>meio(d.cava*.75), dlAdd:1, gola:'', polo:true, manga:'curta'},
  garrafinha:{nome:'Garrafinha (gola alta)', pubs:['fem','masc','inf'], desc:'decote redondo menor com gola alta dobrada', comp:d=>d.comp, folga:2, dlAdd:-2, dpAdd:-2, gola:'garrafinha', manga:'longa'},
  vcurto:   {nome:'Vestido curto', pubs:['fem','inf'], desc:'acima do joelho, marcado na cintura', comp:d=>meio(d.costas*2.05), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
  vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
@@ -1779,7 +1780,8 @@ function pecaPadrao(t){
   const mc=m.manga==='longa'?meio(d.manga+(inf?2:3)):m.manga==='curta'?meio(Math.max(6,d.manga*.33)):0;
   const mlarg=meio(d.braco/2+(m.folga>=4?3:2)), punho=m.manga==='curta'?mlarg:meio(Math.max(6,d.braco*.33+1.5));
   const hcint=Math.max(3,meio(comp-d.costas-barra+(m.quadril?0:0)));
-  return {larg, comp, barra, cava, cent, dtipo, dl, dp, cint:meio(d.cint/2+2), hcint, gola:m.gola, galt,
+  const polo=m.polo?{alt:inf?5:7, comp:meio(2*Math.hypot(dl/2,dp)+dl+2)}:null;
+  return {larg, comp, barra, cava, cent, dtipo, dl, dp, cint:meio(d.cint/2+2), hcint, gola:m.gola, galt, polo,
     manga:m.manga, mc, mlarg, punho, cabeca:meio(cava*.7), mpunho:barra};
 }
 function linhas(el,rows){ el.innerHTML=rows.filter(Boolean).map(([t,e,v,x])=>`<tr><td>${t}<small>${e}${x?' · '+x:''}</small></td><td>${typeof v==='number'?fmt(v):v}</td></tr>`).join(''); }
@@ -1806,7 +1808,10 @@ function mostraPadrao(){
     k.manga!=='sem'?['Largura na ponta',k.manga==='curta'?'boca da manga':'no punho',k.punho,A(k.punho)]:null,
     k.manga==='longa'?['Altura do punho','ribana da ponta da manga',k.mpunho]:null,
     k.manga!=='sem'?['Cabeça da manga','altura da parte que entra na cava',k.cabeca,C(k.cabeca)]:null,
-    ['Gola','acabamento do decote',k.gola==='garrafinha'?'Garrafinha':k.gola==='careca'?(k.galt<=1?'Acabamento fino':'Careca'):(k.dtipo==='V'?'Ribana do V':'—')],
+    k.polo?['Gola','tira de ribana costurada no decote V','Polo']:null,
+    k.polo?['Altura da gola polo','largura da tira (sem dobra)',k.polo.alt,C(k.polo.alt)]:null,
+    k.polo?['Comprimento da gola polo','lados do V + costas, de ponta a ponta',k.polo.comp,A(k.polo.comp)]:null,
+    k.polo?null:['Gola','acabamento do decote',k.gola==='garrafinha'?'Garrafinha':k.gola==='careca'?(k.galt<=1?'Acabamento fino':'Careca'):(k.dtipo==='V'?'Ribana do V':'—')],
     k.galt?['Altura da gola',k.gola==='garrafinha'?'com a dobra':'ribana pronta',k.galt,C(k.galt)]:null]);
 }
 function montaModelos(){
