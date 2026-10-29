@@ -120,7 +120,9 @@ section label{font-size:14px}
 .medidas[open] summary{margin-bottom:6px}
 .medidas>*:not(summary){margin-bottom:8px}
 .dica{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;margin-top:-2px}
-.pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.molde{border-top:1px dashed var(--accent);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+
+.pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 .pad-t{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
 .pad-t td{padding:3px 6px;border-bottom:1px solid var(--line,#ddd)}
 .pad-t td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
@@ -158,18 +160,63 @@ details.more>*:not(summary){margin-bottom:10px}
             <option value="algodao">Algodão</option><option value="viscose">Viscose</option></select></label>
         </div>
         <details class="medidas" id="pad-box">
-          <summary><span class="tt">Medidas padrões (tricô)</span> <span class="hint">— clique para abrir e usar o preenchimento rápido</span></summary>
-          <div class="actions"><label for="pad-pub" style="flex-direction:row;align-items:center;gap:8px">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label></div>
+          <summary><span class="tt">Medidas padrões (tricô) e do seu molde</span> <span class="hint">— clique para abrir e usar o preenchimento rápido</span></summary>
+          <div class="row">
+            <label for="pad-pub">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label>
+            <label for="pad-mod">Modelo da peça<select id="pad-mod"></select></label>
+          </div>
+          <p class="hint" id="pad-desc"></p>
           <div class="tabs" role="tablist" id="pad-tams"></div>
           <div class="pad-grid">
             <div><b>Corpo</b><small class="dica">medida da pessoa, sem folga</small><table class="pad-t" id="pad-corpo"></table></div>
             <div><b>Peça de tricô sugerida (frente)</b><small class="dica">já com folga, pronta para o cálculo</small><table class="pad-t" id="pad-peca"></table></div>
+            <div><b>Manga e gola</b><small class="dica">agulhas e carreiras na sua densidade (agulhas/passadas por cm)</small><table class="pad-t" id="pad-manga"></table></div>
           </div>
           <div class="actions">
             <label style="flex-direction:row;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="pad-cint" style="width:auto;flex:none"> Acinturada (usa a cintura)</label>
-            <button type="button" id="pad-usar">Preencher rápido</button><span class="status hint" id="pad-st"></span>
+            <button type="button" id="pad-usar">Preencher rápido</button>
+            <button type="button" class="ghost" id="pad-copiar">Copiar para o meu molde</button><span class="status hint" id="pad-st"></span>
           </div>
-          <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Masculino e infantil (por idade, 2 a 14 anos) seguem as mesmas tabelas. Peça: frente = metade do busto + 2 cm de folga; comprimento do ombro até o fim da barra para blusa no quadril. <b>Preencher rápido</b> leva tudo para as Medidas da peça, menos agulhas e passadas por cm, que ficam travadas para você preencher à mão. Confira sempre com a sua amostra e o seu molde.</p>
+          <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Masculino e infantil (por idade, 2 a 14 anos) seguem as mesmas tabelas. Cada modelo muda comprimento, folga, cava, decote, gola e manga. <b>Preencher rápido</b> leva tudo para as Medidas da peça e a gola, menos agulhas e passadas por cm, que ficam travadas para você preencher à mão. Confira sempre com a sua amostra e o seu molde.</p>
+
+          <div class="molde">
+            <span class="tt">Medidas do seu molde</span><small class="dica">meça o molde da frente (deitado, sem esticar) e lance aqui; depois clique em Preencher com meu molde</small>
+            <div class="row">
+              <label for="ml-nome">Nome do molde<input id="ml-nome" type="text" placeholder="ex.: Blusa básica M"></label>
+            </div>
+            <div class="row">
+              <label for="ml-larg">Largura do molde<small class="dica">de uma lateral à outra, abaixo da cava</small><input id="ml-larg" type="number" min="5" step="0.5"></label>
+              <label for="ml-comp">Comprimento total<small class="dica">do ombro até o fim da barra</small><input id="ml-comp" type="number" min="5" step="0.5"></label>
+              <label for="ml-barra">Altura da barra<small class="dica">só a ribana do começo</small><input id="ml-barra" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="row">
+              <label for="ml-cava">Altura da cava<small class="dica">do começo da cava até o ombro</small><input id="ml-cava" type="number" min="0" step="0.5"></label>
+              <label for="ml-ombro">Largura nos ombros<small class="dica">de uma ponta do ombro à outra, no molde</small><input id="ml-ombro" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="row">
+              <label for="ml-dtipo">Decote<small class="dica">formato da abertura</small><select id="ml-dtipo"><option value="redondo">Redondo</option><option value="V">V</option><option value="">Sem decote</option></select></label>
+              <label for="ml-dlarg">Largura do decote<small class="dica">abertura de um lado ao outro</small><input id="ml-dlarg" type="number" min="0" step="0.5"></label>
+              <label for="ml-dprof">Profundidade do decote<small class="dica">do ombro até o fundo do decote</small><input id="ml-dprof" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="row">
+              <label for="ml-cint">Largura na cintura<small class="dica">0 ou vazio = peça reta</small><input id="ml-cint" type="number" min="0" step="0.5"></label>
+              <label for="ml-hcint">Altura da cintura<small class="dica">do fim da barra até a parte mais fina</small><input id="ml-hcint" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="row">
+              <label for="ml-gola">Gola<small class="dica">acabamento do decote</small><select id="ml-gola"><option value="">Sem gola</option><option value="careca">Gola careca</option><option value="garrafinha">Garrafinha / gola alta</option></select></label>
+              <label for="ml-galt">Altura da gola<small class="dica">ribana pronta (garrafinha: com a dobra)</small><input id="ml-galt" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="row">
+              <label for="ml-mcomp">Comprimento da manga<small class="dica">da axila até o fim do punho (0 = sem manga)</small><input id="ml-mcomp" type="number" min="0" step="0.5"></label>
+              <label for="ml-mlarg">Largura da manga na cava<small class="dica">de um lado ao outro, na axila</small><input id="ml-mlarg" type="number" min="0" step="0.5"></label>
+              <label for="ml-mpunho">Largura do punho<small class="dica">de um lado ao outro, na ponta</small><input id="ml-mpunho" type="number" min="0" step="0.5"></label>
+            </div>
+            <div class="actions">
+              <button type="button" id="ml-usar">Preencher com meu molde</button>
+              <button type="button" class="ghost" id="ml-salvar">Salvar molde</button><span class="status hint" id="ml-st"></span>
+            </div>
+            <ul class="mlist" id="ml-list"></ul>
+          </div>
         </details>
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
@@ -1088,27 +1135,67 @@ const PADROES_PUB={
 };
 const ROT_PUB={fem:'Feminino',masc:'Masculino',inf:'Infantil'};
 let PADROES=PADROES_PUB.fem, padPub='fem';
-let padSel='M';
+let padSel='M', padMod='blusa';
 const nomeTam=t=>padPub==='inf'?t+' anos':t;
 const meio=v=>Math.round(v*2)/2, fmt=v=>String(v).replace('.',',')+' cm';
+// modelos: comprimento (do ombro ao fim da barra), folga em cada metade, cava, decote, gola e manga
+const MODELOS={
+ cropped:  {nome:'Mini blusa (cropped)', pubs:['fem'], desc:'curtinha, termina acima da cintura; justa, manga longa ou curta à escolha', comp:d=>d.costas-4, folga:1, gola:'careca', manga:'longa'},
+ blusinha: {nome:'Blusinha', pubs:['fem'], desc:'termina na cintura; justa, gola careca', comp:d=>d.costas+3, folga:1.5, gola:'careca', manga:'longa'},
+ blusa:    {nome:'Blusa (no quadril)', pubs:['fem','masc','inf'], desc:'comprimento no quadril, folga normal, gola careca', comp:d=>d.comp, folga:2, gola:'careca', manga:'longa'},
+ camiseta: {nome:'Camiseta (manga curta)', pubs:['fem','masc','inf'], desc:'comprimento no quadril, manga curta, gola careca baixa', comp:d=>d.comp, folga:2.5, gola:'careca', galt:1.5, manga:'curta'},
+ regata:   {nome:'Regata', pubs:['fem','masc','inf'], desc:'sem manga; cava mais funda e mais cavada, decote maior com acabamento fino', comp:d=>d.comp-2, folga:1.5, cavaAdd:3, centAdd:1.5, dlAdd:3, dpAdd:3, gola:'careca', galt:1, manga:'sem'},
+ sueter:   {nome:'Suéter (gola careca)', pubs:['fem','masc','inf'], desc:'mais folgado e um pouco mais comprido, manga longa com punho', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, gola:'careca', manga:'longa'},
+ suetervV: {nome:'Suéter gola V', pubs:['fem','masc'], desc:'folgado, decote em V fundo', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, dtipo:'V', dpV:d=>meio(d.cava+3), dlAdd:2, gola:'', manga:'longa'},
+ garrafinha:{nome:'Garrafinha (gola alta)', pubs:['fem','masc','inf'], desc:'decote redondo menor com gola alta dobrada', comp:d=>d.comp, folga:2, dlAdd:-2, dpAdd:-2, gola:'garrafinha', manga:'longa'},
+ vcurto:   {nome:'Vestido curto', pubs:['fem','inf'], desc:'acima do joelho, marcado na cintura', comp:d=>meio(d.costas*2.05), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
+ vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
+ vlongo:   {nome:'Vestido longo', pubs:['fem'], desc:'até o tornozelo, marcado na cintura', comp:d=>meio(d.costas*3.3), folga:2.5, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4}
+};
 function pecaPadrao(t){
-  const d=PADROES[t], larg=meio(d.busto/2+2), barra=d.barra;
-  return {larg, comp:d.comp, barra, cava:d.cava+2, cent:Math.max(2,meio((larg-d.ombro)/2)),
-    dl:d.dl, dp:d.dp, cint:meio(d.cint/2+2), hcint:Math.max(3,meio(d.comp-d.costas-barra))};
+  const d=PADROES[t], m=MODELOS[padMod]||MODELOS.blusa, inf=padPub==='inf';
+  const base=m.quadril?Math.max(d.busto,d.quad):d.busto;
+  const larg=meio(base/2+m.folga), barra=m.barra?Math.min(m.barra,d.barra+1):d.barra, comp=meio(m.comp(d));
+  const cava=meio(d.cava+2+(m.cavaAdd||0)), cent=Math.max(1.5,meio((larg-d.ombro)/2+(m.centAdd||0)));
+  const dtipo=m.dtipo||'redondo', dl=Math.max(8,d.dl+(m.dlAdd||0)), dp=dtipo==='V'?Math.min(m.dpV(d),comp-barra-4):Math.max(3,d.dp+(m.dpAdd||0));
+  const galt=m.gola==='garrafinha'?(inf?12:18):m.gola==='careca'?(m.galt||(inf?2.5:3)):0;
+  const mc=m.manga==='longa'?meio(d.manga+(inf?2:3)):m.manga==='curta'?meio(Math.max(6,d.manga*.33)):0;
+  const mlarg=meio(d.braco/2+(m.folga>=4?3:2)), punho=m.manga==='curta'?mlarg:meio(Math.max(6,d.braco*.33+1.5));
+  const hcint=Math.max(3,meio(comp-d.costas-barra+(m.quadril?0:0)));
+  return {larg, comp, barra, cava, cent, dtipo, dl, dp, cint:meio(d.cint/2+2), hcint, gola:m.gola, galt,
+    manga:m.manga, mc, mlarg, punho, cabeca:meio(cava*.7), mpunho:barra};
 }
-function linhas(el,rows){ el.innerHTML=rows.map(([t,e,v])=>`<tr><td>${t}<small>${e}</small></td><td>${fmt(v)}</td></tr>`).join(''); }
+function linhas(el,rows){ el.innerHTML=rows.filter(Boolean).map(([t,e,v,x])=>`<tr><td>${t}<small>${e}${x?' · '+x:''}</small></td><td>${typeof v==='number'?fmt(v):v}</td></tr>`).join(''); }
 function mostraPadrao(){
-  const d=PADROES[padSel], k=pecaPadrao(padSel), peito=padPub==='fem'?'Busto':'Peito';
+  const d=PADROES[padSel], k=pecaPadrao(padSel), m=MODELOS[padMod], peito=padPub==='fem'?'Busto':'Peito';
+  const ag=Math.max(1,Math.round(+$('md-ag').value||6)), cr=Math.max(1,Math.round(+$('md-cr').value||6)), A=v=>Math.round(v*ag)+' agulhas', C=v=>Math.round(v*cr)+' carreiras';
   [...$('pad-tams').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t===padSel));
+  $('pad-desc').textContent=m.nome+': '+m.desc+'.';
+  $('pad-cint').checked=!!m.cintura;
   linhas($('pad-corpo'),[
     [peito,'volta na parte mais cheia do peito',d.busto],['Cintura','volta na parte mais fina',d.cint],['Quadril','volta na parte mais larga',d.quad],
     ['Ombro a ombro','de uma ponta do ombro à outra, pelas costas',d.ombro],['Profundidade da cava','do ombro até a axila',d.cava],
     ['Braço','volta na parte mais grossa',d.braco],['Manga','da axila até o pulso',d.manga],['Costas até a cintura','da nuca até a cintura',d.costas]]);
   linhas($('pad-peca'),[
-    ['Largura da frente','metade do '+peito.toLowerCase()+' + folga',k.larg],['Comprimento total','do ombro até o fim da barra',k.comp],['Altura da barra','ribana do começo',k.barra],
+    ['Largura da frente',(m.quadril?'metade do quadril':'metade do '+peito.toLowerCase())+' + folga',k.larg,A(k.larg)],['Comprimento total','do ombro até o fim da barra',k.comp,C(k.comp)],['Altura da barra','ribana do começo',k.barra],
     ['Altura da cava','do começo da cava até o ombro',k.cava],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent],
-    ['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
+    ['Decote','formato',k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
     ['Cintura (se acinturada)','largura da frente na cintura',k.cint],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint]]);
+  linhas($('pad-manga'),[
+    k.manga==='sem'?['Manga','sem manga (regata): a cava leva acabamento','—']:null,
+    k.manga!=='sem'?['Tipo de manga','',k.manga==='curta'?'Curta':'Longa']:null,
+    k.manga!=='sem'?['Comprimento da manga','da axila até o fim'+(k.manga==='longa'?' do punho':''),k.mc,C(k.mc)]:null,
+    k.manga!=='sem'?['Largura na cava','de um lado ao outro, na axila',k.mlarg,A(k.mlarg)]:null,
+    k.manga!=='sem'?['Largura na ponta',k.manga==='curta'?'boca da manga':'no punho',k.punho,A(k.punho)]:null,
+    k.manga==='longa'?['Altura do punho','ribana da ponta da manga',k.mpunho]:null,
+    k.manga!=='sem'?['Cabeça da manga','altura da parte que entra na cava',k.cabeca,C(k.cabeca)]:null,
+    ['Gola','acabamento do decote',k.gola==='garrafinha'?'Garrafinha':k.gola==='careca'?(k.galt<=1?'Acabamento fino':'Careca'):(k.dtipo==='V'?'Ribana do V':'—')],
+    k.galt?['Altura da gola',k.gola==='garrafinha'?'com a dobra':'ribana pronta',k.galt,C(k.galt)]:null]);
+}
+function montaModelos(){
+  const ks=Object.keys(MODELOS).filter(k=>MODELOS[k].pubs.includes(padPub));
+  if(!ks.includes(padMod)) padMod=ks.includes('blusa')?'blusa':ks[0];
+  $('pad-mod').innerHTML=ks.map(k=>`<option value="${k}"${k===padMod?' selected':''}>${MODELOS[k].nome}</option>`).join('');
 }
 function montaTams(){
   $('pad-tams').innerHTML=Object.keys(PADROES).map(t=>`<button type="button" role="tab" data-t="${t}">${nomeTam(t)}</button>`).join('');
@@ -1117,24 +1204,71 @@ function montaTams(){
 function trocaPub(v){
   padPub=v; PADROES=PADROES_PUB[v]; $('pad-pub').value=v; $('sm-pub').value=v;
   const ks=Object.keys(PADROES); if(!PADROES[padSel]) padSel=ks[Math.floor(ks.length/2)];
-  montaTams(); mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto); if(typeof simular==='function') simular();
+  montaModelos(); montaTams(); mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto); if(typeof simular==='function') simular();
 }
 $('pad-pub').addEventListener('change',()=>trocaPub($('pad-pub').value));
 $('sm-pub').addEventListener('change',()=>trocaPub($('sm-pub').value));
+$('pad-mod').addEventListener('change',()=>{ padMod=$('pad-mod').value; mostraPadrao(); });
+['md-ag','md-cr'].forEach(id=>$(id).addEventListener('input',mostraPadrao));
 $('sm-tam').addEventListener('change',()=>{ const t=Object.keys(PADROES).find(k=>String(PADROES[k].busto)===$('sm-tam').value); if(t){ padSel=t; mostraPadrao(); } });
-montaTams();
+montaModelos(); montaTams();
 $('pad-tams').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; padSel=b.dataset.t; mostraPadrao();
   $('sm-tam').value=String(PADROES[padSel].busto); if(typeof simular==='function') simular(); });
-$('pad-usar').addEventListener('click',()=>{
-  const k=pecaPadrao(padSel), set=(id,v)=>{$(id).value=v;};
-  set('md-larg',k.larg); set('md-comp',k.comp); set('md-barra',k.barra); set('md-cava',k.cava); set('md-cent',k.cent);
-  if(!$('md-dtipo').value) $('md-dtipo').value='redondo';
-  if($('md-dtipo').value==='redondo'){ set('md-dlarg',k.dl); set('md-dprof',k.dp); } else set('md-dlarg',k.dl);
-  set('md-cint',$('pad-cint').checked?k.cint:0); set('md-hcint',k.hcint);
-  $('sm-tam').value=String(PADROES[padSel].busto);
+// aplica um conjunto de medidas (padrão ou molde) nas Medidas da peça e na gola
+function aplicaMedidas(k, aviso){
+  const set=(id,v)=>{$(id).value=v;};
+  set('md-larg',k.larg); set('md-comp',k.comp); set('md-barra',k.barra); set('md-cava',k.cava||0); set('md-cent',k.cent||0);
+  $('md-dtipo').value=k.dtipo||''; set('md-dlarg',k.dl||0); set('md-dprof',k.dp||0);
+  set('md-cint',k.cint||0); set('md-hcint',k.hcint||15);
+  if(k.gola!==undefined){ $('gl-tipo').value=k.gola||''; $('gl-tipo').dispatchEvent(new Event('change')); }
   calcularMedidas();
-  $('pad-st').textContent=`${ROT_PUB[padPub]} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`;
+  if(k.gola!==undefined&&k.galt){ $('gl-alt').value=k.galt; golaInfo(); update(); }
+  $('pad-st').textContent=aviso; $('ml-st').textContent='';
   $('pad-box').open=false; $('med-box').open=true; $('med-box').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('pad-usar').addEventListener('click',()=>{
+  const k=Object.assign({},pecaPadrao(padSel)); if(!$('pad-cint').checked) k.cint=0;
+  $('sm-tam').value=String(PADROES[padSel].busto);
+  aplicaMedidas(k,`${MODELOS[padMod].nome} ${ROT_PUB[padPub].toLowerCase()} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`);
+  $('md-st').textContent+=` Modelo: ${MODELOS[padMod].nome}, ${nomeTam(padSel)}.`;
+});
+// ---- medidas do seu molde
+const ML=['larg','comp','barra','cava','ombro','dtipo','dlarg','dprof','cint','hcint','gola','galt','mcomp','mlarg','mpunho'];
+function leMolde(){ const o={nome:$('ml-nome').value.trim()}; ML.forEach(k=>{ const el=$('ml-'+k); o[k]=el.tagName==='SELECT'?el.value:(el.value===''?'':+el.value); }); return o; }
+function poeMolde(o){ $('ml-nome').value=o.nome||''; ML.forEach(k=>{ if(o[k]!==undefined) $('ml-'+k).value=o[k]; }); }
+$('pad-copiar').addEventListener('click',()=>{
+  const k=pecaPadrao(padSel), d=PADROES[padSel];
+  poeMolde({nome:`${MODELOS[padMod].nome} ${nomeTam(padSel)}`, larg:k.larg, comp:k.comp, barra:k.barra, cava:k.cava, ombro:meio(k.larg-2*k.cent), dtipo:k.dtipo, dlarg:k.dl, dprof:k.dp,
+    cint:$('pad-cint').checked?k.cint:0, hcint:k.hcint, gola:k.gola||'', galt:k.galt||'', mcomp:k.mc||0, mlarg:k.manga==='sem'?'':k.mlarg, mpunho:k.manga==='sem'?'':k.punho});
+  $('ml-st').textContent='Copiado. Ajuste o que for diferente no seu molde e clique em Preencher com meu molde.'; $('ml-larg').focus();
+});
+$('ml-usar').addEventListener('click',()=>{
+  const o=leMolde(), falta=['larg','comp'].filter(k=>!(o[k]>0));
+  if(falta.length){ $('ml-st').textContent='Preencha pelo menos a largura e o comprimento do molde.'; return; }
+  const ombro=o.ombro>0?o.ombro:o.larg, cent=Math.max(0,meio((o.larg-ombro)/2));
+  aplicaMedidas({larg:o.larg, comp:o.comp, barra:o.barra||0, cava:o.cava||0, cent, dtipo:o.dtipo, dl:o.dlarg||0, dp:o.dprof||0, cint:o.cint||0, hcint:o.hcint||15, gola:o.gola, galt:o.galt||0},
+    `Molde ${o.nome?'"'+o.nome+'" ':''}preenchido nas Medidas da peça.`);
+  $('md-st').textContent+=o.ombro>0?'':' (sem a largura nos ombros a cava fica reta)';
+  if(o.mcomp>0) $('md-st').textContent+=` Manga: ${Math.round(o.mcomp*(+$('md-cr').value||6))} carreiras, ${Math.round((o.mlarg||0)*(+$('md-ag').value||6))} agulhas na cava e ${Math.round((o.mpunho||0)*(+$('md-ag').value||6))} no punho.`;
+});
+let MOLDES=[];
+function setMoldes(l){
+  MOLDES=l.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')); const ul=$('ml-list'); ul.textContent='';
+  MOLDES.forEach(m=>{ const li=document.createElement('li'); const s=document.createElement('span'); s.textContent=`${m.nome||'Sem nome'} · ${String(m.larg).replace('.',',')} × ${String(m.comp).replace('.',',')} cm`;
+    const u=document.createElement('button'); u.type='button'; u.className='ghost'; u.textContent='Abrir'; u.addEventListener('click',()=>{ poeMolde(m); $('ml-st').textContent=`Molde "${m.nome}" aberto. Clique em Preencher com meu molde.`; });
+    const b=document.createElement('button'); b.type='button'; b.className='ghost'; b.textContent='Excluir'; b.addEventListener('click',async()=>{ if(!confirmaExcluir(b)) return;
+      try{ if(db) await db.collection('moldes').doc(m.id).delete(); else { const o=lsLoad(); o.moldes=(o.moldes||[]).filter(x=>x.id!==m.id); lsSave(o); setMoldes(o.moldes); } }catch(e){ $('ml-st').textContent='Não consegui excluir: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); } });
+    li.append(s,u,b); ul.appendChild(li); });
+}
+$('ml-salvar').addEventListener('click',async()=>{
+  const o=leMolde(); if(!o.nome){ $('ml-st').textContent='Dê um nome ao molde para salvar.'; $('ml-nome').focus(); return; }
+  if(!(o.larg>0&&o.comp>0)){ $('ml-st').textContent='Preencha pelo menos a largura e o comprimento.'; return; }
+  o.criado=Date.now();
+  try{
+    if(db) await db.collection('moldes').add(o);
+    else { const s=lsLoad(); s.moldes=s.moldes||[]; o.id=String(Date.now()); s.moldes.push(o); if(!lsSave(s)) throw new Error('sem espaço'); setMoldes(s.moldes); }
+    $('ml-st').textContent=`Molde "${o.nome}" salvo.`;
+  }catch(e){ $('ml-st').textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
 });
 mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto);
 
@@ -1824,9 +1958,10 @@ async function iniciaPasta(){
     $('store-hint').textContent='O que vocês salvarem aqui fica guardado no app para toda a equipe que abrir este link.';
     db.collection('modulos').onSnapshot(s=>setMeus(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
     db.collection('bases').onSnapshot(s=>setBases(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
+    db.collection('moldes').onSnapshot(s=>setMoldes(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
   } else {
     $('store-hint').textContent='Salvo só neste navegador (o armazenamento da equipe não está disponível nesta visualização).';
-    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]);
+    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]);
   }
 }
 
