@@ -772,7 +772,9 @@ const RAYNEN = (function () {
   const yarnRow = (s, br, sis) => sis && br.f === 1 ? sis[(br.r != null ? br.r : 0) % sis.length] : yarnOf(s, br.f);
   // carreira onde o decote divide: multipla de 2 x sistemas (cada guia-fio volta ao lado de saida)
   const passoDiv = s => 2 * ((sistemas(s) || [1]).length);
-  const splitRow = (s, inicio) => { const q = passoDiv(s); return q * Math.floor((inicio - 1) / q); };
+  // com 2 ou 3 sistemas a divisao cai numa carreira em que o 1o sistema fez passadas impares (esta do lado direito) e os outros pares (lado esquerdo),
+  // como no 25009F: assim cada lado do decote comeca com o guia-fio ja do seu lado (sem caminho vazio longo, W028)
+  const splitRow = (s, inicio) => { const q = passoDiv(s); if (q > 2) return Math.max(1, q * Math.floor((inicio - 2) / q) + 1); return q * Math.floor((inicio - 1) / q); };
 
   // linhas do corpo: [{v:(i)=>codigo, f:indice do guia-fio 1..4}]
   function bodyRows(s, N) {
@@ -1016,7 +1018,7 @@ const RAYNEN = (function () {
         avisos.push({ tipo: 'nota', txt: `Decote polo (como o 25009F): na carreira ${dc.inicio} a peça divide no meio, as ${cb} agulhas do meio tecem a carcela dos dois lados (esquerda na frente, direita atrás), depois 3 carreiras de transferência com deslocamento de ${cb} agulhas (lado direito vai ${cb} agulhas para a direita) e cada lado segue com a sua carcela em ribana dupla por ${+dc.calt || 0} carreiras.${(+dc.colar || 0) > 0 ? ` O decote da gola começa na carreira ${dc.colar} (${dc.passos}).` : ''} Confira a transferência (linha de deslocamento) na simulação do Raynen.` });
       }
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : (sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[0] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F (cada guia-fio já começa do seu lado).` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
@@ -1052,7 +1054,7 @@ const RAYNEN = (function () {
       if (b + k > W - 1) return [a, b]; for (let i = b + 1; i <= b + k; i++) row[i] = 16; return [a, b + k];
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
-    const sisC = sistemas(s), yA = sisC ? sisC[0] : s.guiaFio, yB = sisC && sisC.length > 1 ? sisC[1] : s.fios[0];
+    const sisC = sistemas(s), multi = !!(sisC && sisC.length > 1), yA = multi ? sisC[1] : sisC ? sisC[0] : s.guiaFio, yB = multi ? sisC[0] : s.fios[0];
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -1134,6 +1136,8 @@ const RAYNEN = (function () {
         poloFecha = true;
       }
     }
+    // 2+ sistemas: o lado direito tece 1 carreira a mais no fim para o guia-fio dele voltar ao lado de saida (passadas pares, sem W002)
+    if (multi && info.divisao != null) { const ud = out.filter(r => r.lado === 'D').pop(); if (ud) out.push({ c: ud.c, g: ud.g.slice(), o: ud.o.slice(), ina: null, lado: 'D', sh: ud.sh, extra: true }); }
     // polo: no fim o lado direito volta as PB agulhas para a esquerda, para nenhuma agulha ficar fora da largura do inicio (W041)
     if (polo && desl) {
       const o = bO.slice((nb - 1) * WO, nb * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
@@ -1810,7 +1814,7 @@ function ficha(){
     if(f.aumento.ativo) l.push(`Aumento antes da cava: passos ${f.aumento.passos}, borda ${f.aumento.borda}; nas carreiras do corpo ${fi.aumento.join(', ')} (largura ${fi.larguraInicial} → ${s.largura})`);
     if(f.aumento2.ativo) l.push(`Aumento depois do decote (${f.aumento2.onde==='decote'?'borda do decote':'laterais'}): passos ${f.aumento2.passos}, borda ${f.aumento2.borda}; nas carreiras do corpo ${fi.aumento2.join(', ')}`);
     if(f.cava.ativo) l.push(`Cava: começa na carreira ${f.cava.inicio} do corpo, passos ${f.cava.passos}, borda ${f.cava.borda}; diminuições nas carreiras do corpo ${fi.cava.join(', ')}`);
-    if(f.decote.ativo) l.push(`Decote ${f.decote.tipo}${f.decote.tipo==='redondo'?` (${f.decote.meio} agulhas no meio, presas)`:''}: divide na carreira ${fi.divisao} do corpo, passos ${f.decote.passos}, borda ${f.decote.borda}; lado esquerdo guia-fio ${(RAYNEN.sistemas(s)||[s.guiaFio])[0]}, direito ${(RAYNEN.sistemas(s)||[]).length>1?RAYNEN.sistemas(s)[1]:s.fios[0]}${f.decote.tipo==='polo'?`; carcela de ${f.decote.carcela} agulhas (25009F)`:''}`); }
+    if(f.decote.ativo) l.push(`Decote ${f.decote.tipo}${f.decote.tipo==='redondo'?` (${f.decote.meio} agulhas no meio, presas)`:''}: divide na carreira ${fi.divisao} do corpo, passos ${f.decote.passos}, borda ${f.decote.borda}; lado esquerdo guia-fio ${(RAYNEN.sistemas(s)||[]).length>1?RAYNEN.sistemas(s)[1]:(RAYNEN.sistemas(s)||[s.guiaFio])[0]}, direito ${(RAYNEN.sistemas(s)||[]).length>1?RAYNEN.sistemas(s)[0]:s.fios[0]}${f.decote.tipo==='polo'?`; carcela de ${f.decote.carcela} agulhas (25009F)`:''}`); }
   if(s.ponto.tipo==='motivo'){ l.push('Rapport (carreira 1 embaixo; letra = guia-fio):'); for(let y=s.ponto.motivo.length-1;y>=0;y--) l.push(`  ${String(y+1).padStart(2)} ${'ABCD'[(s.ponto.fios&&s.ponto.fios[y]||1)-1]}: ${s.ponto.motivo[y].map(v=>String(v).padStart(3)).join('')}`); }
   s.trancas.forEach((t,k)=>l.push(`Trança ${k+1}: agulhas ${t.agulha}-${t.agulha+2*t.grupo-1} (${t.grupo}+${t.grupo}), cruza a cada ${t.intervalo} carreiras, ${t.lateral} agulha(s) de malha trás de cada lado, códigos ${k%2?'48/49':'28/29'}${t.sentido==='dir'?' invertidos':''}`));
   if(last.crosses.length) l.push(`Cruzamentos (trança 1): carreiras ${last.crosses.join(', ')}`);
@@ -1922,6 +1926,7 @@ Avisos da compilação do Raynen (janela "Compilation information"; Row = carrei
 - W002: guia-fio termina do lado errado (passadas ímpares). Resolver: mudar carreiras/retas acima, ou sistemas do corpo, até as passadas de cada guia-fio ficarem pares (ler_programa mostra as passadas).
 - W020/W021: agulha da frente/de trás com malha parada (sem tecer) mais de 15 carreiras. Causas: decote redondo (agulhas do meio presas), ribana/carcela com malha atrás que não volta, transferência que deixa malha atrás. Use ler_carreira na Row/Col do aviso para ver o código.
 - W041: agulhas com malha no fim do desenho fora da largura do começo (ex.: carcela da polo deslocada).
+- W028: guia-fio anda muito sem tecer ("yarn feeder lead is super long"): normalmente no começo do decote, quando o guia-fio de um lado está do outro lado da máquina. O app já divide o decote com cada guia-fio do seu lado (com 2 ou 3 sistemas no corpo); se aparecer, confira os sistemas do corpo (precisam ser 2 ou 3 guia-fios diferentes) ou mude 'Carreiras retas abaixo do decote' em 1 a 3 carreiras.
 - Se o aviso vem de um arquivo antigo (gerado antes de uma correção do app), basta gerar de novo e baixar.`;
 // catalogo dos campos que a IA pode mudar: id, nome que aparece na tela, valor e opcoes
 const NAO_MEXE=/^(md-ag|md-cr|sm-|rel-|ml-|pad-|hist-|fi-|reg-|aviso)/;
@@ -2017,7 +2022,7 @@ function papeisGuias(o){
   const WO=512; for(let y=0;y<o.rows;y++){ const g=o.opt[1078+y*WO+59]; if(!g) continue;
     if(y<o.start){ const reg=o.opt[1078+y*WO+22]; add(g, reg<=3||reg===20?'SEPARAÇÃO':'BARRA'); } else add(g,'CORPO'); }
   const sis=RAYNEN.sistemas(s); if(sis) sis.forEach((g,i)=>{ if(m.has(g)) { m.get(g).delete('CORPO'); m.get(g).add(`CORPO (sistema ${i+1})`); } });
-  if(s.forma&&s.forma.decote.ativo){ const d=sis&&sis.length>1?sis[1]:s.fios[0]; add(d,'lado direito do decote'); if(sis) add(sis[0],'lado esquerdo do decote'); }
+  if(s.forma&&s.forma.decote.ativo){ const multi=sis&&sis.length>1; add(multi?sis[0]:s.fios[0],'lado direito do decote'); add(multi?sis[1]:(sis?sis[0]:s.guiaFio),'lado esquerdo do decote'); }
   const gs=golaInfo(); if(gs){ add(gs.guiaFio,'GOLA'); add(+gs.fioDescarte||7,'SEPARAÇÃO DA GOLA'); }
   return m;
 }
@@ -2172,7 +2177,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) e a carcela da polo sem W021/W041';
+const APP_VERSAO='2026-10-29f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2253,7 +2258,7 @@ function sisLista(){ return [1,2,3].slice(0,sisN).map(k=>Math.max(1,Math.min(16,
 function sisMostra(){
   $('lbl-s2').hidden=sisN<2; $('lbl-s3').hidden=sisN<3; $('sis-menos').disabled=sisN<=1; $('sis-mais').disabled=sisN>=3;
   const l=sisLista();
-  $('sis-info').textContent=sisN===1?`1 sistema: só o guia-fio ${l[0]} tece o corpo.`:`${sisN} sistemas: guia-fios ${l.join(', ').replace(/, (\d+)$/,' e $1')} tecem o corpo, alternando carreira a carreira.`+(sisN>1?` No decote: lado esquerdo ${l[0]}, lado direito ${l[1]}.`:'');
+  $('sis-info').textContent=sisN===1?`1 sistema: só o guia-fio ${l[0]} tece o corpo.`:`${sisN} sistemas: guia-fios ${l.join(', ').replace(/, (\d+)$/,' e $1')} tecem o corpo, alternando carreira a carreira.`+(sisN>1?` No decote: lado esquerdo ${l[1]}, lado direito ${l[0]} (cada um já começa do seu lado).`:'');
 }
 $('sis-mais').addEventListener('click',()=>{ if(sisN<3){ sisN++; sisMostra(); update(); } });
 $('sis-menos').addEventListener('click',()=>{ if(sisN>1){ sisN--; sisMostra(); update(); } });

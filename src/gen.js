@@ -66,7 +66,9 @@ const RAYNEN = (function () {
   const yarnRow = (s, br, sis) => sis && br.f === 1 ? sis[(br.r != null ? br.r : 0) % sis.length] : yarnOf(s, br.f);
   // carreira onde o decote divide: multipla de 2 x sistemas (cada guia-fio volta ao lado de saida)
   const passoDiv = s => 2 * ((sistemas(s) || [1]).length);
-  const splitRow = (s, inicio) => { const q = passoDiv(s); return q * Math.floor((inicio - 1) / q); };
+  // com 2 ou 3 sistemas a divisao cai numa carreira em que o 1o sistema fez passadas impares (esta do lado direito) e os outros pares (lado esquerdo),
+  // como no 25009F: assim cada lado do decote comeca com o guia-fio ja do seu lado (sem caminho vazio longo, W028)
+  const splitRow = (s, inicio) => { const q = passoDiv(s); if (q > 2) return Math.max(1, q * Math.floor((inicio - 2) / q) + 1); return q * Math.floor((inicio - 1) / q); };
 
   // linhas do corpo: [{v:(i)=>codigo, f:indice do guia-fio 1..4}]
   function bodyRows(s, N) {
@@ -310,7 +312,7 @@ const RAYNEN = (function () {
         avisos.push({ tipo: 'nota', txt: `Decote polo (como o 25009F): na carreira ${dc.inicio} a peça divide no meio, as ${cb} agulhas do meio tecem a carcela dos dois lados (esquerda na frente, direita atrás), depois 3 carreiras de transferência com deslocamento de ${cb} agulhas (lado direito vai ${cb} agulhas para a direita) e cada lado segue com a sua carcela em ribana dupla por ${+dc.calt || 0} carreiras.${(+dc.colar || 0) > 0 ? ` O decote da gola começa na carreira ${dc.colar} (${dc.passos}).` : ''} Confira a transferência (linha de deslocamento) na simulação do Raynen.` });
       }
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio ${(sistemas(s) || []).length > 1 ? sistemas(s)[1] : (sistemas(s) || [s.guiaFio])[0]} e o direito com o ${(sistemas(s) || []).length > 1 ? sistemas(s)[0] : s.fios[0]}, 2 carreiras de cada lado alternando, igual ao 25009F (cada guia-fio já começa do seu lado).` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
@@ -346,7 +348,7 @@ const RAYNEN = (function () {
       if (b + k > W - 1) return [a, b]; for (let i = b + 1; i <= b + k; i++) row[i] = 16; return [a, b + k];
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
-    const sisC = sistemas(s), yA = sisC ? sisC[0] : s.guiaFio, yB = sisC && sisC.length > 1 ? sisC[1] : s.fios[0];
+    const sisC = sistemas(s), multi = !!(sisC && sisC.length > 1), yA = multi ? sisC[1] : sisC ? sisC[0] : s.guiaFio, yB = multi ? sisC[0] : s.fios[0];
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -428,6 +430,8 @@ const RAYNEN = (function () {
         poloFecha = true;
       }
     }
+    // 2+ sistemas: o lado direito tece 1 carreira a mais no fim para o guia-fio dele voltar ao lado de saida (passadas pares, sem W002)
+    if (multi && info.divisao != null) { const ud = out.filter(r => r.lado === 'D').pop(); if (ud) out.push({ c: ud.c, g: ud.g.slice(), o: ud.o.slice(), ina: null, lado: 'D', sh: ud.sh, extra: true }); }
     // polo: no fim o lado direito volta as PB agulhas para a esquerda, para nenhuma agulha ficar fora da largura do inicio (W041)
     if (polo && desl) {
       const o = bO.slice((nb - 1) * WO, nb * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
