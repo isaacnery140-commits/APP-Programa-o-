@@ -322,7 +322,6 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="md-hcint">Altura da cintura (desde a barra)<small class="dica">do fim da barra até a parte mais fina</small><input id="md-hcint" type="number" min="0" step="0.5" value="15"></label>
           </div>
           <div class="actions"><button type="button" id="md-calc">Calcular tudo pelas medidas</button><span class="status hint" id="md-st"></span></div>
-          <p class="hint">Preenche largura, comprimento, voltas da barra, cava, decote, acinturado e a volta da gola. Depois dá para ajustar à mão cada campo abaixo.</p>
         </details>
         <label for="f-nome"><span class="lt tt">Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
         <div class="row">
@@ -364,7 +363,7 @@ details.more>*:not(summary){margin-bottom:10px}
         <div class="opts">
           <div class="opts-head"><span class="lt tt">Opções de ponto</span></div>
           <p class="hint" id="opt-base" hidden>A base escolhida em Tipo de barra é o programa principal: largura, carreiras, barra, ponto e linhas de função vêm dela, sem mudar nada. Para trocar só o ponto do corpo, escolha outro tipo em Tipo de ponto: o início/barra da base fica e o corpo é refeito.</p>
-          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, converse com a IA abaixo para criar um ponto a partir delas. Para tranças, escolha "Meia malha com tranças" em Tipo de ponto.</p>
+          <p class="hint" id="opt-none" style="display:none"></p>
           <div class="row q">
             <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
             <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
@@ -440,7 +439,7 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
             <div class="chat" id="chat-ponto">
             <div class="chat-head"><span class="tt">Conversar para desenvolver o ponto</span><button type="button" class="ghost" id="chat-limpa">Limpar conversa</button></div>
-            <div class="chat-log" id="chat-log" aria-live="polite"><p class="hint">Converse para criar ou ajustar o ponto (a grade do rapport mostra o resultado). Ex.: "deixe o carregado a cada 4 carreiras", "faça o rapport com 6 agulhas", "coloque um vazado no meio". A IA altera a grade e explica.</p></div>
+            <div class="chat-log" id="chat-log" aria-live="polite"></div>
             <div class="chat-in"><textarea id="chat-txt" rows="2" placeholder="Escreva o que quer mudar no ponto…"></textarea><button type="button" id="chat-env">Enviar</button></div>
           </div>
           <div class="cable tr" id="tr-box">
@@ -460,7 +459,6 @@ details.more>*:not(summary){margin-bottom:10px}
 
         <div class="opts" id="formas">
           <div class="opts-head"><span class="lt tt">Cava, decote e acinturado (forma da peça)</span></div>
-          <p class="hint">Igual à ficha de processo do Raynen: cada passo é <b>carreiras-agulhas-vezes</b>.  Ex.: <span class="code">2-1-6</span> = a cada 2 carreiras diminui 1 agulha, 6 vezes. Vários passos separados por vírgula, na ordem: <span class="code">2-3-1, 2-2-2, 2-1-4</span>. Cada diminuição anda de 1 a 7 agulhas.</p>
           <div class="row" id="fx-box">
             <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
             <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
@@ -617,7 +615,7 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="bed" id="bed"><canvas id="cv" width="10" height="10" aria-label="Prévia da grade de agulhas"></canvas></div>
         <div class="readout" id="readout">Passe o mouse na prévia para ver carreira, agulha e código.</div>
-        <div class="legend" id="legend"></div>
+        <details class="more" id="leg-box"><summary>Acessar cores que estão usando no programa</summary><div class="legend" id="legend" style="margin-top:8px"></div></details>
       </section>
 
       <section aria-labelledby="h-sim">
@@ -679,12 +677,6 @@ details.more>*:not(summary){margin-bottom:10px}
           <button id="btn-dl" type="button" class="dl">Baixar para o Raynen (.zip)</button><button id="btn-hist" type="button" class="ghost">Salvar no histórico</button><button id="btn-ficha" type="button" class="ghost">Imprimir ficha</button>
           <span id="dl-status" class="status hint"></span>
         </div>
-        <ol class="steps">
-          <li>Descompacte o .zip. O <span class="code">.BMP</span>, o <span class="code">.opt</span> (e no jacquard o <span class="code">.INA</span> e o <span class="code">.JQD</span>) ficam juntos na mesma pasta.</li>
-          <li>No Raynen: ícone Abrir → tipo de arquivo <b>BMP</b> → escolha o <span class="code">.BMP</span>.</li>
-          <li>Confira o desenho e as linhas de função, compile e veja a simulação antes de mandar para a máquina.</li>
-          <li>Ajuste a densidade do corpo (endereço #08) na máquina para o ponto escolhido. A ficha vai no .zip (FICHA_nome.html: abra e imprima).</li>
-        </ol>
       </section>
     </div>
   </div>
@@ -1092,7 +1084,6 @@ function update(){
     $('motif-status').textContent=`Clique em "Criar ponto com IA" para gerar “${$('f-ponto').value.trim()}”, ou monte o rapport à mão.`;
   const chk=RAYNEN.check(readSpec()), msgs=$('msgs'); msgs.textContent='';
   chk.erros.forEach(t=>{const m=document.createElement('div');m.className='msg err';m.textContent=t;msgs.appendChild(m);});
-  chk.avisos.forEach(a=>{const m=document.createElement('div');m.className='msg warn';m.textContent=a.txt;msgs.appendChild(m);});
   if(chk.erros.length){ last=null; $('btn-dl').disabled=true; draw(); renderFacts(); renderFicha(); simular(); return; }
   last=RAYNEN.build(readSpec()); $('btn-dl').disabled=false;
   if(!chk.avisos.length){const m=document.createElement('div');m.className='msg ok';m.textContent='Sem conflitos com as regras testadas no Raynen.';msgs.appendChild(m);}
@@ -1559,7 +1550,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29h', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29i', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
