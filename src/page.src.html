@@ -157,6 +157,20 @@ details.more>*:not(summary){margin-bottom:10px}
             <option value="acrilico">Acrílico</option><option value="la">Lã</option><option value="modal">Modal</option><option value="poliester">Poliéster</option>
             <option value="algodao">Algodão</option><option value="viscose">Viscose</option></select></label>
         </div>
+        <details class="medidas" id="pad-box">
+          <summary><span class="tt">Medidas padrões (tricô)</span> <span class="hint">— clique para abrir e usar o preenchimento rápido</span></summary>
+          <div class="actions"><label for="pad-pub" style="flex-direction:row;align-items:center;gap:8px">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label></div>
+          <div class="tabs" role="tablist" id="pad-tams"></div>
+          <div class="pad-grid">
+            <div><b>Corpo</b><small class="dica">medida da pessoa, sem folga</small><table class="pad-t" id="pad-corpo"></table></div>
+            <div><b>Peça de tricô sugerida (frente)</b><small class="dica">já com folga, pronta para o cálculo</small><table class="pad-t" id="pad-peca"></table></div>
+          </div>
+          <div class="actions">
+            <label style="flex-direction:row;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="pad-cint" style="width:auto;flex:none"> Acinturada (usa a cintura)</label>
+            <button type="button" id="pad-usar">Preencher rápido</button><span class="status hint" id="pad-st"></span>
+          </div>
+          <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Masculino e infantil (por idade, 2 a 14 anos) seguem as mesmas tabelas. Peça: frente = metade do busto + 2 cm de folga; comprimento do ombro até o fim da barra para blusa no quadril. <b>Preencher rápido</b> leva tudo para as Medidas da peça, menos agulhas e passadas por cm, que ficam travadas para você preencher à mão. Confira sempre com a sua amostra e o seu molde.</p>
+        </details>
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
           <div class="row">
@@ -497,20 +511,6 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="bed" id="perto-box" hidden style="max-height:640px;background:#000"><canvas id="perto-cv" width="10" height="10" aria-label="Simulação da malha vista de perto"></canvas></div>
 
-        <details class="medidas" id="pad-box" open>
-          <summary><span class="tt">Medidas padrões (tricô)</span></summary>
-          <div class="actions"><label for="pad-pub" style="flex-direction:row;align-items:center;gap:8px">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label></div>
-          <div class="tabs" role="tablist" id="pad-tams"></div>
-          <div class="pad-grid">
-            <div><b>Corpo</b><small class="dica">medida da pessoa, sem folga</small><table class="pad-t" id="pad-corpo"></table></div>
-            <div><b>Peça de tricô sugerida (frente)</b><small class="dica">já com folga, pronta para o cálculo</small><table class="pad-t" id="pad-peca"></table></div>
-          </div>
-          <div class="actions">
-            <label style="flex-direction:row;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="pad-cint" style="width:auto;flex:none"> Acinturada (usa a cintura)</label>
-            <button type="button" id="pad-usar">Preencher rápido</button><span class="status hint" id="pad-st"></span>
-          </div>
-          <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Masculino e infantil (por idade, 2 a 14 anos) seguem as mesmas tabelas. Peça: frente = metade do busto + 2 cm de folga; comprimento do ombro até o fim da barra para blusa no quadril. <b>Preencher rápido</b> leva tudo para as Medidas da peça, menos agulhas e passadas por cm, que ficam travadas para você preencher à mão. Confira sempre com a sua amostra e o seu molde.</p>
-        </details>
         <div class="sim" id="man-box"><canvas id="sim-cv" width="1000" height="1280" aria-label="Simulação da peça vestida no manequim"></canvas></div>
         <p class="hint">Simulação aproximada da frente da peça vestida, em escala pela densidade (agulhas e carreiras por 10 cm medidas na amostra lavada). Meia malha aparece como V, malha trás como ondinha e carregado mais aberto. Use para conferir tamanho, forma e desenho; o caimento real depende do fio e da densidade.</p>
       </section>
@@ -1134,7 +1134,7 @@ $('pad-usar').addEventListener('click',()=>{
   $('sm-tam').value=String(PADROES[padSel].busto);
   calcularMedidas();
   $('pad-st').textContent=`${ROT_PUB[padPub]} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`;
-  $('med-box').open=true; $('med-box').scrollIntoView({behavior:'smooth',block:'start'});
+  $('pad-box').open=false; $('med-box').open=true; $('med-box').scrollIntoView({behavior:'smooth',block:'start'});
 });
 mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto);
 
