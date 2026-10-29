@@ -72,6 +72,7 @@ button:disabled{opacity:.5;cursor:default}
 .status{font-size:13px}
 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-weight:800;font-size:12px;}
 .lt{display:flex;align-items:center;gap:6px}
+.tt{font-weight:700;color:var(--ink);font-size:14.5px}
 #h-novo{font-size:15px;color:var(--ink)}
 section label{font-size:14px}
 .r21{grid-template-columns:2fr 1fr}
@@ -96,6 +97,14 @@ section label{font-size:14px}
 .mlist button{padding:2px 8px;font-size:12px}
 .sim{background:linear-gradient(#eceae4,#d9d6cd);border-radius:4px;overflow:hidden;display:flex;justify-content:center}
 .sim canvas{width:100%;max-width:640px;height:auto;display:block}
+.chat{border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.chat-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chat-head button{padding:3px 8px;font-size:12px}
+.chat-log{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;font-size:13.5px}
+.chat-log .eu{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-radius:10px 10px 2px 10px;padding:6px 10px;max-width:85%;white-space:pre-wrap}
+.chat-log .ia{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:6px 10px;max-width:90%;white-space:pre-wrap}
+.chat-in{display:flex;gap:8px;align-items:flex-end}
+.chat-in textarea{min-height:44px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -120,13 +129,21 @@ details.more>*:not(summary){margin-bottom:10px}
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       <section aria-labelledby="h-novo">
         <h2 id="h-novo">Novo programa</h2>
-        <label for="f-nome"><span class="lt"><span class="n">1</span>Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
         <div class="row">
-          <label for="f-larg"><span class="lt"><span class="n">2</span>Agulhas de largura</span><input id="f-larg" type="number" min="10" max="1000" value="51"></label>
-          <label for="f-carr"><span class="lt"><span class="n">3</span>Carreiras</span><input id="f-carr" type="number" min="4" value="80"></label>
+          <label for="f-maq"><span class="lt tt">Finura da máquina</span><select id="f-maq">
+            <option value="14,20">3,5G</option><option value="20,30">5G</option><option value="28,40" selected>7G</option>
+            <option value="38,56">10G</option><option value="45,66">12G</option><option value="54,80">14G</option></select></label>
+          <label for="f-fio"><span class="lt tt">Tipo de fio</span><select id="f-fio">
+            <option value="acrilico">Acrílico</option><option value="la">Lã</option><option value="modal">Modal</option><option value="poliester">Poliéster</option>
+            <option value="algodao">Algodão</option><option value="viscose">Viscose</option></select></label>
+        </div>
+        <label for="f-nome"><span class="lt tt">Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
+        <div class="row">
+          <label for="f-larg"><span class="lt tt">Largura (agulhas)</span><input id="f-larg" type="number" min="10" max="1000" value="51"></label>
+          <label for="f-carr"><span class="lt tt">Comprimento (carreiras)</span><input id="f-carr" type="number" min="4" value="80"></label>
         </div>
         <div class="row r21">
-          <label for="f-barra"><span class="lt"><span class="n">4</span>Tipo da barra</span><select id="f-barra">
+          <label for="f-barra"><span class="lt tt">Tipo de barra</span><select id="f-barra">
             <option value="2x2">Ribana 2x2 (testada)</option>
             <option value="1x1">Ribana 1x1</option>
             <option value="2x1">Ribana 2x1</option>
@@ -136,7 +153,7 @@ details.more>*:not(summary){margin-bottom:10px}
           </select></label>
           <label for="f-rib">Voltas da barra<input id="f-rib" type="number" min="1" max="99" value="12"></label>
         </div>
-        <label for="f-tipo"><span class="lt"><span class="n">5</span>Tipo do ponto</span><select id="f-tipo">
+        <label for="f-tipo"><span class="lt tt">Tipo de ponto</span><select id="f-tipo">
           <option value="meia">Meia malha</option>
           <option value="links">Malha trás (avesso)</option>
           <option value="quadriculado">Links quadriculado</option>
@@ -147,9 +164,9 @@ details.more>*:not(summary){margin-bottom:10px}
         </select></label>
 
         <div class="opts">
-          <div class="opts-head"><span class="lt"><span class="n">6</span>Opções do ponto</span></div>
-          <p class="hint" id="opt-base" hidden>A base escolhida no item 4 é o programa principal: largura, carreiras, barra, ponto e linhas de função vêm dela, sem mudar nada. Para trocar só o ponto do corpo, escolha outro tipo no item 5: o início/barra da base fica e o corpo é refeito.</p>
-          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, adicione tranças abaixo.</p>
+          <div class="opts-head"><span class="lt tt">Opções de ponto</span></div>
+          <p class="hint" id="opt-base" hidden>A base escolhida em Tipo de barra é o programa principal: largura, carreiras, barra, ponto e linhas de função vêm dela, sem mudar nada. Para trocar só o ponto do corpo, escolha outro tipo em Tipo de ponto: o início/barra da base fica e o corpo é refeito.</p>
+          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, converse com a IA abaixo para criar um ponto a partir delas, ou adicione tranças.</p>
           <div class="row q">
             <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
             <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
@@ -220,13 +237,18 @@ details.more>*:not(summary){margin-bottom:10px}
             <div class="bed" style="max-height:340px;padding:8px"><canvas id="jcv" width="10" height="10" aria-label="Editor do desenho do jacquard: clique para pintar com a cor escolhida"></canvas></div>
             <p class="hint">No formato módulo (padrão) o desenho fica com os códigos 120/121 e a definição do módulo vai acima da linha de fim, igual ao 45018FG: dá para editar o desenho e o módulo no Raynen. No formato compacto cada carreira do desenho é uma carreira no Raynen, com as cores na camada INA: dá para editar o desenho lá. O Raynen cria as passadas de cada cor ao compilar. As cores na grade são só para visualizar: o que vale é o guia-fio de cada cor.</p>
           </div>
+            <div class="chat" id="chat-ponto">
+            <div class="chat-head"><span class="tt">Conversar para desenvolver o ponto</span><button type="button" class="ghost" id="chat-limpa">Limpar conversa</button></div>
+            <div class="chat-log" id="chat-log" aria-live="polite"><p class="hint">Converse para criar ou ajustar o ponto (a grade do rapport mostra o resultado). Ex.: "deixe o carregado a cada 4 carreiras", "faça o rapport com 6 agulhas", "coloque um vazado no meio". A IA altera a grade e explica.</p></div>
+            <div class="chat-in"><textarea id="chat-txt" rows="2" placeholder="Escreva o que quer mudar no ponto…"></textarea><button type="button" id="chat-env">Enviar</button></div>
+          </div>
           <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
           <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
         </div>
 
         <div class="opts" id="formas">
-          <div class="opts-head"><span class="lt"><span class="n">7</span>Cava e decote (forma da peça)</span></div>
-          <p class="hint">Igual à ficha de processo do Raynen: cada passo é <b>carreiras-agulhas-vezes</b>. Com aumentos, o item 2 é a largura do começo (barra) e a peça cresce para os lados. Ex.: <span class="code">2-1-6</span> = a cada 2 carreiras diminui 1 agulha, 6 vezes. Vários passos separados por vírgula, na ordem: <span class="code">2-3-1, 2-2-2, 2-1-4</span>. Cada diminuição anda de 1 a 7 agulhas.</p>
+          <div class="opts-head"><span class="lt tt">Cava, decote e acinturado (forma da peça)</span></div>
+          <p class="hint">Igual à ficha de processo do Raynen: cada passo é <b>carreiras-agulhas-vezes</b>.  Ex.: <span class="code">2-1-6</span> = a cada 2 carreiras diminui 1 agulha, 6 vezes. Vários passos separados por vírgula, na ordem: <span class="code">2-3-1, 2-2-2, 2-1-4</span>. Cada diminuição anda de 1 a 7 agulhas.</p>
           <div class="row" id="fx-box">
             <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
             <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
@@ -257,6 +279,20 @@ details.more>*:not(summary){margin-bottom:10px}
             </div>
             <p class="hint" style="display:none"></p>
             <p class="hint">No decote a peça se divide: o lado esquerdo tece com o guia-fio A e o direito com o B, 2 carreiras de cada lado, como no 25009F. No jacquard (formato Compacto, até 2 cores) o lado esquerdo usa A/B e o direito C/D, para não passar fio pelo decote.</p>
+          </div>
+          <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
+          <div id="ct-box" hidden>
+            <div class="row">
+              <label for="ct-ini">Carreiras retas abaixo da cintura<input id="ct-ini" type="number" min="0" value="29"></label>
+              <label for="ct-dim">Diminuir até a cintura (passos)<input id="ct-dim" value="6-1-6" autocomplete="off"></label>
+              <label for="ct-ret">Carreiras retas na cintura<input id="ct-ret" type="number" min="0" value="10"></label>
+            </div>
+            <div class="row">
+              <label for="ct-aum">Aumentar depois da cintura (passos)<input id="ct-aum" value="6-1-6" autocomplete="off"></label>
+              <label for="ct-modo">Aumentar com<select id="ct-modo"><option value="16">Cor 16 (aumento gradual)</option><option value="transf">Transferência para fora</option></select></label>
+              <label for="ct-bor">Borda (agulhas que andam)<input id="ct-bor" type="number" min="1" max="7" value="2"></label>
+            </div>
+            <p class="hint">Afina dos dois lados até a cintura e depois volta a alargar. Com a cor 16, cada aumento coloca agulhas novas marcadas com 16 na borda, que passam a tecer na carreira seguinte. Fica abaixo da cava: deixe as carreiras antes da cava maiores que o acinturado.</p>
           </div>
           <label class="chk" for="fg-on" hidden><input id="fg-on" type="checkbox"> Aumento escalonado na largura, depois do decote</label>
           <div id="fg-box" hidden>
@@ -311,7 +347,7 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <div class="cable">
           <div class="cable-head"><span>Bases de programas</span><span class="hint" id="bs-count"></span></div>
-          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa e salve: o app guarda o programa inteiro. No item 4, "Tipo da barra", ao escolher a base ela vira o programa principal (nome, largura, carreiras e ponto vêm dela). A linha clara marca até onde vai o início + barra, que é o que fica se você trocar o ponto do corpo no item 5.</p>
+          <p class="hint">Abra a pasta com os programas base em BMP (no Raynen: Arquivo ▸ Salvar como ▸ BMP, que grava o .BMP e o .opt). O .KNX sozinho não dá: o Raynen grava ele criptografado. Escolha o programa e salve: o app guarda o programa inteiro. Em "Tipo de barra", ao escolher a base ela vira o programa principal (nome, largura, carreiras e ponto vêm dela). A linha clara marca até onde vai o início + barra, que é o que fica se você trocar o ponto do corpo em Tipo de ponto.</p>
           <div class="actions">
             <label class="btnfile">Abrir pasta<input id="bs-dir" type="file" webkitdirectory multiple hidden></label>
             <label class="btnfile ghost">Escolher arquivos<input id="bs-files" type="file" accept=".bmp,.BMP,.opt,.OPT,.knx,.KNX" multiple hidden></label>
@@ -349,11 +385,9 @@ details.more>*:not(summary){margin-bottom:10px}
           <span class="hint" id="sim-med"></span>
         </div>
         <div class="row">
-          <label for="sm-maq">Máquina (finura)<select id="sm-maq">
-            <option value="14,20">3,5G</option><option value="20,30">5G</option><option value="28,40" selected>7G</option>
-            <option value="38,56">10G</option><option value="45,66">12G</option><option value="54,80">14G</option></select></label>
           <label for="sm-ag">Agulhas / 10 cm<input id="sm-ag" type="number" min="5" max="120" value="28"></label>
           <label for="sm-cr">Carreiras / 10 cm<input id="sm-cr" type="number" min="5" max="200" value="40"></label>
+          <label for="sm-enq">Enquadrar<select id="sm-enq"><option value="detalhe">Detalhe do busto (ver o ponto)</option><option value="tronco" selected>Tronco</option><option value="inteiro">Manequim inteiro</option></select></label>
           <label for="sm-tam">Manequim<select id="sm-tam"><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option></select></label>
         </div>
         <div class="row">
@@ -493,7 +527,7 @@ function renderMods(){
       bt.append(im,t,cn,tg); box.appendChild(bt);
     });
   }
-  if(!box.children.length){ const p=document.createElement('p'); p.className='hint'; p.textContent='Nenhum módulo com esse nome. Use "Ponto novo (criar com IA)" no item 5.'; box.appendChild(p); }
+  if(!box.children.length){ const p=document.createElement('p'); p.className='hint'; p.textContent='Nenhum módulo com esse nome. Use "Ponto novo (criar com IA)" em Tipo de ponto.'; box.appendChild(p); }
 }
 function escolheRaynen(i){
   const m=RMODS[i]; libSel='r'+i;
@@ -532,6 +566,7 @@ function readSpec(){
     forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
+           cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini')+1+Math.max(0,num('fx-antes')||0),meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:(tipo==='jacquard'||tipo==='base')?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
 }
@@ -546,6 +581,7 @@ function writeSpec(s){
   if(s.ponto.tipo==='jacquard'){ if(s.ponto.cores) $('f-cores').value=s.ponto.cores; if(s.ponto.modo) $('f-jmodo').value=s.ponto.modo; }
   if(s.forma){ const c=s.forma.cava||{}, d=s.forma.decote||{}, a=s.forma.aumento||{}, a2=s.forma.aumento2||{};
     $('fx-antes').value=0; $('fx-depois').value=0;
+    { const z=s.forma.cintura||{}; $('ct-on').checked=!!z.ativo; if(z.inicio) $('ct-ini').value=z.inicio-1; if(z.dim) $('ct-dim').value=z.dim; if(z.retas!=null) $('ct-ret').value=z.retas; if(z.aum) $('ct-aum').value=z.aum; if(z.modo) $('ct-modo').value=z.modo; if(z.borda) $('ct-bor').value=z.borda; }
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
     $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
@@ -700,8 +736,8 @@ $('btn-addc').addEventListener('click',()=>{
   cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
 });
 $('f-barra').addEventListener('change',aplicaBase);
-['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fx-antes','fx-depois','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
-['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
+['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
   if(tipoAtual()!=='jacquard' || !($('fc-on').checked||$('fd-on').checked)) return;
@@ -737,12 +773,13 @@ function update(){
   const tp=tipoAtual(), ehBase=tp==='base';
   $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
   // com cava/decote: carreiras do corpo = retas abaixo + diminuições + retas acima
-  const formaOn=!ehBase && ($('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked);
+  const formaOn=!ehBase && ($('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked||$('ct-on').checked);
+  $('ct-box').hidden=!$('ct-on').checked;
   $('fe-box').hidden=!$('fe-on').checked; $('fg-box').hidden=!$('fg-on').checked;
   $('fa-box').hidden=!formaOn;
   $('fx-box').hidden=!formaOn; $('fx-hint').hidden=!formaOn;
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
-    if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (item 3 ajustado sozinho).`; } }
+    if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
   $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo';
   $('btn-addc').disabled=ehBase;
@@ -753,6 +790,7 @@ function update(){
   document.querySelectorAll('.b').forEach(el=>el.hidden=t5!=='biblioteca');
   document.querySelectorAll('.ai').forEach(el=>el.hidden=t5!=='ia');
   $('opt-none').hidden = !(tp==='meia'||tp==='links');
+  $('chat-ponto').hidden = tp==='jacquard'||tp==='base';
   if(ehBase){ $('btn-addc').hidden=true; $('cables').hidden=true; }
   $('f-rib').disabled = $('f-barra').value.startsWith('base:');
   document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
@@ -811,7 +849,7 @@ function renderFacts(){
     jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`, base:()=>'Programa da base'}[s.ponto.tipo]();
   const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
   const items=[['Largura',last.forma&&last.forma.larguraInicial!==s.largura?`${last.forma.larguraInicial} → ${s.largura} agulhas`:`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (${last.start} ${s.base?'da base':'início/ribana'} + ${last.bodyRows}${last.rows-last.start-last.bodyRows?` + ${last.rows-last.start-last.bodyRows} do módulo`:''})`],
-    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],['Forma',last.forma?[s.forma.aumento.ativo?'aumento':'',s.forma.cava.ativo?'cava':'',s.forma.decote.ativo?`decote ${s.forma.decote.tipo}`:'',s.forma.aumento2.ativo?'aumento':''].filter(Boolean).join(' + '):'reta'],
+    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],['Forma',last.forma?[s.forma.cintura&&s.forma.cintura.ativo?'acinturado':'',s.forma.aumento.ativo?'aumento':'',s.forma.cava.ativo?'cava':'',s.forma.decote.ativo?`decote ${s.forma.decote.tipo}`:'',s.forma.aumento2.ativo?'aumento':''].filter(Boolean).join(' + '):'reta'],
     ['Passadas por guia-fio',ps],['Cruzamentos',last.crosses.length?last.crosses.slice(0,6).join(', ')+(last.crosses.length>6?'…':''):'—']];
   items.forEach(([k,v])=>{const d=document.createElement('div');const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;d.append(dt,dd);f.appendChild(d);});
 }
@@ -824,6 +862,7 @@ function ficha(){
     `Ponto: ${s.ponto.tipo==='base'?`programa da base "${$('f-barra').selectedOptions[0].textContent}" como está (corpo das carreiras ${last.start+1} a ${last.rows})`:s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
   if(last.forma){ const f=s.forma, fi=last.forma;
+    if(f.cintura&&f.cintura.ativo) l.push(`Acinturado: diminui ${f.cintura.dim}, ${f.cintura.retas} carreiras retas na cintura, aumenta ${f.cintura.aum} (${f.cintura.modo==='16'?'cor 16':'transferência'}); carreiras do corpo ${fi.cintura.join(', ')}`);
     if(f.aumento.ativo) l.push(`Aumento antes da cava: passos ${f.aumento.passos}, borda ${f.aumento.borda}; nas carreiras do corpo ${fi.aumento.join(', ')} (largura ${fi.larguraInicial} → ${s.largura})`);
     if(f.aumento2.ativo) l.push(`Aumento depois do decote (${f.aumento2.onde==='decote'?'borda do decote':'laterais'}): passos ${f.aumento2.passos}, borda ${f.aumento2.borda}; nas carreiras do corpo ${fi.aumento2.join(', ')}`);
     if(f.cava.ativo) l.push(`Cava: começa na carreira ${f.cava.inicio} do corpo, passos ${f.cava.passos}, borda ${f.cava.borda}; diminuições nas carreiras do corpo ${fi.cava.join(', ')}`);
@@ -920,6 +959,39 @@ async function criarPonto(){
   }finally{ $('btn-motif').disabled=false; }
 }
 $('btn-motif').addEventListener('click',criarPonto);
+// ---- conversa para desenvolver o ponto ----
+let chatHist=[];
+function chatMsg(quem,txt){ const d=document.createElement('div'); d.className=quem; d.textContent=txt; $('chat-log').appendChild(d); $('chat-log').scrollTop=$('chat-log').scrollHeight; }
+async function chatEnviar(){
+  const txt=$('chat-txt').value.trim(); if(!txt) return;
+  if(!sample){ chatMsg('ia','A conversa com a IA não está disponível nesta visualização. Ajuste o ponto clicando na grade.'); return; }
+  $('chat-txt').value=''; chatMsg('eu',txt); $('chat-env').disabled=true;
+  const atual=JSON.stringify({nome:$('f-ponto').value.trim(), rapport:motivo, fios:motivoFios});
+  const hist=chatHist.slice(-8).map(m=>`${m.q==='eu'?'Programador':'Você'}: ${m.t}`).join('\n');
+  const pend=document.createElement('div'); pend.className='ia'; pend.textContent='Pensando…'; $('chat-log').appendChild(pend);
+  try{
+    const r=await sample.json(`${regrasPonto()}
+
+Você está numa conversa com o programador para desenvolver o ponto. Responda APENAS com JSON: {"resposta": string em português (curta, explique o que mudou), "rapport": [[...]] (o rapport COMPLETO já alterado, carreira 1 primeiro) ou null se não precisar mudar, "fios": [...] ou null, "nome": string (nome do ponto)}.
+Ponto atual na grade: ${atual}
+${hist?`Conversa até agora:\n${hist}\n`:''}Pedido novo do programador: "${txt}"`,{modelTier:'default'});
+    pend.remove();
+    if(Array.isArray(r.rapport)&&r.rapport.length){
+      const w=Math.min(64,Math.max(...r.rapport.map(x=>x.length))), rr=r.rapport.slice(0,64);
+      setMotif(rr.map(row=>Array.from({length:w},(_,i)=>+(row[i]??1)||0)), Array.isArray(r.fios)?rr.map((_,i)=>Math.min(4,Math.max(1,+r.fios[i]||1))):null);
+      if(tipoAtual()!=='motivo'){ $('f-tipo').value='ia'; }
+      motivoReal=false; if(r.nome){ $('f-ponto').value=r.nome; } motifNome=norm($('f-ponto').value);
+      $('motif-src').hidden=false; $('motif-src').textContent='Ajustado na conversa com a IA. Confira no Raynen.';
+      update();
+    }
+    const resp=r.resposta||'Pronto.'; chatMsg('ia',resp); chatHist.push({q:'eu',t:txt},{q:'ia',t:resp});
+  }catch(e){ pend.remove(); const c=e&&e.code; chatMsg('ia',c==='not_granted'?'Sem permissão para usar a IA.':c==='rate_limited'?'Muitos pedidos seguidos. Espere um pouco.':'Não consegui entender a resposta. Tente pedir de outro jeito.'); }
+  finally{ $('chat-env').disabled=false; }
+}
+$('chat-env').addEventListener('click',chatEnviar);
+$('chat-txt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); chatEnviar(); } });
+$('chat-limpa').addEventListener('click',()=>{ chatHist=[]; const l=$('chat-log'); while(l.children.length>1) l.lastChild.remove(); });
+
 // ---- desenho do jacquard: texto (fonte propria) e desenho (SVG da IA rasterizado) ----
 const FONT5x7={'A':'01110100011000111111100011000110001','B':'11110100011000111110100011000111110','C':'01110100011000010000100001000101110','D':'11110100011000110001100011000111110','E':'11111100001000011110100001000011111','F':'11111100001000011110100001000010000','G':'01110100011000010111100011000101111','H':'10001100011000111111100011000110001','I':'01110001000010000100001000010001110','J':'00111000100001000010000101001001100','K':'10001100101010011000101001001010001','L':'10000100001000010000100001000011111','M':'10001110111010110101100011000110001','N':'10001100011100110101100111000110001','O':'01110100011000110001100011000101110','P':'11110100011000111110100001000010000','Q':'01110100011000110001101011001001101','R':'11110100011000111110101001001010001','S':'01111100001000001110000010000111110','T':'11111001000010000100001000010000100','U':'10001100011000110001100011000101110','V':'10001100011000110001100010101000100','W':'10001100011000110101101011010101010','X':'10001100010101000100010101000110001','Y':'10001100010101000100001000010000100','Z':'11111000010001000100010001000011111','0':'01110100011001110101110011000101110','1':'00100011000010000100001000010001110','2':'01110100010000100010001000100011111','3':'11111000100010000010000011000101110','4':'00010001100101010010111110001000010','5':'11111100001111000001000011000101110','6':'00110010001000011110100011000101110','7':'11111000010001000100010000100001000','8':'01110100011000101110100011000101110','9':'01110100011000101111000010001001100',' ':'00000000000000000000000000000000000','.':'00000000000000000000000000110001100',',':'00000000000000000000001100010001000','!':'00100001000010000100001000000000100','?':'01110100010000100010001000000000100','-':'00000000000000011111000000000000000','&':'01100100101010001000101011001001101','+':'00000001000010011111001000010000000','/':'00001000010001000100010001000010000',':':'00000011000110000000011000110000000','\'':'00100001000100000000000000000000000','#':'01010010101111101010111110101001010','@':'01110100011011110101101111000001110','*':'00000001001010101110101010010000000','=':'00000000001111100000111110000000000','(':'00010001000100001000010000010000010',')':'01000001000001000010000100010001000'};
 const semAcento = t => t.normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -1059,17 +1131,25 @@ $('btn-ia').addEventListener('click',async()=>{
 // ---- simulacao no manequim ----
 function hexRgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
 // textura de malha: cada ponto desenhado como a laçada real (V da meia malha, ondinha do avesso, carregado aberto)
-function tileMalha(tipo, rgb, sx, sy, fundo){
+const FIBRAS={acrilico:{brilho:1.15,pelo:.25,fosco:.95},la:{brilho:.95,pelo:.6,fosco:.9},modal:{brilho:1.4,pelo:.08,fosco:1.02},poliester:{brilho:1.6,pelo:.04,fosco:1.05},algodao:{brilho:1.0,pelo:.12,fosco:.92},viscose:{brilho:1.5,pelo:.05,fosco:1.04}};
+const fibraAtual=()=>FIBRAS[($('f-fio')&&$('f-fio').value)||'acrilico']||FIBRAS.acrilico;
+function tileMalha(tipo, rgb, sx, sy, fundo, fib){
+  fib=fib||FIBRAS.acrilico;
   const oy=Math.ceil(sy*.55), c=document.createElement('canvas'); c.width=sx+Math.ceil(sx*.7); c.height=sy+oy+Math.ceil(sy*.15); const g=c.getContext('2d');
   const ox=Math.ceil(sx*.35);   // folga lateral para a lacada inclinada
   const m=(f,a=1)=>`rgba(${Math.min(255,rgb[0]*f)|0},${Math.min(255,rgb[1]*f)|0},${Math.min(255,rgb[2]*f)|0},${a})`;
   if(fundo){ g.fillStyle=fundo; g.fillRect(ox,oy,sx,sy); }
   // fio como um tubo: borda escura, corpo e brilho
+  let sem=(rgb[0]*7+rgb[1]*13+rgb[2]*17+tipo*31+sx)|0; const rnd=()=>{ sem=(sem*1103515245+12345)&0x7fffffff; return sem/0x7fffffff; };
   const tubo=(desenha,w)=>{ g.lineCap='round'; g.lineJoin='round';
+    if(fib.pelo>.15){ g.strokeStyle=m(.9*fib.fosco,.10+fib.pelo*.12); g.lineWidth=w*(1.25+fib.pelo*.5); desenha(0); g.stroke(); }   // halo de pelo (lã)
     g.strokeStyle=m(.22); g.lineWidth=w; desenha(0); g.stroke();
-    g.strokeStyle=m(.72); g.lineWidth=w*.72; desenha(0); g.stroke();
-    g.strokeStyle=m(1.0); g.lineWidth=w*.42; desenha(-w*.08); g.stroke();
-    g.strokeStyle=m(1.35,.85); g.lineWidth=w*.16; desenha(-w*.16); g.stroke(); };
+    g.strokeStyle=m(.70*fib.fosco); g.lineWidth=w*.74; desenha(0); g.stroke();
+    g.strokeStyle=m(.98*fib.fosco); g.lineWidth=w*.46; desenha(-w*.07); g.stroke();
+    g.strokeStyle=m(1.12*fib.brilho,.55+.3*Math.min(1,fib.brilho-.9)); g.lineWidth=w*.18; desenha(-w*.15); g.stroke();
+    // torcao do fio: tracinhos diagonais escuros
+    g.save(); g.globalAlpha=.18; g.strokeStyle=m(.35); g.lineWidth=Math.max(.5,w*.07); g.setLineDash([Math.max(1,w*.18),Math.max(1,w*.22)]); desenha(w*.05); g.stroke(); g.restore();
+    if(fib.pelo>.15){ g.strokeStyle=m(1.05,.25*fib.pelo); g.lineWidth=Math.max(.4,w*.05); for(let k=0;k<Math.round(6*fib.pelo*w/4);k++){ g.beginPath(); const x=rnd()*c.width, y=rnd()*c.height; g.moveTo(x,y); g.lineTo(x+(rnd()-.5)*w*.6,y+(rnd()-.5)*w*.6); g.stroke(); } } };
   if(tipo===2){   // malha tras: arcos horizontais (cabecas das lacadas)
     const w=sy*.42;
     for(const yy of [.32,.82]) tubo(d=>{ g.beginPath(); g.moveTo(ox+sx*.02,oy+sy*yy+sy*.12+d); g.quadraticCurveTo(ox+sx*.5,oy+sy*(yy-.32)+d,ox+sx*.98,oy+sy*yy+sy*.12+d); }, w);
@@ -1091,9 +1171,9 @@ function tileMalha(tipo, rgb, sx, sy, fundo){
 }
 function texturaPeca(sim, sx, sy, cores, fundo){
   const W=sim.cols, H=sim.cursos.length, cv=document.createElement('canvas'); cv.width=W*sx; cv.height=H*sy;
-  const ctx=cv.getContext('2d'), rgb=cores.map(hexRgb), cache={};
+  const ctx=cv.getContext('2d'), rgb=cores.map(hexRgb), cache={}, fib=fibraAtual();
   if(fundo){ ctx.fillStyle=fundo; ctx.fillRect(0,0,cv.width,cv.height); }
-  const tile=(t,c)=>{ const k=t+'_'+c; return cache[k]||(cache[k]=tileMalha(t,rgb[c-1],sx,sy,null)); };
+  const tile=(t,c)=>{ const k=t+'_'+c; return cache[k]||(cache[k]=tileMalha(t,rgb[c-1],sx,sy,null,fib)); };
   for(let r=H-1;r>=0;r--){ const cu=sim.cursos[r], y0=(H-1-r)*sy;   // de cima para baixo: as lacadas de baixo ficam por cima
     for(let i=0;i<W;i++){ const t=cu.typ[i]; if(!t) continue; const tl=tile(t,cu.col[i]||1); ctx.drawImage(tl.c,i*sx-tl.ox,y0-tl.oy); }
   }
@@ -1154,13 +1234,14 @@ function simular(){
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
   const sim=last.sim, W=sim.cols, H=sim.cursos.length, wcm=W/ag*10, hcm=H/cr*10;
   const pf=perfilManequim(busto);
-  const s=Math.min((Hc-40)/(Math.max(pf.fim, hcm+6)+38), (Wc-30)/(Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2))));
+  const enq=$('sm-enq').value, perto=enq!=='inteiro', altV=enq==='detalhe'?30:perto?Math.max(30,Math.min(pf.fim,hcm)+6):Math.max(pf.fim,hcm+6)+38;
+  const s=enq==='detalhe'?Math.min((Hc-40)/34,(Wc-20)/(pf.O*2.3)):Math.min((Hc-40)/(altV+(perto?8:0)), (Wc-30)/(Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2))));
   const cx=Wc/2, y0=26+8*s;
   desenhaManequim(ctx,cx,y0,s,pf);
   // textura no tamanho de tela (com suavizacao do navegador) para amostrar
-  const sx=Math.max(4,Math.min(14,Math.floor(3200/W))), sy=Math.max(3,Math.round(sx*ag/cr));
+  const sx=Math.max(6,Math.min(18,Math.floor(4200/W))), sy=Math.max(4,Math.round(sx*ag/cr));
   const tx=texturaPeca(sim,sx,sy,[1,2,3,4].map(k=>$('sm-c'+k).value));
-  const tw=Math.max(8,Math.round(wcm*s*2)), th=Math.max(8,Math.round(hcm*s*2));
+  const tw=Math.max(8,Math.round(wcm*s*1.25)), th=Math.max(8,Math.round(hcm*s*1.25));
   const t2=document.createElement('canvas'); t2.width=tw; t2.height=th; const c2=t2.getContext('2d'); c2.imageSmoothingQuality='high'; c2.drawImage(tx,0,0,tw,th);
   const T=c2.getImageData(0,0,tw,th).data;
   // corpo como secao oval: arco desde o centro da frente -> posicao x vista de frente
@@ -1220,8 +1301,9 @@ function trocaSim(m){ simModo=m; $('tab-man').setAttribute('aria-selected',Strin
   $('man-box').hidden=m!=='man'; $('perto-box').hidden=m!=='perto'; $('lbl-smpt').hidden=m!=='perto'; simular(); }
 $('tab-man').addEventListener('click',()=>trocaSim('man')); $('tab-perto').addEventListener('click',()=>trocaSim('perto'));
 $('sm-pt').addEventListener('input',()=>simular());
-$('sm-maq').addEventListener('change',()=>{ const [a,c]=$('sm-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); });
-['sm-ag','sm-cr','sm-tam','sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',simular));
+$('f-maq').addEventListener('change',()=>{ const [a,c]=$('f-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); });
+$('f-fio').addEventListener('change',()=>simular());
+['sm-ag','sm-cr','sm-tam','sm-enq','sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',simular));
 
 // ---- pasta do programador: meus modulos e bases (salvos no banco do app para a equipe; sem ele, so neste navegador) ----
 let MEUS=[], BASES=[], db=null;
@@ -1289,12 +1371,12 @@ async function importaModulos(files){
       await salvar('modulos',{nome:k,motivo:enc(motivo),fios,arquivo:g[k].bmp.name,criado:Date.now()}); ok++;
     }catch(e){ falhas.push(`${k} (${e.message})`); }
   }
-  st.textContent=`${ok} módulo(s) salvo(s).`+(falhas.length?` Não entraram: ${falhas.slice(0,6).join('; ')}${falhas.length>6?'…':''}`:'')+(ok?' Veja em 5 ▸ Módulo de ponto pronto ▸ Meus módulos.':'')+avisoKnx(g);
+  st.textContent=`${ok} módulo(s) salvo(s).`+(falhas.length?` Não entraram: ${falhas.slice(0,6).join('; ')}${falhas.length>6?'…':''}`:'')+(ok?' Veja em Tipo de ponto ▸ Módulo de ponto pronto ▸ Meus módulos.':'')+avisoKnx(g);
 }
 $('mm-dir').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
 $('mm-files').addEventListener('change',e=>{ importaModulos(e.target.files); e.target.value=''; });
 $('mm-save').addEventListener('click',async()=>{
-  const st=$('mm-status'); if(tipoAtual()!=='motivo'){ st.textContent='Escolha um módulo ou crie um ponto (item 5) para ter um rapport para salvar.'; return; }
+  const st=$('mm-status'); if(tipoAtual()!=='motivo'){ st.textContent='Escolha um módulo ou crie um ponto (Tipo de ponto) para ter um rapport para salvar.'; return; }
   const nome=($('f-ponto').value.trim()||'Meu ponto');
   try{ await salvar('modulos',{nome,motivo:enc(motivo),fios:motivoFios.slice(),arquivo:'',criado:Date.now()}); st.textContent=`"${nome}" salvo em Meus módulos.`; }
   catch(e){ st.textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
@@ -1337,7 +1419,7 @@ $('bs-save').addEventListener('click',async()=>{
     const nome=$('bs-nome').value.trim()||$('bs-prog').value;
     const g64=await gz(grid), o64=await gz(opt); if(g64.length+o64.length>240000) throw new Error('programa grande demais para salvar no app (tente um programa menor)');
     await salvar('bases',{nome,rows:n,h,w,periodo:4,grid:g64,opt:o64,arquivo:$('bs-prog').value,criado:Date.now()});
-    st.textContent=`Base "${nome}" salva com o programa inteiro (${w} agulhas × ${h} carreiras). Escolha em 4 ▸ Tipo da barra: ela vira o programa principal.`;
+    st.textContent=`Base "${nome}" salva com o programa inteiro (${w} agulhas × ${h} carreiras). Escolha em Tipo de barra: ela vira o programa principal.`;
   }catch(e){ st.textContent='Não consegui salvar: '+(e.code==='not_granted'?'sem permissão para alterar.':e.message); }
 });
 async function iniciaPasta(){

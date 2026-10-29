@@ -49,7 +49,8 @@ const RAYNEN = (function () {
       cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
-      aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {})
+      aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
+      cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {})
     };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
@@ -196,7 +197,7 @@ const RAYNEN = (function () {
     });
     return out;
   }
-  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo));
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo)));
   const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
   // aumento depois do decote: comeca 'depois' carreiras apos a ultima diminuicao do decote (ou da cava)
   function inicioAum2(f) {
@@ -204,7 +205,9 @@ const RAYNEN = (function () {
     return base + Math.max(0, +f.aumento2.depois || 0) + 1;
   }
   function eventos(f) {
-    return { cava: evList(f.cava), decote: evList(f.decote), aum: evList(f.aumento),
+    const ct = f.cintura || {}, cd = ct.ativo ? agenda((+ct.inicio || 1) - 1, parsePassos(ct.dim).filter(p => !p.erro)) : [];
+    const ca = ct.ativo ? agenda((cd.length ? cd[cd.length - 1][0] + 1 : (+ct.inicio || 1) - 1) + Math.max(0, +ct.retas || 0), parsePassos(ct.aum).filter(p => !p.erro)) : [];
+    return { cintD: cd, cintA: ca, cava: evList(f.cava), decote: evList(f.decote), aum: evList(f.aumento),
       aum2: f.aumento2 && f.aumento2.ativo ? agenda(inicioAum2(f) - 1, parsePassos(f.aumento2.passos).filter(p => !p.erro)) : [] };
   }
   // agulhas a mais de cada lado (largura inicial + aumentos = largura maxima)
@@ -215,7 +218,7 @@ const RAYNEN = (function () {
   // ultima carreira do corpo (1-base) com diminuicao de cava ou decote; 0 se nao houver
   function fimForma(f) {
     let fim = 0;
-    const e = eventos(f); [e.cava, e.decote, e.aum, e.aum2].forEach(ev => { if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
+    const e = eventos(f); [e.cava, e.decote, e.aum, e.aum2, e.cintD, e.cintA].forEach(ev => { if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
     return fim;
   }
   // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
@@ -259,7 +262,19 @@ const RAYNEN = (function () {
       parsePassos(f.passos).forEach(x => { if (x.erro) erros.push(`${nm}: passo "${x.erro}" inválido. Use carreiras-agulhas-vezes, ex.: 6-1-5.`); else if (x.ag < 1 || x.ag > 7) erros.push(`${nm}: cada aumento pode andar de 1 a 7 agulhas (passo ${x.txt}).`); else if (x.cada < 1) erros.push(`${nm}: carreiras do passo ${x.txt} precisam ser 1 ou mais.`); });
       if (!(f.borda >= 1 && f.borda <= 7)) erros.push(`${nm}: borda (agulhas que andam) de 1 a 7.`);
     });
+    const ctz = s.forma.cintura;
+    if (ctz && ctz.ativo) {
+      [['dim', 'diminuição'], ['aum', 'aumento']].forEach(([k, nm]) => parsePassos(ctz[k]).forEach(x => { if (x.erro) erros.push(`Acinturado: passo de ${nm} "${x.erro}" inválido. Use carreiras-agulhas-vezes, ex.: 6-1-6.`); else if (x.ag < 1 || x.ag > 7) erros.push(`Acinturado: cada ${nm} de 1 a 7 agulhas (passo ${x.txt}).`); }));
+      if (!(ctz.borda >= 1 && ctz.borda <= 7)) erros.push('Acinturado: borda (agulhas que andam) de 1 a 7.');
+    }
     const evs = eventos(s.forma);
+    if (ctz && ctz.ativo) {
+      const sd = evs.cintD.reduce((a, x) => a + x[1], 0), sa = evs.cintA.reduce((a, x) => a + x[1], 0);
+      if (sa > sd) erros.push(`Acinturado: aumenta ${sa} agulhas por lado mas só diminuiu ${sd}. Para alargar além da largura inicial, aumente a largura.`);
+      if (2 * sd >= W - 6) erros.push(`Acinturado: diminui ${2 * sd} agulhas numa peça de ${W}. Diminua os passos.`);
+      if (cv.ativo && evs.cava.length && evs.cintA.length && evs.cintA[evs.cintA.length - 1][0] >= evs.cava[0][0]) avisos.push({ tipo: 'nota', txt: 'Acinturado: os aumentos passam do começo da cava. Aumente as carreiras antes da cava.' });
+      avisos.push({ tipo: 'nota', txt: `Acinturado: diminui ${sd} agulhas de cada lado até a cintura e aumenta ${sa} de volta${ctz.modo === '16' ? ' com a cor 16 (agulha sem ponto entra aos poucos)' : ' com transferência para fora'}.` });
+    }
     if (fa.ativo && cv.ativo && evs.aum.length && evs.cava.length && evs.aum[evs.aum.length - 1][0] >= evs.cava[0][0]) avisos.push({ tipo: 'nota', txt: 'Os aumentos passam do começo da cava. Aumente as carreiras retas abaixo da cava ou diminua os aumentos.' });
     if (fb.ativo && !dc.ativo && !cv.ativo) erros.push('Aumento depois do decote: ligue o decote (ou a cava) para saber onde ele começa.');
     if (fb.ativo && fb.onde === 'decote' && !dc.ativo) erros.push('Aumento na borda do decote: ligue o decote.');
@@ -283,6 +298,7 @@ const RAYNEN = (function () {
     const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
     const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
+    const evWd = new Map(evs.cintD), evWa = new Map(evs.cintA), ct = s.forma.cintura || {};
     let L = ex, R = W - 1 - ex;                 // limites da peca inteira (antes da divisao); comeca estreita se tiver aumentos
     const mid = Math.floor(W / 2), meio = dc.ativo && dc.tipo === 'redondo' ? +dc.meio : 0;
     let lA = 0, lB = 0, rA = 0, rB = 0;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
@@ -299,13 +315,21 @@ const RAYNEN = (function () {
       if (lado === 'L') { if (a - k < 0) return [a, b]; for (let i = a; i < a + e; i++) row[i] = moveCode(row[i], k, -1); return [a - k, b]; }
       if (b + k > W - 1) return [a, b]; for (let i = b; i > b - e; i--) row[i] = moveCode(row[i], k, +1); return [a, b + k];
     }
+    // aumento com a cor 16: a agulha nova entra marcada com 16 (sem ponto) e tece a partir da carreira seguinte
+    function aum16(row, a, b, lado, k) {
+      if (lado === 'L') { if (a - k < 0) return [a, b]; for (let i = a - k; i < a; i++) row[i] = 16; return [a - k, b]; }
+      if (b + k > W - 1) return [a, b]; for (let i = b + 1; i <= b + k; i++) row[i] = 16; return [a, b + k];
+    }
+    const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
     const yA = s.guiaFio, yB = s.fios[0];
-    let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], larguraInicial: W - 2 * ex };
+    let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
         if (evA.has(c)) { const k = evA.get(c); [L] = aum(row, L, R, 'L', k, fa); [, R] = aum(row, L + k, R, 'R', k, fa); L = Math.max(0, L); info.aumento.push(c + 1); }
         else if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
+        if (evWa.has(c)) { const k = evWa.get(c); [L] = aumC(row, L, R, 'L', k); [, R] = aumC(row, L + k, R, 'R', k); info.cintura.push(c + 1); }
         if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
         out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
@@ -329,6 +353,8 @@ const RAYNEN = (function () {
         if (evB.has(cc)) { const k = evB.get(cc), ext = fb.onde !== 'decote';
           if (lado === 'E') { if (ext) [na] = aum(row, na, nb2, 'L', k, fb); else [, nb2] = aum(row, na, nb2, 'R', k, fb); }
           else { if (ext) [, nb2] = aum(row, na, nb2, 'R', k, fb); else [na] = aum(row, na, nb2, 'L', k, fb); } }
+        if (evWd.has(cc)) { const k = evWd.get(cc); if (lado === 'E') [na] = dim(row, na, nb2, 'L', k, ct); else [, nb2] = dim(row, na, nb2, 'R', k, ct); }
+        if (evWa.has(cc)) { const k = evWa.get(cc); if (lado === 'E') [na] = aumC(row, na, nb2, 'L', k); else [, nb2] = aumC(row, na, nb2, 'R', k); }
         if (lado === 'E' && evA.has(cc)) info.aumento.push(cc + 1);
         if (lado === 'E' && evB.has(cc)) info.aumento2.push(cc + 1);
         if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
