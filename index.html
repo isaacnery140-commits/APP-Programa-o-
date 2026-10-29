@@ -157,6 +157,17 @@ section label{font-size:14px}
 .aviso-bt{display:flex;gap:8px;margin-left:auto}
 .rel-badge{display:inline-block;margin-left:8px;background:#fff;color:var(--ok);border-radius:999px;padding:1px 8px;font-size:12px}
 .rel-novo{outline:2px solid var(--ok);border-radius:6px;padding:4px}
+.hist{border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-bottom:12px;background:var(--panel)}
+.hist summary{cursor:pointer}
+.hist[open] summary{margin-bottom:8px}
+.hist-bar input{width:100%}
+.hist-list{max-height:320px;overflow:auto;margin-top:8px}
+.hist-list li{display:flex;gap:8px;align-items:center}
+.hist-list li span{flex:1;min-width:0}
+.hist-list li small{display:block;color:var(--muted);white-space:normal;overflow:visible}
+.hist-list li span b{white-space:normal}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sim-auth{font-weight:700}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -187,6 +198,12 @@ details.more>*:not(summary){margin-bottom:10px}
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       <section aria-labelledby="h-novo">
         <h2 id="h-novo">Novo programa</h2>
+        <details class="hist" id="hist-box">
+          <summary><span class="tt">Histórico de programas</span> <span class="hint" id="hist-count">— abra um programa feito antes, sem preencher tudo de novo</span></summary>
+          <div class="hist-bar"><label for="hist-busca" class="sr">Buscar pelo nome</label><input id="hist-busca" type="search" placeholder="Buscar pelo nome do programa" autocomplete="off"></div>
+          <ul class="mlist hist-list" id="hist-list"></ul>
+          <span class="status hint" id="hist-st"></span>
+        </details>
         <div class="row">
           <label for="f-maq"><span class="lt tt">Finura da máquina</span><select id="f-maq">
             <option value="14,20">3,5G</option><option value="20,30">5G</option><option value="28,40" selected>7G</option>
@@ -609,6 +626,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <div class="chips" id="chips"></div>
         </div>
         <div class="actions">
+          <button type="button" id="sim-auth" class="sim-auth" aria-pressed="false">▶ Simular a peça</button>
           <div class="tabs" role="tablist">
             <button type="button" role="tab" id="tab-man" aria-selected="true">Peça completa (vestida)</button>
             <button type="button" role="tab" id="tab-perto" aria-selected="false">Simulação do pano</button>
@@ -626,7 +644,7 @@ details.more>*:not(summary){margin-bottom:10px}
         <div class="msgs" id="msgs"></div>
         <dl class="facts" id="facts"></dl>
         <div class="actions">
-          <button id="btn-dl" type="button" class="dl">Baixar para o Raynen (.zip)</button>
+          <button id="btn-dl" type="button" class="dl">Baixar para o Raynen (.zip)</button><button id="btn-hist" type="button" class="ghost">Salvar no histórico</button>
           <span id="dl-status" class="status hint"></span>
         </div>
         <ol class="steps">
@@ -1838,6 +1856,65 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// ---- historico de programas: guarda tudo o que foi preenchido, pelo nome, para abrir depois
+let HIST=[];
+const HIST_FORA=/^(rel-|ml-|pad-|hist-|aviso|chat-|ia-|f-desc|bs-|mm-)/;
+function campos(){ return [...document.querySelectorAll('main input[id], main select[id], main textarea[id], section input[id], section select[id], section textarea[id]')].filter(el=>!HIST_FORA.test(el.id)&&el.type!=='file'&&el.type!=='search'); }
+function fotoPrograma(){
+  const v={}; campos().forEach(el=>{ v[el.id]=el.type==='checkbox'||el.type==='radio'?el.checked:el.value; });
+  const s=readSpec(), nome=s.nome||'NOVO';
+  return {nome, salvo:Date.now(), largura:s.largura, carreiras:s.carreiras, ponto:$('f-tipo').selectedOptions[0]?.textContent||'', modelo:typeof padMod!=='undefined'&&pecaAtual?MODELOS[padMod]?.nome||'':'',
+    campos:v, estado:{motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
+}
+const idHist=n=>String(n||'NOVO').toUpperCase().replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,120)||'NOVO';
+async function salvaHistorico(silencio){
+  const st=$('hist-st'), f=fotoPrograma();
+  if(JSON.stringify(f).length>240000){ f.estado.desenho=null; }
+  try{
+    if(db) await db.collection('programas').doc(idHist(f.nome)).set(f);
+    else { const o=lsLoad(); o.programas=(o.programas||[]).filter(x=>idHist(x.nome)!==idHist(f.nome)); f.id=idHist(f.nome); o.programas.push(f); if(!lsSave(o)) throw new Error('sem espaço no navegador'); HIST=o.programas; renderHist(); }
+    if(!silencio) st.textContent=`"${f.nome}" salvo no histórico.`;
+    $('dl-st')&&($('dl-st').textContent=`Salvo no histórico como "${f.nome}".`);
+  }catch(e){ st.textContent='Não consegui salvar no histórico: '+(e.code==='not_granted'?'sem permissão para gravar.':e.message); }
+}
+function abrePrograma(h){
+  const st=$('hist-st');
+  try{
+    const e=h.estado||{};
+    if(e.padPub&&e.padPub!==padPub) trocaPub(e.padPub);
+    if(e.padSel&&PADROES[e.padSel]) padSel=e.padSel;
+    if(e.padMod&&MODELOS[e.padMod]){ padMod=e.padMod; montaModelos(); }
+    const v=h.campos||{};
+    campos().forEach(el=>{ if(!(el.id in v)) return; if(el.type==='checkbox'||el.type==='radio') el.checked=!!v[el.id]; else el.value=v[el.id]; });
+    if(e.motivo) { setMotif(e.motivo,e.motivoFios||e.motivo.map(()=>1)); motivoReal=!!e.motivoReal; motifNome=e.motifNome||''; }
+    if(e.desenho){ desenho=e.desenho; if(typeof fillJPaint==='function') fillJPaint(); drawJq(); }
+    if(e.sisN){ sisN=e.sisN; sisMostra(); }
+    pecaAtual=e.pecaAtual||null;
+    mostraPadrao(); renderChips(); update(); golaInfo(); simular();
+    st.textContent=`"${h.nome}" aberto. Mude o que precisar e baixe de novo.`;
+    $('hist-box').open=false; $('h-novo').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){ st.textContent='Não consegui abrir: '+err.message; }
+}
+function renderHist(){
+  const ul=$('hist-list'), q=$('hist-busca').value.trim().toLowerCase(); ul.textContent='';
+  const l=HIST.slice().sort((a,b)=>(b.salvo||0)-(a.salvo||0)).filter(h=>!q||(h.nome||'').toLowerCase().includes(q));
+  $('hist-count').textContent=HIST.length?`— ${HIST.length} programa${HIST.length>1?'s':''} salvo${HIST.length>1?'s':''}`:'— abra um programa feito antes, sem preencher tudo de novo';
+  if(!l.length){ const li=document.createElement('li'); li.textContent=HIST.length?'Nenhum programa com esse nome.':'Nenhum programa ainda. Ao baixar um programa ele entra aqui sozinho (ou use "Salvar no histórico").'; ul.appendChild(li); return; }
+  l.slice(0,200).forEach(h=>{ const li=document.createElement('li'), sp=document.createElement('span'), b=document.createElement('b'); b.textContent=h.nome; sp.appendChild(b);
+    const sm=document.createElement('small'); sm.textContent=`${new Date(h.salvo).toLocaleString('pt-BR')} · ${h.largura} agulhas × ${h.carreiras} carreiras${h.ponto?' · '+h.ponto:''}${h.modelo?' · '+h.modelo:''}`; sp.appendChild(sm);
+    const ab=document.createElement('button'); ab.type='button'; ab.textContent='Abrir'; ab.addEventListener('click',()=>abrePrograma(h));
+    const ex=document.createElement('button'); ex.type='button'; ex.className='ghost'; ex.textContent='Excluir'; ex.addEventListener('click',async()=>{ if(!confirmaExcluir(ex)) return;
+      try{ if(db) await db.collection('programas').doc(h.id).delete(); else { const o=lsLoad(); o.programas=(o.programas||[]).filter(x=>x.id!==h.id); lsSave(o); HIST=o.programas; renderHist(); } }catch(e){ $('hist-st').textContent='Não consegui excluir: '+e.message; } });
+    li.append(sp,ab,ex); ul.appendChild(li); });
+}
+$('hist-busca').addEventListener('input',renderHist);
+$('btn-hist').addEventListener('click',()=>salvaHistorico(false));
+renderHist();
+// ---- simulacao so com autorizacao: o manequim fica sem a peca ate clicar em Simular
+let simAuth=false;
+function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',String(v)); $('sim-auth').textContent=v?'■ Tirar a peça do manequim':'▶ Simular a peça'; simular(); }
+$('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
+
 // ---- avisos: problema resolvido e programa atualizado
 const APP_VERSAO='2026-10-29b', APP_NOVIDADES='aviso quando um problema relatado for resolvido e quando o programa for atualizado';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
@@ -2113,6 +2190,7 @@ mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto);
 $('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
+  salvaHistorico(true);
 
   const n=last.spec.nome, files=[{name:n+'.BMP',data:last.bmp},{name:n+'.opt',data:last.opt}];
   if(last.ina){ files.push({name:n+'.INA',data:last.ina},{name:n+'.JQD',data:last.jqd}); }
@@ -2478,7 +2556,7 @@ function pintaManequim(D, Wc, Hc, cx, y0, s, pf, capa){
   for(let Y=Math.max(0,Math.floor(y0-7*s)); Y<=ymax; Y++){
     const ycm=(Y+.5-y0)/s; let a, da;
     if(ycm<0.6){ a=pf.pesc; da=0; }
-    else { a=pf.hw(Math.min(ycm,pf.fim)); da=(pf.hw(Math.min(ycm+.5,pf.fim))-pf.hw(Math.max(0,ycm-.5))); if(ycm>pf.fim-2) a*=Math.sqrt(Math.max(0,1-((ycm-(pf.fim-2))/4.2)**2)); }
+    else { a=pf.hw(Math.min(ycm,pf.fim)); da=(pf.hw(Math.min(ycm+2.5,pf.fim))-pf.hw(Math.max(0,ycm-2.5)))/5; if(ycm>pf.fim-2) a*=Math.sqrt(Math.max(0,1-((ycm-(pf.fim-2))/4.2)**2)); }
     const x0=Math.max(0,Math.floor(cx-a*s)), x1=Math.min(Wc-1,Math.ceil(cx+a*s));
     for(let X=x0;X<=x1;X++){
       const xc=(X+.5-cx)/s; if(Math.abs(xc)>a) continue;
@@ -2487,7 +2565,7 @@ function pintaManequim(D, Wc, Hc, cx, y0, s, pf, capa){
       const n=normalCorpo(xc,ycm,a,da);
       // volume do busto
       const bz=pf.seio*Math.exp(-(((Math.abs(xc)-pf.B*.52)**2)/(2*4.6**2)+((ycm-pf.by)**2)/(2*4.4**2)));
-      n[0]+=Math.sign(xc)*bz*.12*Math.sign(Math.abs(xc)-pf.B*.52); n[1]+=bz*.25*Math.sign(ycm-pf.by)*Math.min(1,Math.abs(ycm-pf.by)/3);
+      n[0]+=Math.sign(xc)*bz*.12*Math.tanh((Math.abs(xc)-pf.B*.52)/2.2); n[1]+=bz*.25*Math.tanh((ycm-pf.by)/2.5);
       const {d,sp}=iluminar(n,capa==='preto'?.35:pele?.1:.18,capa==='preto'?18:pele?14:10);
       let f=pele?.38+.72*d:.32+.78*d;
       const nx=Math.abs(xc)/a;
@@ -2756,6 +2834,7 @@ function simular(){
   queixoCm=pessoa?hC[1]+hR[1]*.95:null;
   desenhaSuporte.tampa=true;
   if(!pessoa){ const gw=ctx.createLinearGradient(cx-3.4*s,0,cx+3.4*s,0); gw.addColorStop(0,'#6b4a2b'); gw.addColorStop(.45,'#c39a64'); gw.addColorStop(1,'#5a3d22'); ctx.fillStyle=gw; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.4*s,1.1*s,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d9b27a'; ctx.beginPath(); ctx.ellipse(cx-.4*s,y0-7.2*s,2.6*s,.7*s,0,0,Math.PI*2); ctx.fill(); }
+  if(!simAuth){ ctx.save(); ctx.fillStyle='rgba(27,33,30,.72)'; ctx.font=`600 ${Math.round(Wc*.028)}px sans-serif`; ctx.textAlign='center'; ctx.fillText('Clique em “Simular a peça” para vestir o manequim',Wc/2,Hc-28); ctx.restore(); $('sim-med').textContent='Manequim sem a peça. Clique em “Simular a peça” para ver o pano.'; return; }
   // textura no tamanho de tela (com suavizacao do navegador) para amostrar
   const sx=Math.max(6,Math.min(18,Math.floor(4200/W))), sy=Math.max(4,Math.round(sx*ag/cr));
   const tx=texturaPeca(sim,sx,sy,[1,2,3,4].map(k=>$('sm-c'+k).value));
@@ -2827,6 +2906,7 @@ let simModo='man';
 function simularPerto(){
   const cv=$('perto-cv'), ctx=cv.getContext('2d');
   if(!last||!last.sim||!last.sim.cursos.length){ cv.width=10; cv.height=10; return; }
+  if(!simAuth){ cv.width=700; cv.height=120; ctx.fillStyle='#000'; ctx.fillRect(0,0,700,120); ctx.fillStyle='#e3e8e4'; ctx.font='600 18px sans-serif'; ctx.textAlign='center'; ctx.fillText('Clique em “Simular a peça” para ver o pano',350,66); return; }
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), sim=last.sim, W=sim.cols;
   let sx=+$('sm-pt').value||18; sx=Math.max(6,Math.min(sx,Math.floor(9000/W))); const sy=Math.max(4,Math.round(sx*ag/cr));
   const box=$('perto-box'), fimAntes=box.scrollTop+box.clientHeight>=box.scrollHeight-4;
@@ -2974,10 +3054,11 @@ async function iniciaPasta(){
     db.collection('modulos').onSnapshot(s=>setMeus(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
     db.collection('bases').onSnapshot(s=>setBases(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
     db.collection('problemas').onSnapshot(s=>{ RELATOS=s.docs.map(d=>Object.assign({id:d.id},d.data())); if(!$('rel-back').hidden) renderRelatos(); checaResolvidos(); },()=>{});
+    db.collection('programas').onSnapshot(s=>{ HIST=s.docs.map(d=>Object.assign({id:d.id},d.data())); renderHist(); },()=>{});
     db.collection('moldes').onSnapshot(s=>setMoldes(s.docs.map(d=>Object.assign({id:d.id},d.data()))),()=>{});
   } else {
     $('store-hint').textContent='Salvo só neste navegador (o armazenamento da equipe não está disponível nesta visualização).';
-    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]); RELATOS=o.problemas||[]; checaResolvidos();
+    const o=lsLoad(); setMeus(o.modulos||[]); setBases(o.bases||[]); setMoldes(o.moldes||[]); RELATOS=o.problemas||[]; HIST=o.programas||[]; renderHist(); checaResolvidos();
   }
 }
 
