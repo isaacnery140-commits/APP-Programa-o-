@@ -53,6 +53,9 @@ button:disabled{opacity:.5;cursor:default}
 .msgs{display:flex;flex-direction:column;gap:6px}
 .msg{font-size:13px;border-radius:4px;padding:7px 10px}
 .msg.err{background:var(--err-bg);color:var(--err)}
+.cm-eq{display:block;color:var(--accent);font-size:11.5px;font-weight:600;margin-top:2px}
+.obrig{border-color:var(--err)!important;box-shadow:0 0 0 2px var(--err-bg)}
+.dens-av{color:var(--err);font-size:13px;font-weight:600;margin:4px 0 0}
 .msg.warn{background:var(--warn-bg);color:var(--warn)}
 .msg.ok{color:var(--ok);padding-left:0}
 .bedbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
@@ -301,8 +304,8 @@ details.more>*:not(summary){margin-bottom:10px}
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
           <div class="row">
-            <label for="md-ag">Agulhas por cm<small class="dica">🔒 preencher à mão · quantas agulhas dão 1 cm de largura (número inteiro)</small><input id="md-ag" type="number" min="1" max="20" step="1" inputmode="numeric" value="6"></label>
-            <label for="md-cr">Passadas por cm<small class="dica">🔒 preencher à mão · quantas carreiras dão 1 cm de altura (número inteiro)</small><input id="md-cr" type="number" min="1" max="30" step="1" inputmode="numeric" value="6"></label>
+            <label for="md-ag">Agulhas por cm<small class="dica">🔒 preencher à mão · quantas agulhas dão 1 cm de largura (número inteiro)</small><input id="md-ag" type="number" min="1" max="20" step="1" inputmode="numeric" value="" placeholder="obrigatório" required></label>
+            <label for="md-cr">Passadas por cm<small class="dica">🔒 preencher à mão · quantas carreiras dão 1 cm de altura (número inteiro)</small><input id="md-cr" type="number" min="1" max="30" step="1" inputmode="numeric" value="" placeholder="obrigatório" required></label>
           </div>
           <div class="row">
             <label for="md-larg">Largura da peça<small class="dica">de uma lateral à outra</small><input id="md-larg" type="number" min="5" step="0.5" value="50"></label>
@@ -464,7 +467,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
             <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
           </div>
-          <p class="hint" id="fx-hint">Acrescenta carreiras retas (comprimento) sem mudar a largura: antes da cava a peça fica mais comprida embaixo e a cava e o decote sobem; depois do decote o ombro fica mais alto.</p>
+          <p class="hint" id="fx-hint" style="display:none"></p>
           <label class="chk" for="fe-on" hidden><input id="fe-on" type="checkbox"> Aumento escalonado na largura, antes da cava (nos dois lados)</label>
           <div class="row" id="fe-box" hidden>
             <label for="fe-ini">Carreiras retas abaixo dos aumentos<input id="fe-ini" type="number" min="0" value="19"></label>
@@ -494,7 +497,7 @@ details.more>*:not(summary){margin-bottom:10px}
               <label for="fd-bor">Borda (agulhas que andam)<input id="fd-bor" type="number" min="1" max="7" value="2"></label>
             </div>
             <p class="hint" style="display:none"></p>
-            <p class="hint">No decote a peça se divide: o lado esquerdo tece com o guia-fio A e o direito com o B, 2 carreiras de cada lado, como no 25009F. No jacquard (formato Compacto, até 2 cores) o lado esquerdo usa A/B e o direito C/D, para não passar fio pelo decote.</p>
+            
           </div>
           <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
           <div id="ct-box" hidden>
@@ -535,21 +538,20 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="gl-alt">Altura da gola (cm)<input id="gl-alt" type="number" min="1" max="40" step="0.5" value="3"></label>
             <label for="gl-per">Volta do decote (cm)<input id="gl-per" type="number" min="20" max="90" step="0.5" value="52"></label>
           </div>
-          <p class="hint glx" id="gl-info"></p>
-          <p class="hint glx">Como na ficha de processo do Raynen (golas são acessórios): a gola sai como um programa separado (NOME_GOLA) no mesmo .zip, em ribana com início tubular e fio de descarte no fim para cerzir (remalhar) no decote. A garrafinha sai com o dobro da altura, para dobrar.</p>
+          <p class="hint glx" id="gl-info" style="display:none"></p>
         </div>
 
         <details class="more" open>
           <summary>Guia-fios</summary>
           <div class="sis">
-            <span class="tt">Guia-fios do corpo (sistemas)</span><small class="dica">quantos sistemas tecem o corpo, alternando carreira a carreira (padrão: 2 sistemas, guia-fios 4 e 5, como no 25009F)</small>
+            <span class="tt">Guia-fios do corpo (sistemas)</span>
             <div class="sis-row">
               <label for="f-s1">Sistema 1<input id="f-s1" type="number" min="1" max="16" value="4"></label>
               <label for="f-s2" id="lbl-s2">Sistema 2<input id="f-s2" type="number" min="1" max="16" value="5"></label>
               <label for="f-s3" id="lbl-s3" hidden>Sistema 3<input id="f-s3" type="number" min="1" max="16" value="6"></label>
               <span class="sis-bt"><button type="button" class="ghost" id="sis-menos" aria-label="Tirar um sistema">− sistema</button><button type="button" class="ghost" id="sis-mais" aria-label="Pôr mais um sistema">+ sistema</button></span>
             </div>
-            <span class="hint" id="sis-info"></span>
+            <span class="hint" id="sis-info" style="display:none"></span>
           </div>
           <div class="row">
             <label for="f-guia">Guia-fio A<small class="dica">cor 1 do jacquard e pontos com listras</small><input id="f-guia" type="number" min="1" max="16" value="3"></label>
@@ -623,13 +625,13 @@ details.more>*:not(summary){margin-bottom:10px}
           <span class="hint" id="sim-med" style="display:none"></span>
         </div>
         <div class="row">
-          <label for="sm-ag">Agulhas / 10 cm<input id="sm-ag" type="number" min="5" max="120" value="28"></label>
-          <label for="sm-cr">Carreiras / 10 cm<input id="sm-cr" type="number" min="5" max="200" value="40"></label>
-          <label for="sm-enq">Enquadrar<select id="sm-enq"><option value="detalhe">Detalhe do busto (ver o ponto)</option><option value="tronco" selected>Tronco</option><option value="inteiro">Manequim inteiro</option></select></label>
+          <label for="sm-ag" style="display:none">Agulhas / 10 cm<input id="sm-ag" type="number" min="5" max="120" value="28"></label>
+          <label for="sm-cr" style="display:none">Carreiras / 10 cm<input id="sm-cr" type="number" min="5" max="200" value="40"></label>
+          <label for="sm-enq" style="display:none">Enquadrar<select id="sm-enq"><option value="detalhe">Detalhe do busto (ver o ponto)</option><option value="tronco" selected>Tronco</option><option value="inteiro">Manequim inteiro</option></select></label>
           <label for="sm-pub">Público<select id="sm-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label>
           <label for="sm-tam">Tamanho do manequim<select id="sm-tam"><option value="78">PP (busto 78)</option><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option><option value="116">XG (busto 116)</option></select></label>
         </div>
-        <div class="row">
+        <div class="row" style="display:none">
           <label for="sm-man">Pele / manequim<select id="sm-man"><option value="pele1">Pele clara</option><option value="pele2" selected>Pele morena</option><option value="pele3">Pele negra</option><option value="linho">Manequim linho bege</option><option value="preto">Preto</option><option value="branco">Branco</option><option value="cinza">Cinza</option></select></label>
           <label for="sm-c1">Cor do fio A<input id="sm-c1" type="color" value="#e9e3d3"></label>
           <label for="sm-c2">Cor do fio B<input id="sm-c2" type="color" value="#3d42a0"></label>
@@ -1761,7 +1763,7 @@ $('f-tipo').addEventListener('change',()=>{
 });
 $('f-zoom').addEventListener('input',draw);
 
-function update(){
+function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   const tp=tipoAtual(), ehBase=tp==='base';
   $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
   // com cava/decote: carreiras do corpo = retas abaixo + diminuições + retas acima
@@ -2255,7 +2257,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29k', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29l', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2530,7 +2532,35 @@ $('ml-salvar').addEventListener('click',async()=>{
 });
 mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto);
 
-['md-ag','md-cr'].forEach(id=>$(id).addEventListener('change',()=>{ $(id).value=Math.max(1,Math.round(+$(id).value||6)); }));
+['md-ag','md-cr'].forEach(id=>$(id).addEventListener('change',()=>{ if($(id).value!=='') $(id).value=Math.max(1,Math.round(+$(id).value)); densOk(true); }));
+['md-ag','md-cr'].forEach(id=>$(id).addEventListener('input',()=>{ const ag=+$('md-ag').value, cr=+$('md-cr').value; if(ag>0) $('sm-ag').value=Math.round(ag*10); if(cr>0) $('sm-cr').value=Math.round(cr*10); if(ag>0||cr>0) densOk(true); }));
+
+// ---- equivalência em cm nos campos de cava, decote e acinturado ----
+const CM_UN={'fx-antes':'c','fx-depois':'c','fc-ini':'c','fc-pas':'p','fc-bor':'a','fd-ini':'c','fd-meio':'a','fd-carc':'a','fd-colar':'c','fd-pas':'p','fd-bor':'a','ct-ini':'c','ct-dim':'p','ct-ret':'c','ct-aum':'p','ct-bor':'a','fa-acima':'c'};
+function densCm(){ const ag=+$('md-ag').value>0?+$('md-ag').value:(+$('sm-ag').value||28)/10, cr=+$('md-cr').value>0?+$('md-cr').value:(+$('sm-cr').value||40)/10; return {ag,cr}; }
+function mostraCm(){
+  const {ag,cr}=densCm(), f=v=>(Math.round(v*10)/10).toString().replace('.',',');
+  Object.entries(CM_UN).forEach(([id,u])=>{ const el=$(id); if(!el) return; let sp=el.parentNode.querySelector('.cm-eq');
+    if(!sp){ sp=document.createElement('small'); sp.className='cm-eq'; el.after(sp); }
+    let t='';
+    if(u==='c') t=`= ${f((+el.value||0)/cr)} cm de altura`;
+    else if(u==='a') t=`= ${f((+el.value||0)/ag)} cm de largura`;
+    else { let A=0,C=0; String(el.value).split(',').forEach(q=>{ const m=q.trim().match(/^(\d+)-(\d+)-(\d+)$/); if(m){ C+=+m[1]*+m[3]; A+=+m[2]*+m[3]; } }); t=A||C?`= ${f(A/ag)} cm de largura (cada lado) em ${f(C/cr)} cm de altura`:''; }
+    sp.textContent=t; });
+}
+document.addEventListener('input',e=>{ if(e.target&&(CM_UN[e.target.id]||/^(md-ag|md-cr|sm-ag|sm-cr)$/.test(e.target.id))) mostraCm(); });
+document.addEventListener('change',()=>setTimeout(mostraCm,0));
+setTimeout(mostraCm,300);
+// agulhas e passadas por cm são obrigatórias: nada segue sem elas
+function densOk(quieto){
+  const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
+  ['md-ag','md-cr'].forEach(id=>$(id).classList.toggle('obrig',falta.includes(id)));
+  let av=$('dens-av'); if(!av){ av=document.createElement('p'); av.id='dens-av'; av.className='dens-av'; $('md-ag').closest('.row').after(av); }
+  av.hidden=!falta.length||quieto&&av.hidden; av.textContent='Preencha agulhas por cm e passadas por cm da sua amostra para continuar.';
+  if(falta.length&&!quieto){ $('med-box').open=true; $(falta[0]).scrollIntoView({behavior:'smooth',block:'center'}); $(falta[0]).focus({preventScroll:true}); }
+  return !falta.length;
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('#md-calc,#pad-usar,#btn-dl,#btn-hist,#btn-ficha,#sim-auth,#aviso-baixa,#rel-baixa'); if(b&&!densOk()){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
 $('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
@@ -3369,7 +3399,7 @@ function montar3D(){
   const yFim=pf.fim, nA=Math.ceil(yFim/.8)+1, nT=72;
   const rPesc=pf.pesc*1.45;
   const fechaB=(x,yy,top)=>1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-rPesc-.3)/2.5);
-  const zBody=(x,yy)=>{ const a=pf.hw(Math.min(Math.max(yy,0),pf.fim)); if(Math.abs(x)>=a) return 0; const top=pf.ombro(x)*(1-Math.min(1,yy/9)); return (prof(yy,x,a)*Math.sqrt(1-(x/a)**2)+bustZ(x,yy))*Math.max(.04,fechaB(x,yy,top)); };
+  const zBody=(x,yy,fr)=>{ const a=pf.hw(Math.min(Math.max(yy,0),pf.fim)); if(Math.abs(x)>=a) return 0; const top=pf.ombro(x)*(1-Math.min(1,yy/9)); return (prof(yy,x,a)*Math.sqrt(1-(x/a)**2)+(fr===false?0:bustZ(x,yy)))*Math.max(.04,fechaB(x,yy,top)); };
   const pt=(y,th,a)=>{ const x=a*Math.cos(th), top=pf.ombro(x)*(1-Math.min(1,y/9)), yy=Math.max(y,top), s=Math.sin(th); return [x,-yy,(prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s:0))*Math.max(.04,fechaB(x,yy,top))]; };
   grade3D(nA,nT+1,(j,i)=>{ const y=Math.min(yFim,j*.8), a=pf.hw(Math.min(y,pf.fim))*(y>pf.fim-2?Math.sqrt(Math.max(.05,1-((y-(pf.fim-2))/4.2)**2)):1); return {p:pt(y,th0(i),a),t:[0,0]}; },Object.assign({normalFora:(x,y,z)=>[x,0,z]},pele));
   function th0(i){ return Math.PI*2*i/nT; }
@@ -3396,7 +3426,7 @@ function montar3D(){
   // frente: so fica aberto o decote; as laterais da cava sao preenchidas (a manga encaixa por cima). costas: tudo fechado
   const dc0=last.spec&&last.spec.forma&&last.spec.forma.decote, gs0=golaSpec(), golaFecha=!!gs0&&!(dc0&&dc0.ativo&&dc0.tipo==='polo');   // careca/garrafinha: a ribana cobre o decote
   const tF=tex3D(preenche(tx,2*sy,!golaFecha),'mip'), tB=tex3D(preenche(tx,2*sy,false),'mip');
-  const armR=arms[0].r[0], yAx=Math.max(10,ip.cava*Math.max(.7,pf.e)), larOmbro=pf.O+armR*1.02;
+  const armR=arms[0].r[0], yAx=Math.max(10,ip.cava*Math.max(.7,pf.e)), larOmbro=pf.O-.2;
   // largura da peca: no ombro cobre a cabeca do braco; da axila para baixo cai do peito sem entrar na cintura
   const hwG=(()=>{ const m=[]; let maxA=0; for(let k=0;k<=Math.ceil(hcm*2)+4;k++){ const y=k/2, real=pf.hw(Math.min(y,pf.fim)); maxA=y>14?Math.max(maxA,real):real;
       let a=(y>14?(.55*maxA+.45*real):real)+.55; if(y>pf.fim) a=Math.max(a,m.length?m[m.length-1]:a); if(y<yAx) a=Math.max(a,larOmbro*(1-sst((y-3)/(yAx-3)))+a*sst((y-3)/(yAx-3))); m.push(a+(y>hcm-4?(y-(hcm-4))*.08:0)); }
@@ -3411,29 +3441,46 @@ function montar3D(){
   const abPesc=golaFecha?pf.pesc*1.45+.5:Math.max(pf.pesc*1.45+.6,meiaAb(.5)+.3);
   const nL=Math.ceil(hcm/.5)+1, nG=110;
   const aoP=(x,y,z)=>{ const yy=-y, ax=Math.abs(x), a=hwG(yy); let o=1; o*=1-.28*Math.exp(-((yy-yAx)**2)/(2*4**2))*sst((ax-pf.B*.7)/(pf.B*.3)); o*=1-.12*Math.exp(-((ax-a)**2)/4); o*=1-.1*Math.exp(-((yy-hcm)**2)/1.5); return o; };
+  // a peça nunca fica por dentro do pescoço: perto da gola a profundidade cobre o pescoço
+  const pescZ=(x,yy)=>{ const r=rPesc+.75; return Math.sqrt(Math.max(0,r*r-x*x))*(1-sst((yy-3)/6)); };
   const peca=(lado,tex)=>grade3D(nL,nG+1,(j,i)=>{ const y=Math.min(hcm,j*.5), a=hwG(y), th=lado==='F'?Math.PI*i/nG:Math.PI+Math.PI*i/nG, x=a*Math.cos(th), s=Math.sin(th);
-      const top=topoP(x)*(1-Math.min(1,y/16))-.6, yy=Math.max(y-.6,top), fecha=1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-abPesc)/2.5), zo=(profG(yy,x,a)*Math.abs(s)+(s>0?bustZ(x,yy)*s*.92:0))*Math.max(.04,fecha), z=Math.sign(s||1)*Math.max(zo,zBody(x,yy)*(s>0?1:1)+.55*Math.max(.15,fecha));
+      const top=topoP(x)*(1-Math.min(1,y/16))-.6, yy=Math.max(y-.6,top), fecha=1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-abPesc)/2.5); let zo=(profG(yy,x,a)*Math.abs(s)+(s>0?bustZ(x,yy)*s*.92:0))*Math.max(.04,fecha), z=Math.sign(s||1)*Math.max(zo,zBody(x,yy,s>0)+.55*Math.max(.15,fecha),pescZ(x,yy)*Math.min(1,Math.abs(s)*4));
       const u=lado==='F'?.5-Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI:.5+Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI;
+      if(j===0) z*=1-sst((Math.abs(x)-abPesc-.4)/1.6);   // frente e costas se encontram no ombro (sem fresta)
       return {p:[x,-yy,z],t:[u,Math.max(0,Math.min(1,(yy-top-.6)/hcm))]}; },{tex,alphaT:.45,rough,normalFora:(x,y,z)=>[x,0,z],ao:aoP});
   peca('F',tF); peca('B',tB);
+  const shellZ=(x,y,fr)=>{ const a=hwG(Math.max(0,y)), c=Math.max(-1,Math.min(1,x/a)), sa=Math.sqrt(1-c*c), top=topoP(x)*(1-Math.min(1,y/16))-.6, yy=Math.max(y,top), fecha=1-(1-sst((yy-top)/3.2))*sst((Math.abs(x)-abPesc)/2.5);
+    const zo=(profG(yy,x,a)*sa+(fr?bustZ(x,yy)*sa*.92:0))*Math.max(.04,fecha); return (fr?1:-1)*Math.max(zo,zBody(x,yy,fr)+.55*Math.max(.15,fecha),pescZ(x,yy)*Math.min(1,sa*4)); };
+  const topoPeca=x=>topoP(x)-.6;
   // mangas: tubo de malha que sai de dentro do ombro da peca (a emenda fica escondida, como numa camiseta de verdade)
   if(ip.manga!=='sem'){
     const bf=Math.min(.25,Math.max(.04,(+$('md-barra').value||5)/hcm));
     const tCorpo=tex3D(recorte(tx,.3,.7,.56,.74),true), tRib=tex3D(recorte(tx,.3,.7,1-bf*.95,.995),true);
     const cCirc=wcm*.4, cAlt=hcm*.18, rAlt=Math.max(1,hcm*bf*.95);
     arms.forEach(a=>{
-      const Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, rTop=Math.max(a.r[0]+.9,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.97,ip.mlarg/Math.PI):Math.max(a.r[2]+.5,ip.punho/Math.PI);
-      const S=[a.S[0]+a.sg*.3,topoP(a.S[0])+rTop*.6,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0];
+      const sg=a.sg, Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, rTop=Math.max(a.r[0]+.9,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.97,ip.mlarg/Math.PI):Math.max(a.r[2]+.5,ip.punho/Math.PI);
+      const S=[sg*(pf.O-.3),topoPeca(sg*(pf.O-.3))+rTop*.92,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0];
       const L1=Math.hypot(E[0]-S[0],E[1]-S[1],1), L2=Math.hypot(W[0]-E[0],W[1]-E[1],1), Lt=Ls-(S[1]-a.S[1]);
-      const at=t=>t<=L1?[0,1,2].map(k=>S[k]+(E[k]-S[k])*t/L1):[0,1,2].map(k=>E[k]+(W[k]-E[k])*Math.min(1,(t-L1)/L2));
       const rAt=t=>rTop+(rEnd-rTop)*Math.min(1,t/Lt), ribL=ip.manga==='curta'?1.6:Math.max(2,ip.mpunho), Lc=Lt-ribL;
-      const voltas=Math.max(1,Math.round(2*Math.PI*rTop/cCirc)), aoM=(x,y,z)=>{ const ins=(x*a.sg<a.S[0]*a.sg+1)?.82:1; return ins*(1-.15*Math.exp(-((-y-S[1])**2)/6)); };
-      const pedaco=(t0,t1,tex,altTex)=>{ const n=Math.max(1,Math.ceil((t1-t0)/2.5)); for(let k=0;k<n;k++){ const ta=t0+(t1-t0)*k/n, tb=t0+(t1-t0)*(k+1)/n; tubo3D(at(ta),at(tb),rAt(ta),rAt(tb),{tex,rough,rep:[voltas,1],ao:aoM},48,ta/altTex,tb/altTex); } };
-      pedaco(0,Lc,tCorpo,cAlt); pedaco(Lc,Lt,tRib,rAlt);
-      // cabeça da manga: domo achatado que fecha a emenda com o ombro
-      esfera3D([S[0]-a.sg*rTop*.15,S[1],S[2]],rTop*1.02,rTop*.62,rTop*.98,{tex:tCorpo,rough,rep:[voltas,1],ao:aoM});
-      // borda da manga (espessura do tecido)
-      const Pe=at(Lt); tubo3D([Pe[0],Pe[1]-.05,Pe[2]],[Pe[0],Pe[1]+.25,Pe[2]],rAt(Lt),rAt(Lt)-.35,{tex:tRib,rough,rep:[voltas,.2]},48);
+      const rBraco=t=>t<=L1?a.r[0]+(a.r[1]-a.r[0])*t/L1:a.r[1]+(a.r[2]-a.r[1])*Math.min(1,(t-L1)/L2);
+      // cabeça da manga: começa dentro do ombro da peça, achatada como a cava
+      const xc=sg*(pf.O-.3-rTop*1.1), ry0=rTop*.85, yc=topoPeca(xc)+rTop*1.0;
+      const rz0=Math.max(1,Math.min(rTop*.85,Math.abs(shellZ(xc,yc,true))*.85,Math.abs(shellZ(xc,yc,false))*.85)), C0=[xc,yc,0];
+      const Lcap=Math.hypot(S[0]-C0[0],S[1]-C0[1]), segs=[[C0,S],[S,E],[E,W]], lens=[Lcap,L1,L2];
+      const pAt=d=>{ for(let k=0;k<3;k++){ if(d<=lens[k]||k===2){ const f=Math.min(1,d/lens[k]); return [0,1,2].map(q=>segs[k][0][q]+(segs[k][1][q]-segs[k][0][q])*f); } d-=lens[k]; } };
+      const passo=.4, nR=Math.ceil((Lcap+Lt)/passo)+1, raw=[]; for(let k=0;k<nR;k++) raw.push(pAt(Math.min(Lcap+Lt,k*passo)));
+      const cen=raw.map((_,k)=>{ if(k<2||k>nR-3) return raw[k]; let t=[0,0,0],n=0; for(let q=-5;q<=5;q++){ const r=raw[Math.max(0,Math.min(nR-1,k+q))], w=1-Math.abs(q)/6; t=t.map((v,ii)=>v+r[ii]*w); n+=w; } return t.map(v=>v/n); });
+      const C3=cen.map(c=>[c[0],-c[1],c[2]]);
+      const fr=C3.map((c,k)=>{ const A=C3[Math.max(0,k-1)], B=C3[Math.min(nR-1,k+1)]; let w=[B[0]-A[0],B[1]-A[1],B[2]-A[2]]; const lw=Math.hypot(...w)||1; w=w.map(v=>v/lw);
+        let u=[w[1],-w[0],0]; const lu=Math.hypot(...u)||1; u=u.map(v=>v/lu); const vv=[w[1]*u[2]-w[2]*u[1],w[2]*u[0]-w[0]*u[2],w[0]*u[1]-w[1]*u[0]]; return [u,vv]; });
+      const rad=k=>{ const d=k*passo, q=d-Lcap, b=sst(d/Lcap); const r=Math.max(rAt(Math.max(0,q)),q>0?rBraco(q)+.5:0); return [ry0+(r-ry0)*b, rz0+(r-rz0)*b]; };
+      const voltas=Math.max(1,Math.round(2*Math.PI*rTop/cCirc)), nS=56;
+      const nf=(x,y,z)=>{ let m=1e9,c=C3[0]; for(const q of C3){ const d=(q[0]-x)**2+(q[1]-y)**2+(q[2]-z)**2; if(d<m){ m=d; c=q; } } return [x-c[0],y-c[1],z-c[2]]; };
+      const aoM=(x,y,z)=>1-.14*Math.exp(-((-y-S[1]-rTop*.5)**2)/8)*(z<0?1.2:1);
+      const parte=(k0,k1,tex,v0,alt)=>grade3D(k1-k0+1,nS+1,(j,i)=>{ const k=k0+j, th=Math.PI*2*i/nS, [ry,rz]=rad(k), [u,vv]=fr[k], c=C3[k], co=Math.cos(th), si=Math.sin(th);
+          return {p:[c[0]+ry*co*u[0]+rz*si*vv[0],c[1]+ry*co*u[1]+rz*si*vv[1],c[2]+ry*co*u[2]+rz*si*vv[2]],t:[i/nS,(k*passo-v0)/alt]}; },{tex,rough,rep:[voltas,1],ao:aoM,normalFora:nf});
+      const kC=Math.min(nR-2,Math.round((Lcap+Lc)/passo));
+      parte(0,kC,tCorpo,Lcap,cAlt); parte(kC,nR-1,tRib,Lcap+Lc,rAlt);
     });
   }
   // gola (ribana na cor do fio)
@@ -3441,23 +3488,46 @@ function montar3D(){
   const tG=tex3D(rib,true), dcp=last.spec&&last.spec.forma&&last.spec.forma.decote, gs=golaSpec();
   const zCorpo=(x,y,off)=>{ const yy=Math.max(-1,y), a=hwG(Math.max(0,yy)); return Math.max(profG(Math.max(0,yy),x,a)*Math.sqrt(Math.max(0,1-(x/a)**2))+bustZ(x,yy)*.92, zBody(x,yy)+.55)+(off||0); };
   if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
-    const colar=+dcp.colar||0, yC=Math.max(2.5,(last.spec.carreiras-((colar||(dcp.inicio+(+dcp.calt||60)))-1))*10/cr), w=Math.max(4,Math.min(ip.galt||7,8)), nr=pf.pesc*1.45+.3, xv=Math.max(.9,(+dcp.carcela||9)*10/ag/2);
-    { const rx=Math.max(nr+.4,meiaAb(.6)+.25), N=48; grade3D(N+1,2,(j,i)=>{ const th=Math.PI*(1.12+.76*j/N), x=rx*Math.cos(th), z=Math.max(rx*.62,nr)*Math.sin(th)-.2, y=i?-1.6:.6; return {p:[x*(i?.94:1),-y,z*(i?.94:1)],t:[j/N*12,i]}; },{tex:tG,rough,rep:[1,1],ao:()=>1,normalFora:(x,y,z)=>[x,0,z]}); }
-    [-1,1].forEach(sg=>{ const N=36; grade3D(N+1,3,(j,i)=>{ const t=j/N, f=i/2;
-        const yi=-.3+(yC+.3)*Math.pow(t,1.05), xi=sg*Math.max(xv,meiaAb(Math.max(0,yi))+.3), xo=xi+sg*w*(.9-.38*t), yo=yi+w*(.08+.62*Math.pow(t,1.3));
-        const x=xi+(xo-xi)*f, y=Math.max(yi+(yo-yi)*f,topoP(x)-.9), lift=.75+.45*Math.sin(Math.PI*f)*(1-t*.5);
-        return {p:[x,-y,zCorpo(x,y,lift)],t:[f*1.5,t*w*1.6]}; },{tex:tG,rough,rep:[1,1],normalFora:()=>[0,0,1],ao:(x,y,z)=>.92}); });
-    if(!dcp.fecha) [yC+2,yC+5].forEach(y=>esfera3D([0,y,zCorpo(0,y,.55)],.5,.5,.18,{cor:[.9,.88,.84],rough:.3}));
+    const colar=+dcp.colar||0, yC=Math.max(2.5,(last.spec.carreiras-((colar||(dcp.inicio+(+dcp.calt||60)))-1))*10/cr), w=Math.max(4.5,Math.min(ip.galt||7,7.5)), xv=Math.max(.9,(+dcp.carcela||9)*10/ag/2);
+    const rn=rPesc*1.04+.45, y0=-.2, yS=-1.7;
+    // linha onde a gola é costurada: sobe pela borda do V, contorna a nuca e desce pelo outro lado
+    const xcF=y=>Math.max(xv,meiaAb(Math.max(0,y))+.3);
+    const xc=xcF(y0), zc=Math.max(shellZ(xc,y0,true),.5), rc=Math.hypot(xc,zc), thL=Math.atan2(zc,-xc), thR=2*Math.PI+Math.atan2(zc,xc);
+    const nV=26, nB=60, base=[];
+    for(let k=0;k<=nV;k++){ const p=k/nV, y=yC+(y0-yC)*sst(p)**.9*1.0; const x=-xcF(y); base.push({p:[x,y,shellZ(x,y,true)+.2],d:[-1,0],fr:true,lap:p}); }
+    for(let k=1;k<nB;k++){ const t=k/nB, th=thL+(thR-thL)*t, wE=(1-sst(t/.22))+sst((t-.78)/.22), r=rn+(rc-rn)*wE, y=yS+(y0-yS)*wE;
+      const sgx=Math.cos(th)<0?-1:1, dx=Math.cos(th)*(1-wE)+sgx*wE, dz=Math.sin(th)*(1-wE)+.25*wE, dn=Math.hypot(dx,dz);
+      base.push({p:[r*Math.cos(th),y,r*Math.sin(th)],d:[dx/dn,dz/dn],fr:Math.sin(th)>0,lap:1,anel:true,wE}); }
+    for(let k=nV;k>=0;k--){ const p=k/nV, y=yC+(y0-yC)*sst(p)**.9; const x=xcF(y); base.push({p:[x,y,shellZ(x,y,true)+.2],d:[1,0],fr:true,lap:p}); }
+    const nP=base.length, nj=10, naSup=(x,y,z,fr)=>{ const xx=Math.max(-larOmbro+.8,Math.min(larOmbro-.8,x)), sz=shellZ(xx,Math.max(-1,y),fr); return [xx,fr?Math.max(z,sz+.3):Math.min(z,sz-.3)]; };
+    grade3D(nj+1,nP,(j,i)=>{ const b=base[i], [xi,yi,zi]=b.p, we=w*(.12+.88*sst(b.lap*1.15));
+        if(j===0) return {p:[xi,-yi,zi],t:[i/nP*nP/3,0]};
+        const f=(j-1)/(nj-1), dd=b.anel?b.d:[b.d[0],.25], dl=Math.hypot(...dd), kY=b.anel?.22+.38*(1-b.wE):.22, ux=dd[0]/dl, uz=dd[1]/dl;
+        const fx=xi+ux*.7, fz=zi+uz*.7, fy=yi-.35;                         // dobra da gola
+        const ox=xi+ux*we*.85, oz=zi+uz*we*.85, oy=yi+we*kY;    // ponta que deita no ombro/peito
+        let x=fx+(ox-fx)*f, z=fz+(oz-fz)*f, y=fy+(oy-fy)*f+(-.25*Math.sin(Math.PI*f));
+        const [xx,zz]=naSup(x,y,z,b.fr); return {p:[xx,-y,zz+(b.fr?.15:-.15)*(1-f)],t:[i/nP*nP/3,.15+f]}; },
+      {tex:tG,rough,rep:[1,Math.max(1,w/1.2)],normalFora:(x,y,z)=>[x,1.2,z],ao:(x,y,z)=>.93});
+    // pé da gola (por baixo, na nuca)
+    grade3D(2,nB+1,(j,i)=>{ const t=i/nB, th=thL+(thR-thL)*t, wE=(1-sst(t/.22))+sst((t-.78)/.22), r=rn+(rc-rn)*wE, y=(yS+(y0-yS)*wE)+(j?2.2:0);
+      return {p:[r*Math.cos(th)*(j?1.04:1),-y,r*Math.sin(th)*(j?1.04:1)],t:[t*nB/3,j]}; },{tex:tG,rough,rep:[1,1],normalFora:(x,y,z)=>[x,0,z]});
+    if(!dcp.fecha) [yC+2,yC+5].forEach(y=>esfera3D([0,y,shellZ(0,y,true)+.6],.5,.5,.18,{cor:[.9,.88,.84],rough:.3}));
   } else if(gs){
-    const nr=pf.pesc*1.45, zc=-.2;
-    if(gs.tipoGola==='garrafinha'){ const alto=Math.min(gs.alturaCm/2,11,7*Math.max(.75,pf.e)*.85);
-      tubo3D([0,1.6,zc],[0,.2,zc],nr+2.0,nr+1.15,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,.6,z-zc]},64);          // base que assenta no ombro
-      tubo3D([0,.2,zc],[0,-alto+.6,zc],nr+1.15,nr+.95,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,0,z-zc]},64);
-      tubo3D([0,-alto+1.9,zc],[0,-alto+.5,zc],nr+1.4,nr+1.15,{tex:tG,rough,rep:[18,1],normalFora:(x,y,z)=>[x,0,z-zc]},64);   // dobra
-      esfera3D([0,-alto+.5,zc],nr+1.27,.35,nr+1.27,{tex:tG,rough,rep:[18,1]},0,Math.PI);
-    } else { const h=Math.max(1.5,Math.min(gs.alturaCm,4));
-      tubo3D([0,1.2,zc+.3],[0,1.2-h,zc],nr+1.2+h*.7,nr+.6,{tex:tG,rough,rep:[20,1],normalFora:(x,y,z)=>[x,.8,z-zc]},72);
-      esfera3D([0,1.2-h,zc],nr+.68,.32,nr+.68,{tex:tG,rough,rep:[20,1]},0,Math.PI); }
+    const nr=pf.pesc*1.45*1.04, R0=Math.min(abPesc+2.4,larOmbro*.6), N=120;
+    // ribana que sai da borda do decote (em cima do ombro) e sobe abraçando o pescoço: sem vão entre gola e corpo
+    const gola=(yTopo,rTopo,dip,lin)=>{ const nj=14; grade3D(nj+2,N+1,(j,i)=>{ const th=Math.PI*2*i/N, co=Math.cos(th), si=Math.sin(th), frt=si>=0;
+        const xb=R0*co, yb=topoPeca(xb)+.25, zb=shellZ(xb,yb,frt)*.985;
+        const yt=yTopo+dip*Math.max(0,si)**2, xt=rTopo*co, zt=rTopo*si;
+        if(j>nj){ const ri=rTopo-.38; return {p:[ri*co,-(yt+.15),ri*si],t:[i/N,1.05]}; }   // espessura da ribana na borda
+        const f=j/nj, g=1-Math.pow(1-f,2.6), lift=.25*Math.sin(Math.PI*f);
+        const x=xb+(xt-xb)*g, z=zb+(zt-zb)*g, y=yb+(yt-yb)*f;
+        const k=Math.hypot(x,z)||1; return {p:[x+x/k*lift,-y,z+z/k*lift],t:[i/N,f*(lin||1)]}; },{tex:tG,rough,rep:[Math.round(nr*2*Math.PI/.9),1],normalFora:(x,y,z)=>[x,.35,z],ao:(x,y,z)=>.95}); };
+    if(gs.tipoGola==='garrafinha'){ const alto=Math.min(gs.alturaCm/2,11,7*Math.max(.75,pf.e)*.85), rg=nr+1.0;
+      gola(-.6,rg,.5,1);
+      tubo3D([0,-.6],[0,-alto+.6],rg,rg-.2,{tex:tG,rough,rep:[Math.round(rg*2*Math.PI/.9),1],normalFora:(x,y,z)=>[x,0,z]},96);
+      tubo3D([0,-alto+2.2],[0,-alto+.5],rg+.45,rg+.25,{tex:tG,rough,rep:[Math.round(rg*2*Math.PI/.9),1],normalFora:(x,y,z)=>[x,0,z]},96);   // dobra
+      esfera3D([0,-alto+.5],rg+.12,.32,rg+.12,{tex:tG,rough,rep:[Math.round(rg*2*Math.PI/.9),1]},0,Math.PI);
+    } else { const h=Math.max(1.5,Math.min(gs.alturaCm,3.5)); gola(-h*.55,nr+.45,.35,1); }
   }
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${Wn} agulhas × ${Hn} carreiras) · arraste para girar`;
   return fim();
