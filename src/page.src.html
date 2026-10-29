@@ -159,6 +159,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <option value="meia">Meia malha</option>
           <option value="links">Malha trás (avesso)</option>
           <option value="quadriculado">Links quadriculado</option>
+          <option value="trancas">Meia malha com tranças</option>
           <optgroup label="Canelados (corpo)">
             <option value="pr:can1x1">Canelado 1x1</option><option value="pr:can2x2">Canelado 2x2</option>
             <option value="pr:can3x1">Canelado 3x1</option><option value="pr:can3x3">Canelado 3x3</option>
@@ -178,7 +179,7 @@ details.more>*:not(summary){margin-bottom:10px}
         <div class="opts">
           <div class="opts-head"><span class="lt tt">Opções de ponto</span></div>
           <p class="hint" id="opt-base" hidden>A base escolhida em Tipo de barra é o programa principal: largura, carreiras, barra, ponto e linhas de função vêm dela, sem mudar nada. Para trocar só o ponto do corpo, escolha outro tipo em Tipo de ponto: o início/barra da base fica e o corpo é refeito.</p>
-          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, converse com a IA abaixo para criar um ponto a partir delas, ou adicione tranças.</p>
+          <p class="hint" id="opt-none">Meia malha e malha trás não têm opções. Se quiser, converse com a IA abaixo para criar um ponto a partir delas. Para tranças, escolha "Meia malha com tranças" em Tipo de ponto.</p>
           <div class="row q">
             <label for="f-bx">Bloco: agulhas<input id="f-bx" type="number" min="1" value="5"></label>
             <label for="f-by">Bloco: carreiras<input id="f-by" type="number" min="1" value="5"></label>
@@ -255,8 +256,19 @@ details.more>*:not(summary){margin-bottom:10px}
             <div class="chat-log" id="chat-log" aria-live="polite"><p class="hint">Converse para criar ou ajustar o ponto (a grade do rapport mostra o resultado). Ex.: "deixe o carregado a cada 4 carreiras", "faça o rapport com 6 agulhas", "coloque um vazado no meio". A IA altera a grade e explica.</p></div>
             <div class="chat-in"><textarea id="chat-txt" rows="2" placeholder="Escreva o que quer mudar no ponto…"></textarea><button type="button" id="chat-env">Enviar</button></div>
           </div>
-          <div id="cables" style="display:flex;flex-direction:column;gap:8px"></div>
-          <div class="actions"><button id="btn-addc" type="button" class="ghost">+ Adicionar trança</button></div>
+          <div class="cable tr" id="tr-box">
+            <div class="cable-head"><span class="tt">Tranças</span><span class="hint" id="tr-info"></span></div>
+            <div class="row">
+              <label for="tr-n">Quantidade<input id="tr-n" type="number" min="1" max="12" value="1"></label>
+              <label for="tr-g">Tamanho<select id="tr-g"><option value="1">2 agulhas (1+1)</option><option value="2" selected>4 agulhas (2+2)</option><option value="3">6 agulhas (3+3)</option><option value="4">8 agulhas (4+4)</option><option value="5">10 agulhas (5+5)</option><option value="6">12 agulhas (6+6)</option><option value="7">14 agulhas (7+7)</option></select></label>
+              <label for="tr-int">Cruza a cada (carreiras)<input id="tr-int" type="number" min="2" value="6"></label>
+            </div>
+            <div class="row">
+              <label for="tr-lat">Malha trás ao lado<input id="tr-lat" type="number" min="0" max="4" value="2"></label>
+              <label for="tr-sent">Sentido<select id="tr-sent"><option value="esq">Todas para a esquerda</option><option value="dir">Todas para a direita</option><option value="alt">Alternado (espelhado)</option></select></label>
+            </div>
+            <p class="hint">As tranças ficam distribuídas por igual na largura, em fundo de meia malha.</p>
+          </div>
         </div>
 
         <div class="opts" id="formas">
@@ -485,7 +497,7 @@ const BUILTIN = {'meia malha':'meia','jersey':'meia','malha tras':'links','avess
 const LABEL = {base:'Ponto da base',meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
 const norm = t => (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
 const libByName = n => LIB.find(e=>norm(e.nome)===norm(n));
-const tipoAtual = () => { const t=$('f-tipo').value; return (t==='biblioteca'||t==='ia'||t.startsWith('pr:'))?'motivo':t; };
+const tipoAtual = () => { const t=$('f-tipo').value; return (t==='biblioteca'||t==='ia'||t.startsWith('pr:'))?'motivo':t==='trancas'?'meia':t; };
 // canelados e fang prontos para o corpo: frente (1) e tras (2) pela distribuicao; fang = carregado (5 tras / 4 frente) alternando
 const PRONTOS=(()=>{ const o={}, arr={'1x1':[1,1],'2x2':[2,2],'3x1':[3,1],'3x3':[3,3]};
   for(const [k,[f,t]] of Object.entries(arr)){
@@ -595,7 +607,7 @@ function readSpec(){
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini')+1+Math.max(0,num('fx-antes')||0),meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
-    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:(tipo==='jacquard'||tipo==='base')?[]:cables.map(c=>({agulha:+c.agulha,grupo:+c.grupo,intervalo:+c.intervalo,lateral:+c.lateral,sentido:c.sentido}))};
+    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
 }
 function writeSpec(s){
   $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
@@ -613,8 +625,8 @@ function writeSpec(s){
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
     $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
     $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; }
-  cables = s.trancas.map(t=>({agulha:t.agulha,grupo:t.grupo,intervalo:t.intervalo,lateral:t.lateral,sentido:t.sentido||'esq'}));
-  renderCables(); update();
+  if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
+  update();
 }
 
 // ---- editor do rapport ----
@@ -741,27 +753,13 @@ $('f-jimg').addEventListener('change',async e=>{
   }catch(err){ $('jq-status').textContent='Não consegui ler essa imagem. Tente um PNG ou JPG com fundo liso.'; }
   e.target.value='';
 });
-function renderCables(){
-  const box=$('cables'); box.textContent='';
-  cables.forEach((c,k)=>{
-    const d=document.createElement('div'); d.className='cable';
-    d.innerHTML=`<div class="cable-head"><span>Trança ${k+1}</span><button type="button" class="ghost" data-del="${k}">Remover</button></div>
-    <div class="row">
-      <label>1ª agulha<input type="number" min="1" data-k="${k}" data-f="agulha" value="${c.agulha}"></label>
-      <label>Tamanho<select data-k="${k}" data-f="grupo">${[1,2,3,4,5,6,7].map(g=>`<option value="${g}"${c.grupo==g?' selected':''}>${2*g} agulhas (${g}+${g})</option>`).join('')}</select></label>
-      <label>Cruza a cada<input type="number" min="2" data-k="${k}" data-f="intervalo" value="${c.intervalo}"></label>
-      <label>Trás ao lado<input type="number" min="0" max="4" data-k="${k}" data-f="lateral" value="${c.lateral}"></label>
-      <label>Sentido<select data-k="${k}" data-f="sentido"><option value="esq"${c.sentido!=='dir'?' selected':''}>28 | 29</option><option value="dir"${c.sentido==='dir'?' selected':''}>29 | 28 (invertido)</option></select></label>
-    </div>`;
-    box.appendChild(d);
-  });
-  box.querySelectorAll('[data-k]').forEach(el=>el.addEventListener('input',e=>{const t=e.target; cables[+t.dataset.k][t.dataset.f]=t.value; update();}));
-  box.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',e=>{cables.splice(+e.target.dataset.del,1); renderCables(); update();}));
+function gerarTrancas(W){
+  const n=Math.max(1,parseInt($('tr-n').value,10)||1), g=parseInt($('tr-g').value,10)||2, iv=Math.max(2,parseInt($('tr-int').value,10)||6), lat=Math.max(0,parseInt($('tr-lat').value,10)||0), sen=$('tr-sent').value;
+  const seg=(W||0)/n, out=[];
+  for(let k=0;k<n;k++){ const ag=Math.floor(k*seg+(seg-2*g)/2)+1; out.push({agulha:ag,grupo:g,intervalo:iv,lateral:lat,sentido:sen==='alt'?(k%2?'dir':'esq'):sen}); }
+  return out;
 }
-$('btn-addc').addEventListener('click',()=>{
-  const W=parseInt($('f-larg').value,10)||50;
-  cables.push({agulha:Math.max(3,Math.floor((W-4)/2)+1),grupo:2,intervalo:6,lateral:2,sentido:'esq'}); renderCables(); update();
-});
+function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
 ['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
@@ -783,7 +781,7 @@ function aplicaBase(){
   } else if($('f-tipo').value==='base') $('f-tipo').value='meia';
   update();
 }
-['f-nome','f-larg','f-carr','f-rib','f-guia','f-gb','f-gc','f-gd','f-bx','f-by'].forEach(id=>$(id).addEventListener('input',update));
+['f-nome','f-larg','f-carr','f-rib','f-guia','f-gb','f-gc','f-gd','f-bx','f-by','tr-n','tr-g','tr-int','tr-lat','tr-sent'].forEach(id=>$(id).addEventListener('input',update));
 $('f-ponto').addEventListener('input',()=>{ const e=libByName($('f-ponto').value); if(e && norm(e.nome)!==motifNome) loadLib(e); else if(!e) { $('motif-src').hidden=true; } update(); });
 $('f-tipo').addEventListener('change',()=>{
   const t=$('f-tipo').value;
@@ -811,7 +809,6 @@ function update(){
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
   $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo';
-  $('btn-addc').disabled=ehBase;
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -820,10 +817,9 @@ function update(){
   document.querySelectorAll('.ai').forEach(el=>el.hidden=t5!=='ia');
   $('opt-none').hidden = !(tp==='meia'||tp==='links');
   $('chat-ponto').hidden = tp==='jacquard'||tp==='base';
-  if(ehBase){ $('btn-addc').hidden=true; $('cables').hidden=true; }
   $('f-rib').disabled = $('f-barra').value.startsWith('base:');
   document.querySelectorAll('.j').forEach(el=>el.hidden=tp!=='jacquard');
-  $('btn-addc').hidden = tp==='jacquard'; $('cables').hidden = tp==='jacquard';
+  $('tr-box').hidden = $('f-tipo').value!=='trancas'; { const tt=readSpec().trancas; $('tr-info').textContent=tt.length?`1ª agulha de cada: ${tt.map(t=>t.agulha).join(', ')}`:''; }
   if(t5==='ia' && $('f-ponto').value.trim() && norm($('f-ponto').value)!==motifNome && !$('btn-motif').disabled)
     $('motif-status').textContent=`Clique em "Criar ponto com IA" para gerar “${$('f-ponto').value.trim()}”, ou monte o rapport à mão.`;
   const chk=RAYNEN.check(readSpec()), msgs=$('msgs'); msgs.textContent='';
