@@ -156,8 +156,8 @@ details.more>*:not(summary){margin-bottom:10px}
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
           <div class="row">
-            <label for="md-ag">Agulhas por cm<small class="dica">quantas agulhas dão 1 cm de largura</small><input id="md-ag" type="number" min="1" max="20" step="0.1" value="6"></label>
-            <label for="md-cr">Passadas por cm<small class="dica">quantas carreiras dão 1 cm de altura</small><input id="md-cr" type="number" min="1" max="30" step="0.1" value="6"></label>
+            <label for="md-ag">Agulhas por cm<small class="dica">quantas agulhas dão 1 cm de largura (número inteiro)</small><input id="md-ag" type="number" min="1" max="20" step="1" inputmode="numeric" value="6"></label>
+            <label for="md-cr">Passadas por cm<small class="dica">quantas carreiras dão 1 cm de altura (número inteiro)</small><input id="md-cr" type="number" min="1" max="30" step="1" inputmode="numeric" value="6"></label>
           </div>
           <div class="row">
             <label for="md-larg">Largura da peça<small class="dica">de uma lateral à outra</small><input id="md-larg" type="number" min="5" step="0.5" value="50"></label>
@@ -1594,7 +1594,8 @@ function passosAuto(total, R, primeiro){
   return out.join(', ');
 }
 function calcularMedidas(){
-  const ag=+$('md-ag').value||6, cr=+$('md-cr').value||6, cm=x=>Math.max(0,+$(x).value||0);
+  const inteiro=id=>{const v=Math.max(1,Math.round(+$(id).value||6));$(id).value=v;return v;};
+  const ag=inteiro('md-ag'), cr=inteiro('md-cr'), cm=x=>Math.max(0,+$(x).value||0);
   const larg=cm('md-larg'), comp=cm('md-comp'), barra=cm('md-barra'), cava=cm('md-cava'), cent=cm('md-cent'), dt=$('md-dtipo').value, dl=cm('md-dlarg'), dp=cm('md-dprof'), cint=cm('md-cint'), hc=cm('md-hcint');
   let W=Math.round(larg*ag); if(W%2===0) W++;
   // barra: inicio fixo (~7 carreiras de ribana fora do laco) + 4 carreiras por volta
@@ -1635,6 +1636,7 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+['md-ag','md-cr'].forEach(id=>$(id).addEventListener('change',()=>{ $(id).value=Math.max(1,Math.round(+$(id).value||6)); }));
 $('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
