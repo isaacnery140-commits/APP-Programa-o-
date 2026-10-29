@@ -138,7 +138,9 @@ section label{font-size:14px}
 .sis-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .sis-row label{width:96px}
 .sis-bt{display:flex;gap:6px}
-.rel-fab{position:fixed;right:16px;bottom:16px;z-index:40;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.2);background:var(--warn);color:#fff;border:0;font-weight:700}
+.fabs{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.rel-fab.aj{background:var(--accent);color:var(--accent-ink)}
+.rel-fab{border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.2);background:var(--warn);color:#fff;border:0;font-weight:700}
 .rel-back{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:16px}
 .rel-back[hidden]{display:none}
 .rel-box{background:var(--panel);color:var(--ink);border-radius:10px;max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
@@ -182,6 +184,9 @@ section label{font-size:14px}
 .rel-passos li{margin:2px 0}
 .rel-ajuste{border:1px solid var(--accent);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
 .rel-ajuste textarea{width:100%;font:inherit}
+.v3-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.v3-bar button{padding:5px 10px;font-size:13px}
+.v3-bar .hint{flex-basis:100%}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -687,22 +692,26 @@ details.more>*:not(summary){margin-bottom:10px}
 
 
 <div class="aviso-topo" id="aviso-topo" role="status" aria-live="polite" hidden><span id="aviso-txt"></span><span class="aviso-bt"><button type="button" id="aviso-baixa" hidden>Baixar programa com erros e avisos ajustados</button><button type="button" id="aviso-ver">Ver</button><button type="button" class="ghost" id="aviso-ok">Ok, vi</button></span></div>
-<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema / ajustar<span class="rel-badge" id="rel-badge" hidden></span></button>
+<div class="fabs"><button type="button" class="rel-fab aj" id="aj-abre" aria-haspopup="dialog">✎ Ajustar programa</button><button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema<span class="rel-badge" id="rel-badge" hidden></span></button></div>
 <div class="rel-back" id="rel-back" hidden>
   <div class="rel-box" role="dialog" aria-modal="true" aria-labelledby="rel-tt">
-    <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema ou ajustar o programa</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
-    <div class="rel-ajuste">
+    <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
+    <div class="rel-ajuste" id="rel-sec-aj" hidden>
       <label for="rel-aj"><span class="tt">Ajustar o programa</span><small class="dica">explique o que quer mudar e o app faz no programa aberto. Ex.: "polo decote V: depois do V feche o pano e não faça o cavado da gola"</small><textarea id="rel-aj" rows="3" placeholder="Descreva o ajuste"></textarea></label>
+      <label for="rel-aj-img">Anexar foto (opcional)<small class="dica">foto do modelo, do desenho ou da tela do Raynen mostrando como quer que fique</small><input id="rel-aj-img" type="file" accept="image/*"></label>
+      <img id="rel-aj-prev" alt="Foto anexada ao ajuste" hidden style="max-width:100%;max-height:200px;object-fit:contain;border:1px solid var(--line);border-radius:6px">
       <div class="actions"><button type="button" id="rel-ajusta">Ajustar programa</button><span class="status hint" id="rel-aj-st"></span></div>
     </div>
+    <div id="rel-sec-erro">
     <label for="rel-txt">O que deu errado?<small class="dica">ex.: a gola não encaixou na simulação; o Raynen deu erro W002 na carreira 120</small><textarea id="rel-txt" rows="4" placeholder="Descreva o problema"></textarea></label>
     <p class="hint" id="rel-prog"></p>
     <label for="rel-img">Anexar print (opcional)<small class="dica">foto da tela do app ou a janela de compilação do Raynen com os avisos (W021, W041…)</small><input id="rel-img" type="file" accept="image/*"></label>
     <img id="rel-prev" alt="Print anexado" hidden>
     <label class="chk" for="rel-sim"><input type="checkbox" id="rel-sim" checked> Incluir a imagem da simulação e as medidas/configurações atuais</label>
     <div class="actions"><button type="button" id="rel-envia">Enviar relato</button><button type="button" class="ghost" id="rel-copia">Copiar texto para o chat</button><span class="status hint" id="rel-st"></span></div>
+    </div>
     <div class="rel-ajuda" id="rel-ajuda" hidden aria-live="polite"><span class="tt" id="rel-ajuda-tt">Resolvendo pelo manual do Raynen</span><ol class="rel-passos" id="rel-passos"></ol><div id="rel-ajuda-txt" style="white-space:pre-wrap"></div><div class="actions"><button type="button" id="rel-baixa" hidden>Baixar programa com erros e avisos ajustados</button><button type="button" class="ghost" id="rel-desfaz" hidden>Desfazer as mudanças</button></div></div>
-    <div class="rel-lista"><span class="tt">Relatos enviados</span><ul class="mlist" id="rel-list"></ul></div>
+    <div class="rel-lista"><span class="tt" id="rel-lista-tt">Relatos enviados</span><ul class="mlist" id="rel-list"></ul></div>
   </div>
 </div>
 
@@ -1244,16 +1253,20 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+let ajFoto=null;
+$('rel-aj-img').addEventListener('change',async()=>{ const f=$('rel-aj-img').files[0]; ajFoto=null; $('rel-aj-prev').hidden=true; if(!f) return;
+  try{ const url=URL.createObjectURL(f); ajFoto=await imagemCabe(url,1100); URL.revokeObjectURL(url); $('rel-aj-prev').src=ajFoto; $('rel-aj-prev').hidden=false; }catch(e){ $('rel-aj-st').textContent=e.message; } });
+
 let carrAntesFecha=0; $('fd-fecha').addEventListener('click',()=>{ carrAntesFecha=+$('f-carr').value||0; },true);
 $('fd-fecha').addEventListener('change',()=>{ const antes=carrAntesFecha||(+$('f-carr').value||0); update(); const d=antes-(+$('f-carr').value||0); if(d){ $('fa-acima').value=Math.max(0,(+$('fa-acima').value||0)+d); update(); } });
 $('rel-ajusta').addEventListener('click',async()=>{
-  const st=$('rel-aj-st'), t=$('rel-aj').value.trim(); if(!t){ st.textContent='Escreva o ajuste que quer.'; $('rel-aj').focus(); return; }
+  const st=$('rel-aj-st'), t=$('rel-aj').value.trim(); if(!t&&!ajFoto){ st.textContent='Escreva o ajuste que quer (ou anexe uma foto).'; $('rel-aj').focus(); return; }
   $('rel-ajusta').disabled=true; st.textContent='Ajustando…';
   try{
-    const r={texto:t, tipo:'ajuste', criado:Date.now(), status:'aberto', resposta:'', versao:document.title, avisos:($('msgs').textContent||'').replace(/\s+/g,' ').slice(0,3000), erros:[], spec:specResumo(), programa:readSpec().nome};
+    const r={print:ajFoto||undefined, texto:t, tipo:'ajuste', criado:Date.now(), status:'aberto', resposta:'', versao:document.title, avisos:($('msgs').textContent||'').replace(/\s+/g,' ').slice(0,3000), erros:[], spec:specResumo(), programa:readSpec().nome};
     salvaHistorico(true); let ref=null;
     if(db) ref=await db.collection('problemas').add(r); else { const o=lsLoad(); o.problemas=o.problemas||[]; r.id=String(Date.now()); o.problemas.push(r); lsSave(o); RELATOS=o.problemas; }
-    st.textContent='Pedido registrado. Veja abaixo o que o app está mudando.'; $('rel-aj').value='';
+    st.textContent='Pedido registrado. Veja abaixo o que o app está mudando.'; $('rel-aj').value=''; $('rel-aj-img').value=''; ajFoto=null; $('rel-aj-prev').hidden=true; if(!r.print) delete r.print;
     await ajudaRelato(r,ref);
   }catch(e){ st.textContent='Não consegui registrar: '+(e.code==='not_granted'?'sem permissão para gravar.':e.message); }
   finally{ $('rel-ajusta').disabled=false; }
@@ -1392,7 +1405,7 @@ function papeisGuias(o){
   return m;
 }
 let fotoModelo=null;
-function fotoFicha(){ if(fotoModelo) return fotoModelo; try{ if(!simAuth||simModo!=='man') return null; const cv=$('sim-cv'), c=document.createElement('canvas'); c.width=184; c.height=220; const x=c.getContext('2d'); const k=Math.max(184/cv.width,220/cv.height); x.drawImage(cv,(184-cv.width*k)/2,(220-cv.height*k)/2*0,cv.width*k,cv.height*k); return c.toDataURL('image/jpeg',.8); }catch(e){ return null; } }
+function fotoFicha(){ if(fotoModelo) return fotoModelo; try{ if(!simAuth||simModo!=='man') return null; const cv=(V3&&$('sim-cv').hidden)?(desenha3D(),V3.cv):$('sim-cv'), c=document.createElement('canvas'); c.width=184; c.height=220; const x=c.getContext('2d'); const k=Math.max(184/cv.width,220/cv.height); x.drawImage(cv,(184-cv.width*k)/2,(220-cv.height*k)/2*0,cv.width*k,cv.height*k); return c.toDataURL('image/jpeg',.8); }catch(e){ return null; } }
 function fichaDados(){
   if(!last) return null;
   const o=last, s=o.spec, gs=golaInfo(), go=gs?RAYNEN.build(gs):null;
@@ -1586,7 +1599,8 @@ function renderRelatos(){
   const ul=$('rel-list'); ul.textContent='';
   if(!RELATOS.length){ const li=document.createElement('li'); li.textContent='Nenhum relato ainda.'; ul.appendChild(li); return; }
   const novos=new Set(novosResolvidos().map(r=>r.id));
-  RELATOS.slice().sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); if(novos.has(r.id)) li.className='rel-novo'; const sp=document.createElement('span');
+  if(!RELATOS.some(r=>(r.tipo==='ajuste')===(relModo==='ajuste'))){ const li=document.createElement('li'); li.textContent=relModo==='ajuste'?'Nenhum ajuste pedido ainda.':'Nenhum relato ainda.'; ul.appendChild(li); return; }
+  RELATOS.filter(r=>(r.tipo==='ajuste')===(relModo==='ajuste')).sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); if(novos.has(r.id)) li.className='rel-novo'; const sp=document.createElement('span');
     const b=document.createElement('b'); b.textContent=(r.tipo==='ajuste'?'Ajuste: ':'')+(r.texto||'(sem texto)').slice(0,90); sp.appendChild(b);
     const sm=document.createElement('small'); sm.textContent=`${new Date(r.criado).toLocaleString('pt-BR')} · `; const st=document.createElement('span'); st.textContent=r.status==='resolvido'?'resolvido ✓':'aberto'; if(r.status==='resolvido') st.className='rel-ok'; sm.appendChild(st); sp.appendChild(sm);
     if(r.resposta){ const rs=document.createElement('small'); rs.textContent='Resposta do Claude: '+r.resposta; sp.appendChild(rs); }
@@ -1594,9 +1608,10 @@ function renderRelatos(){
     if((r.status==='resolvido'||r.ajustado)&&r.programa){ const bb=document.createElement('button'); bb.type='button'; bb.className='ghost'; bb.textContent='Baixar programa com erros e avisos ajustados'; bb.addEventListener('click',()=>{ relFecha(); baixaDeNovo(r.programa); }); li.appendChild(bb); }
     li.appendChild(sp); ul.appendChild(li); });
 }
-function relAbre(){ $('rel-prog').textContent=`O app vai corrigir o programa que está aberto agora: ${readSpec().nome}. Se o erro é de outro programa, abra ele no Histórico de programas antes.`; $('rel-back').hidden=false; $('rel-st').textContent=''; renderRelatos(); setTimeout(()=>$('rel-txt').focus(),30); }
-function relFecha(){ $('rel-back').hidden=true; $('rel-abre').focus(); }
-$('rel-abre').addEventListener('click',relAbre);
+let relModo='erro';
+function relAbre(modo){ relModo=modo==='ajuste'?'ajuste':'erro'; $('rel-sec-aj').hidden=relModo!=='ajuste'; $('rel-sec-erro').hidden=relModo==='ajuste'; $('rel-tt').textContent=relModo==='ajuste'?'Ajustar o programa':'Relatar problema'; $('rel-lista-tt').textContent=relModo==='ajuste'?'Ajustes pedidos':'Relatos enviados'; $('rel-ajuda').hidden=true; renderRelatos(); $('rel-prog').textContent=`O app vai corrigir o programa que está aberto agora: ${readSpec().nome}. Se o erro é de outro programa, abra ele no Histórico de programas antes.`; $('rel-back').hidden=false; $('rel-st').textContent=''; renderRelatos(); setTimeout(()=>(relModo==='ajuste'?$('rel-aj'):$('rel-txt')).focus(),30); }
+function relFecha(){ $('rel-back').hidden=true; (relModo==='ajuste'?$('aj-abre'):$('rel-abre')).focus(); }
+$('rel-abre').addEventListener('click',()=>relAbre('erro')); $('aj-abre').addEventListener('click',()=>relAbre('ajuste'));
 $('rel-fecha').addEventListener('click',relFecha);
 $('rel-back').addEventListener('click',e=>{ if(e.target===$('rel-back')) relFecha(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('rel-back').hidden) relFecha(); });
@@ -2435,6 +2450,8 @@ function desenhaCabelo(ctx,cx,y0,s,C,rx,ry,pub,fase){
 }
 function simular(){
   if(typeof simModo!=='undefined' && simModo==='perto'){ simularPerto(); return; }
+  try{ if(simModo==='man'&&montar3D()){ $('sim-cv').hidden=true; return; } }catch(e){ console.error(e); if(V3){ V3.cv.hidden=true; V3.bar.hidden=true; } }
+  $('sim-cv').hidden=false;
   const cv=$('sim-cv'), ctx=cv.getContext('2d'), Wc=cv.width, Hc=cv.height;
   ctx.clearRect(0,0,Wc,Hc);
   if(!last||!last.sim||!last.sim.cursos.length){ ctx.fillStyle='#5b665f'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem programa para simular.',Wc/2,Hc/2); $('sim-med').textContent=''; return; }
@@ -2533,6 +2550,192 @@ function simular(){
   }
   else { const gs=golaSpec(); if(gs) desenhaGola(ctx,cx,y0,s,pf,gs,$('sm-c1').value); }
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${W} agulhas × ${H} carreiras)`;
+}
+
+// ---- PEÇA 3D: manequim e peça em 3D (WebGL próprio, sem biblioteca externa); dá para girar e aproximar ----
+let V3=null;
+const M4={
+  mul(a,b){ const o=new Float32Array(16); for(let i=0;i<4;i++) for(let j=0;j<4;j++){ let s=0; for(let k=0;k<4;k++) s+=a[k*4+j]*b[i*4+k]; o[i*4+j]=s; } return o; },
+  persp(f,as,n,fa){ const t=1/Math.tan(f/2), o=new Float32Array(16); o[0]=t/as; o[5]=t; o[10]=(fa+n)/(n-fa); o[11]=-1; o[14]=2*fa*n/(n-fa); return o; },
+  rotX(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]); },
+  rotY(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); },
+  trans(x,y,z){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
+};
+const V3VS=`attribute vec3 p;attribute vec3 n;attribute vec2 t;uniform mat4 mv,pr;varying vec3 vn,vp;varying vec2 vt;
+void main(){ vec4 q=mv*vec4(p,1.0); vp=q.xyz; vn=mat3(mv)*n; vt=t; gl_Position=pr*q; }`;
+const V3FS=`precision mediump float;varying vec3 vn,vp;varying vec2 vt;uniform sampler2D tx;uniform float useTx,alphaT,rough,pele;uniform vec3 cor;uniform vec2 rep;
+void main(){ vec4 b=useTx>0.5?texture2D(tx,vt*rep):vec4(cor,1.0); if(b.a<alphaT) discard;
+ vec3 N=normalize(vn); if(!gl_FrontFacing) N=-N; vec3 V=normalize(-vp);
+ vec3 L1=normalize(vec3(-0.45,0.62,0.65)), L2=normalize(vec3(0.6,0.25,-0.75));
+ float h=0.5+0.5*N.y; vec3 amb=mix(vec3(0.42,0.40,0.37),vec3(0.62,0.62,0.63),h);
+ float d1=max(dot(N,L1),0.0), d2=max(dot(N,L2),0.0)*0.35;
+ float sp=pow(max(dot(N,normalize(L1+V)),0.0),mix(48.0,10.0,rough))*(1.0-rough)*0.45;
+ float rim=pow(1.0-max(dot(N,V),0.0),3.0)*0.12;
+ vec3 c=b.rgb*(amb*0.75+vec3(1.0,0.98,0.95)*d1*0.78+d2)+vec3(sp)+vec3(rim);
+ gl_FragColor=vec4(c,1.0); }`;
+function tem3D(){ try{ const c=document.createElement('canvas'); return !!(c.getContext('webgl')||c.getContext('experimental-webgl')); }catch(e){ return false; } }
+function iniciar3D(){
+  if(V3) return V3; if(!tem3D()) return null;
+  const box=$('man-box'), cv=document.createElement('canvas'); cv.id='sim3d'; cv.setAttribute('aria-label','Peça em 3D no manequim: arraste para girar'); cv.style.cssText='width:100%;display:block;touch-action:none;cursor:grab;border-radius:8px;background:#ebe8e3';
+  box.insertBefore(cv,box.firstChild);
+  const gl=cv.getContext('webgl',{antialias:true,preserveDrawingBuffer:true})||cv.getContext('experimental-webgl',{preserveDrawingBuffer:true});
+  if(!gl){ cv.remove(); return null; }
+  const ext32=gl.getExtension('OES_element_index_uint');
+  const sh=(t,s)=>{ const o=gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o); if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  const pg=gl.createProgram(); gl.attachShader(pg,sh(gl.VERTEX_SHADER,V3VS)); gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,V3FS)); gl.linkProgram(pg);
+  const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),t:gl.getAttribLocation(pg,'t')}; ['mv','pr','tx','useTx','alphaT','rough','cor','rep','pele'].forEach(k=>loc[k]=gl.getUniformLocation(pg,k));
+  const bar=document.createElement('div'); bar.className='v3-bar';
+  bar.innerHTML='<button type="button" data-v="0">Frente</button><button type="button" data-v="-35">3/4</button><button type="button" data-v="90">Lado</button><button type="button" data-v="180">Costas</button><button type="button" data-z="-1" aria-label="Aproximar">＋</button><button type="button" data-z="1" aria-label="Afastar">－</button><button type="button" data-a="1" aria-pressed="false">Girar sozinho</button><span class="hint">Arraste para girar · roda do mouse ou pinça para aproximar</span>';
+  box.insertBefore(bar,cv.nextSibling);
+  V3={gl,pg,loc,cv,bar,ext32,malhas:[],rotY:-.35,rotX:.06,dist:1,auto:false,alvoY:-30,altura:100};
+  const ajusta=()=>{ const w=box.clientWidth||600, h=Math.round(Math.min(w*1.25,820)), dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+'px'; desenha3D(); };
+  V3.ajusta=ajusta; try{ new ResizeObserver(()=>ajusta()).observe(box); }catch(e){ window.addEventListener('resize',ajusta); }
+  const pts=new Map(); let ult=null, pinca=0;
+  cv.addEventListener('pointerdown',e=>{ cv.setPointerCapture(e.pointerId); pts.set(e.pointerId,[e.clientX,e.clientY]); ult=[e.clientX,e.clientY]; cv.style.cursor='grabbing'; V3.auto=false; marcaAuto(); });
+  cv.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pts.size===2){ const [a,b]=[...pts.values()], d=Math.hypot(a[0]-b[0],a[1]-b[1]); if(pinca) V3.dist=Math.max(.3,Math.min(1.6,V3.dist*pinca/d)); pinca=d; desenha3D(); return; }
+    const dx=e.clientX-ult[0], dy=e.clientY-ult[1]; ult=[e.clientX,e.clientY]; V3.rotY+=dx*.012; V3.rotX=Math.max(-.6,Math.min(.7,V3.rotX+dy*.006)); desenha3D(); });
+  const solta=e=>{ pts.delete(e.pointerId); pinca=0; if(!pts.size) cv.style.cursor='grab'; };
+  cv.addEventListener('pointerup',solta); cv.addEventListener('pointercancel',solta);
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); V3.dist=Math.max(.3,Math.min(1.6,V3.dist*(e.deltaY>0?1.1:.9))); desenha3D(); },{passive:false});
+  function marcaAuto(){ const b=bar.querySelector('[data-a]'); b.setAttribute('aria-pressed',String(V3.auto)); b.textContent=V3.auto?'Parar de girar':'Girar sozinho'; }
+  bar.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.v!=null){ V3.rotY=(+b.dataset.v)*Math.PI/180; V3.rotX=.06; V3.auto=false; marcaAuto(); desenha3D(); }
+    if(b.dataset.z){ V3.dist=Math.max(.3,Math.min(1.6,V3.dist*(b.dataset.z>0?1.15:.85))); desenha3D(); }
+    if(b.dataset.a){ V3.auto=!V3.auto; marcaAuto(); if(V3.auto) gira(); } });
+  function gira(){ if(!V3.auto) return; V3.rotY+=.012; desenha3D(); requestAnimationFrame(gira); }
+  ajusta(); return V3;
+}
+function desenha3D(){ if(!V3) return; const {gl,pg,loc,cv}=V3;
+  gl.viewport(0,0,cv.width,cv.height); gl.clearColor(.922,.910,.890,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+  gl.useProgram(pg);
+  const d=V3.altura*2.15*V3.dist, pr=M4.persp(28*Math.PI/180,cv.width/Math.max(1,cv.height),2,4000);
+  const mv=M4.mul(M4.trans(0,0,-d),M4.mul(M4.rotX(V3.rotX),M4.mul(M4.rotY(V3.rotY),M4.trans(0,-V3.alvoY,0))));
+  gl.uniformMatrix4fv(loc.pr,false,pr); gl.uniformMatrix4fv(loc.mv,false,mv);
+  V3.malhas.forEach(m=>{
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bp); gl.enableVertexAttribArray(loc.p); gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bn); gl.enableVertexAttribArray(loc.n); gl.vertexAttribPointer(loc.n,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bt); gl.enableVertexAttribArray(loc.t); gl.vertexAttribPointer(loc.t,2,gl.FLOAT,false,0,0);
+    gl.uniform1f(loc.useTx,m.tex?1:0); gl.uniform1f(loc.alphaT,m.alphaT||0); gl.uniform1f(loc.rough,m.rough==null?.8:m.rough); gl.uniform3fv(loc.cor,m.cor||[.8,.8,.8]); gl.uniform2fv(loc.rep,m.rep||[1,1]);
+    if(m.tex){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,m.tex); gl.uniform1i(loc.tx,0); }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.bi); gl.drawElements(gl.TRIANGLES,m.ni,m.i32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0); });
+}
+function limpa3D(){ if(!V3) return; const gl=V3.gl; V3.malhas.forEach(m=>{ [m.bp,m.bn,m.bt,m.bi].forEach(b=>gl.deleteBuffer(b)); }); (V3.texs||[]).forEach(t=>gl.deleteTexture(t)); V3.malhas=[]; V3.texs=[]; }
+// textura: canvas -> WebGL (repetida precisa de potencia de 2)
+function tex3D(canvas,rep){ const gl=V3.gl; let c=canvas; const mip=!!rep;
+  if(rep){ const p2=v=>Math.min(rep==='mip'?4096:1024,Math.pow(2,Math.round(Math.log2(Math.max(8,v))))); const k=document.createElement('canvas'); k.width=p2(canvas.width); k.height=p2(canvas.height); k.getContext('2d').drawImage(canvas,0,0,k.width,k.height); c=k; }
+  else if(canvas.width>4096||canvas.height>4096){ const s=4096/Math.max(canvas.width,canvas.height), k=document.createElement('canvas'); k.width=Math.round(canvas.width*s); k.height=Math.round(canvas.height*s); k.getContext('2d').drawImage(canvas,0,0,k.width,k.height); c=k; }
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  if(mip){ const wr=rep==='mip'?gl.CLAMP_TO_EDGE:gl.REPEAT; gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wr); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wr); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); }
+  else { gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); }
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR); (V3.texs=V3.texs||[]).push(t); return t; }
+// malha: posicoes (cm, y para cima), uv, indices; normais calculadas
+function malha3D(pos,uv,idx,mat){ const gl=V3.gl, nv=pos.length/3, nor=new Float32Array(pos.length);
+  for(let i=0;i<idx.length;i+=3){ const a=idx[i]*3,b=idx[i+1]*3,c=idx[i+2]*3; const ux=pos[b]-pos[a],uy=pos[b+1]-pos[a+1],uz=pos[b+2]-pos[a+2],vx=pos[c]-pos[a],vy=pos[c+1]-pos[a+1],vz=pos[c+2]-pos[a+2];
+    const nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; for(const q of [a,b,c]){ nor[q]+=nx; nor[q+1]+=ny; nor[q+2]+=nz; } }
+  for(let i=0;i<nv;i++){ const l=Math.hypot(nor[i*3],nor[i*3+1],nor[i*3+2])||1; nor[i*3]/=l; nor[i*3+1]/=l; nor[i*3+2]/=l; }
+  if(mat.normalFora) for(let i=0;i<nv;i++){ const o=mat.normalFora(pos[i*3],pos[i*3+1],pos[i*3+2]); if(o[0]*nor[i*3]+o[1]*nor[i*3+1]+o[2]*nor[i*3+2]<0){ nor[i*3]*=-1; nor[i*3+1]*=-1; nor[i*3+2]*=-1; } }
+  const i32=nv>65535; if(i32&&!V3.ext32) return;
+  const buf=(arr,t)=>{ const b=gl.createBuffer(); gl.bindBuffer(t,b); gl.bufferData(t,arr,gl.STATIC_DRAW); return b; };
+  V3.malhas.push({bp:buf(new Float32Array(pos),gl.ARRAY_BUFFER),bn:buf(nor,gl.ARRAY_BUFFER),bt:buf(new Float32Array(uv),gl.ARRAY_BUFFER),bi:buf(i32?new Uint32Array(idx):new Uint16Array(idx),gl.ELEMENT_ARRAY_BUFFER),ni:idx.length,i32,
+    tex:mat.tex||null,cor:mat.cor,rep:mat.rep,alphaT:mat.alphaT,rough:mat.rough}); }
+// grade (linhas x colunas) a partir de uma funcao f(j,i) -> {p:[x,y,z], t:[u,v]}
+function grade3D(nj,ni,f,mat){ const pos=[],uv=[],idx=[]; for(let j=0;j<nj;j++) for(let i=0;i<ni;i++){ const q=f(j,i); pos.push(...q.p); uv.push(...q.t); }
+  for(let j=0;j<nj-1;j++) for(let i=0;i<ni-1;i++){ const a=j*ni+i, b=a+1, c=a+ni, d=c+1; idx.push(a,c,b,b,c,d); } malha3D(pos,uv,idx,mat); }
+// tubo entre P0 e P1 (cm; y do desenho para baixo -> y do 3D para cima); u em volta, v ao longo
+function tubo3D(P0,P1,r0,r1,mat,seg,v0,v1){ const A=[P0[0],-P0[1],P0[2]||0], B=[P1[0],-P1[1],P1[2]||0], ax=[B[0]-A[0],B[1]-A[1],B[2]-A[2]], L=Math.hypot(...ax)||1, w=ax.map(v=>v/L);
+  let up=Math.abs(w[2])<.9?[0,0,1]:[1,0,0]; let u=[w[1]*up[2]-w[2]*up[1],w[2]*up[0]-w[0]*up[2],w[0]*up[1]-w[1]*up[0]]; const lu=Math.hypot(...u); u=u.map(x=>x/lu); const vv=[w[1]*u[2]-w[2]*u[1],w[2]*u[0]-w[0]*u[2],w[0]*u[1]-w[1]*u[0]];
+  const n=seg||32; grade3D(2,n+1,(j,i)=>{ const th=Math.PI*2*i/n, r=j?r1:r0, c=Math.cos(th), s=Math.sin(th), C=j?B:A; return {p:[C[0]+r*(c*u[0]+s*vv[0]),C[1]+r*(c*u[1]+s*vv[1]),C[2]+r*(c*u[2]+s*vv[2])],t:[i/n,j?(v1==null?1:v1):(v0||0)]}; },Object.assign({normalFora:(x,y,z)=>{ const q=[x-A[0],y-A[1],z-A[2]], k=q[0]*w[0]+q[1]*w[1]+q[2]*w[2]; return [q[0]-k*w[0],q[1]-k*w[1],q[2]-k*w[2]]; }},mat)); }
+function esfera3D(C,rx,ry,rz,mat,fi0,fi1,eixo){ const n=36,m=24; grade3D(m+1,n+1,(j,i)=>{ const fi=(fi0||0)+((fi1==null?Math.PI:fi1)-(fi0||0))*j/m, th=Math.PI*2*i/n; let x=Math.sin(fi)*Math.cos(th), y=Math.cos(fi), z=Math.sin(fi)*Math.sin(th);
+    if(eixo){ const [a,b]=eixo; const q=[x,y,z]; x=q[0]; const yy=q[1]*Math.cos(a)-q[0]*Math.sin(a)*0, xx=q[0]*Math.cos(a)-q[1]*Math.sin(a), y2=q[0]*Math.sin(a)+q[1]*Math.cos(a); x=xx; y=y2; }
+    return {p:[C[0]+rx*x,-C[1]+ry*y,(C[2]||0)+rz*z],t:[i/n,j/m]}; },Object.assign({normalFora:(x,y,z)=>[x-C[0],y+C[1],z-(C[2]||0)]},mat)); }
+function recorte(src,u0,u1,v0,v1){ const w=Math.max(8,Math.round((u1-u0)*src.width)), h=Math.max(8,Math.round((v1-v0)*src.height)), c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(src,u0*src.width,v0*src.height,w,h,0,0,w,h); return c; }
+function costasDe(src,P){ P=Math.max(2,P||8); const c=document.createElement('canvas'); c.width=src.width; c.height=src.height; const x=c.getContext('2d'); x.drawImage(src,0,0);
+  const im=x.getImageData(0,0,c.width,c.height), D=im.data, W=c.width, H=c.height, a=(X,Y)=>D[(Y*W+X)*4+3];
+  for(let y=H-1;y>=0;y--){ let l=-1,r=-1; for(let X=0;X<W;X++) if(a(X,y)>128){ if(l<0) l=X; r=X; } if(l<0) continue;
+    for(let X=l;X<=r;X++) if(a(X,y)<250){ let yy=y+1; while(yy<H&&a(X,yy)<250) yy++; let off=Math.ceil((yy-y)/P)*P+P; while(y+off<H&&a(X,y+off)<250) off+=P; if(y+off<H){ const s=((y+off)*W+X)*4, t=(y*W+X)*4; for(let k=0;k<4;k++) D[t+k]=D[s+k]; } } }
+  x.putImageData(im,0,0); return c; }
+function montar3D(){
+  const v=iniciar3D(); if(!v) return false; limpa3D();
+  const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
+  const pf=perfilManequim(busto), capa=$('sm-man').value, pub=$('sm-pub').value, ip=infoPeca(), base=corCapa(capa).map(x=>x/255), enq=$('sm-enq').value;
+  const pele={cor:base,rough:capa.startsWith('pele')?.55:.9}, zf=.74;
+  const bustZ=(x,y)=>pf.seio*2.4*Math.exp(-(((Math.abs(x)-pf.B*.5)**2)/(2*4.2**2)+((y-pf.by)**2)/(2*4.4**2)));
+  // tronco (aneis de elipse; o topo segue a linha do ombro)
+  const yFim=pf.fim, nA=Math.ceil(yFim/.8)+1, nT=72;
+  const sst=t=>{ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
+  const prof=(y,x,a)=>zf*a*(.55+.45*sst(y/16))*(1-.22*Math.max(0,Math.abs(x)/a-.7)/.3*(1-sst(y/16)));
+  const pt=(y,th,a)=>{ const x=a*Math.cos(th), yy=Math.max(y,pf.ombro(x)*(1-Math.min(1,y/9))), s=Math.sin(th); return [x,-yy,prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s:0)]; };
+  grade3D(nA,nT+1,(j,i)=>{ const y=Math.min(yFim,j*.8), a=pf.hw(Math.min(y,pf.fim))*(y>pf.fim-2?Math.sqrt(Math.max(.05,1-((y-(pf.fim-2))/4.2)**2)):1), th=Math.PI*2*i/nT; return {p:pt(y,th,a),t:[0,0]}; },Object.assign({normalFora:(x,y,z)=>[x,0,z]},pele));
+  // pescoco, cabeca, cabelo
+  const e=Math.max(.75,pf.e), hR=[7.6*(pub==='inf'?.95:1)*(pub==='masc'?1.05:1)*Math.max(.82,e*1.05),11.4*(pub==='masc'?1.03:1)*Math.max(.8,e*1.02)], hC=[0,-7*e-hR[1]*.82,0];
+  tubo3D([0,1.5],[0,hC[1]+hR[1]*.5],pf.pesc*1.05,pf.pesc*.98,pele,28);
+  esfera3D(hC,hR[0],hR[1],hR[0]*1.08,pele);
+  const cab={cor:[.17,.11,.085],rough:.7};
+  esfera3D([0,hC[1]-hR[1]*.06,-.35],hR[0]*1.06,hR[1]*1.03,hR[0]*1.15,cab,0,Math.PI*.44);
+  if(pub==='fem') esfera3D([0,hC[1]-hR[1]*.55,-hR[0]*.8],hR[0]*.55,hR[0]*.5,hR[0]*.5,cab);
+  // bracos e maos
+  const arms=bracos(pf,ip);
+  arms.forEach(a=>{ const S=[a.S[0],a.S[1]-.8,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0], H=[a.Hn[0],a.Hn[1],.8];
+    if(ip.manga==='sem'||!simAuth) esfera3D([S[0],S[1]+.4,0],a.r[0]*1.02,a.r[0]*.7,a.r[0]*.95,pele); tubo3D(S,E,a.r[0],a.r[1],pele); esfera3D(E,a.r[1],a.r[1],a.r[1],pele);
+    tubo3D(E,W,a.r[1],a.r[2],pele); esfera3D(W,a.r[2],a.r[2],a.r[2],pele); esfera3D([(W[0]+H[0])/2,(W[1]+H[1])/2,.3],a.r[3]*.95,a.r[3]*2.1,a.r[3]*.62,pele); });
+  if(enq==='inteiro') [-1,1].forEach(sg=>{ const H0=[sg*pf.Q*.42,pf.fim-6,0], K=[sg*pf.Q*.36,pf.fim+44*pf.e,.5], A=[sg*pf.Q*.31,pf.fim+84*pf.e,0];
+    tubo3D(H0,K,pf.Q*.48,pf.Q*.28,pele); esfera3D(K,pf.Q*.28,pf.Q*.28,pf.Q*.28,pele); tubo3D(K,A,pf.Q*.28,pf.Q*.17,pele); });
+  const topo=hC[1]-hR[1], baixo=enq==='inteiro'?pf.fim+86*pf.e:pf.fim+2;
+  if(enq==='detalhe'){ v.altura=26; v.alvoY=-16; } else { v.altura=(baixo-topo)*.98; v.alvoY=-(topo+baixo)/2; }
+  const fim=()=>{ v.ajusta(); return true; };
+  if(!simAuth||!last||!last.sim||!last.sim.cursos.length){ $('sim-med').textContent=simAuth?'Sem programa para simular.':'Manequim sem a peça. Clique em “Simular a peça” para vestir. Arraste para girar.'; return fim(); }
+  // ---- a peca: frente e costas em volta do corpo, com a malha do programa ----
+  const sim=last.sim, Wn=sim.cols, Hn=sim.cursos.length, wcm=Wn/ag*10, hcm=Hn/cr*10;
+  let sx=Math.max(3,Math.min(12,Math.floor(3200/Wn))), sy=Math.max(3,Math.round(sx*ag/cr)); while(Hn*sy>4096&&sx>3){ sx--; sy=Math.max(2,Math.round(sx*ag/cr)); }
+  const cores=[1,2,3,4].map(k=>$('sm-c'+k).value), tx=texturaPeca(sim,sx,sy,cores), fib=fibraAtual(), rough=Math.max(.45,1.05-fib.brilho*.35);
+  const tF=tex3D(tx,'mip'), tB=tex3D(costasDe(tx,2*sy),'mip');
+  const hwG=(()=>{ const m=[]; let maxA=0; for(let k=0;k<=Math.ceil(hcm*2)+4;k++){ const y=k/2, real=pf.hw(Math.min(y,pf.fim)); maxA=y>14?Math.max(maxA,real):real; m.push((y>14?(.55*maxA+.45*real):real)+.5); } return y=>m[Math.max(0,Math.min(m.length-1,Math.round(y*2)))]; })();
+  const nL=Math.ceil(hcm/.5)+1, nG=96;
+  const peca=(lado,tex)=>grade3D(nL,nG+1,(j,i)=>{ const y=Math.min(hcm,j*.5), a=hwG(y), th=lado==='F'?Math.PI*i/nG:Math.PI+Math.PI*i/nG, x=a*Math.cos(th), s=Math.sin(th);
+      const top=pf.ombro(x)*(1-Math.min(1,y/16)), yy=Math.max(y,top), z=prof(yy,x,a)*s+(s>0?bustZ(x,yy)*s*.92+.25:-.25);
+      const u=lado==='F'?.5-Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI:.5+Math.asin(Math.max(-1,Math.min(1,x/a)))/Math.PI;
+      return {p:[x,-yy,z],t:[u,Math.max(0,Math.min(1,(yy-top)/hcm))]}; },{tex,alphaT:.45,rough,normalFora:(x,y,z)=>[x,0,z]});
+  peca('F',tF); peca('B',tB);
+  // mangas: tubo de malha em volta do braco + cabeca da manga que encaixa no ombro (sem degrau na emenda)
+  if(ip.manga!=='sem'){
+    const bf=Math.min(.25,Math.max(.04,(+$('md-barra').value||5)/hcm));
+    const tCorpo=tex3D(recorte(tx,.3,.7,.56,.74),true), tRib=tex3D(recorte(tx,.3,.7,1-bf*.95,.995),true);
+    const cCirc=wcm*.4, cAlt=hcm*.18, rAlt=Math.max(1,hcm*bf*.95);
+    arms.forEach(a=>{
+      const Ls=(ip.manga==='curta'?ip.cabeca*.6:ip.cabeca*.75)+ip.mc, rTop=Math.max(a.r[0]+.75,ip.mlarg/Math.PI), rEnd=ip.manga==='curta'?Math.max(rTop*.98,ip.mlarg/Math.PI):Math.max(a.r[2]+.5,ip.punho/Math.PI);
+      const S=[a.S[0],a.S[1]-.8,0], E=[a.E[0],a.E[1],-1], W=[a.Wr[0],a.Wr[1],0], L1=Math.hypot(E[0]-S[0],E[1]-S[1],1), L2=Math.hypot(W[0]-E[0],W[1]-E[1],1);
+      const at=t=>t<=L1?[0,1,2].map(k=>S[k]+(E[k]-S[k])*t/L1):[0,1,2].map(k=>E[k]+(W[k]-E[k])*Math.min(1,(t-L1)/L2));
+      const rAt=t=>rTop+(rEnd-rTop)*Math.min(1,t/Ls), ribL=ip.manga==='curta'?1.6:Math.max(2,ip.mpunho), Lc=Ls-ribL;
+      const voltas=Math.max(1,Math.round(2*Math.PI*rTop/cCirc));
+      const pedaco=(t0,t1,tex,altTex)=>{ const n=Math.max(1,Math.ceil((t1-t0)/2.5)); for(let k=0;k<n;k++){ const ta=t0+(t1-t0)*k/n, tb=t0+(t1-t0)*(k+1)/n; tubo3D(at(ta),at(tb),rAt(ta),rAt(tb),{tex,rough,rep:[voltas,1]},40,ta/altTex,tb/altTex); } };
+      pedaco(0,Lc,tCorpo,cAlt); pedaco(Lc,Ls,tRib,rAlt);
+      // cabeca da manga: meia esfera achatada no ombro, com a mesma malha
+      esfera3D([S[0],S[1]+.2,0],rTop*1.01,rTop*.62,rTop*.95,{tex:tCorpo,rough,rep:[voltas,.6]},0,Math.PI*.5);
+    });
+  }
+  // gola (ribana)
+  const rr=hexRgb($('sm-c1').value), rib=document.createElement('canvas'); rib.width=64; rib.height=16; { const x=rib.getContext('2d'); for(let i=0;i<64;i+=4){ x.fillStyle=`rgb(${rr.map(q=>Math.min(255,q*1.08)|0)})`; x.fillRect(i,0,2,16); x.fillStyle=`rgb(${rr.map(q=>q*.6|0)})`; x.fillRect(i+2,0,2,16); } }
+  const tG=tex3D(rib,true), dcp=last.spec&&last.spec.forma&&last.spec.forma.decote, gs=golaSpec();
+  const zCorpo=(x,y,off)=>{ const yy=Math.max(0,y), a=hwG(yy); return prof(yy,x,a)*Math.sqrt(Math.max(0,1-(x/a)**2))+bustZ(x,yy)*.92+(off||0); };
+  if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
+    const colar=+dcp.colar||0, yC=Math.max(2.5,(last.spec.carreiras-((colar||(dcp.inicio+(+dcp.calt||60)))-1))*10/cr), w=Math.max(4,Math.min(ip.galt||7,8)), nr=pf.pesc+.35, xv=Math.max(.9,(+dcp.carcela||9)*10/ag/2);
+    // pe de gola em volta do pescoco
+    tubo3D([0,-2.2,-.5],[0,.6,-.4],nr+.55,nr+1.05,{tex:tG,rough,rep:[10,1]},40);
+    [-1,1].forEach(sg=>{ const N=30; grade3D(N+1,2,(j,i)=>{ const t=j/N;
+        const xi=sg*(nr+(xv-nr)*Math.pow(t,.85)), yi=-.4+(yC+.4)*Math.pow(t,1.15), xo=sg*(nr+w*.62+(xv+w*.42-(nr+w*.62))*t+Math.sin(Math.PI*t)*w*.22), yo=-1+(yC+w*.78+1)*Math.pow(t,1.05);
+        const x=i?xo:xi, y=i?yo:yi; return {p:[x,-y,zCorpo(x,y,i?.55:.9)],t:[i,t*6]}; },{tex:tG,rough,rep:[1,1],normalFora:()=>[0,0,1]}); });
+    if(!dcp.fecha) [yC+2,yC+5].forEach(y=>esfera3D([0,y,zCorpo(0,y,.7)],.55,.55,.2,{cor:[.92,.9,.85],rough:.35}));
+  } else if(gs){
+    if(gs.tipoGola==='garrafinha'){ const alto=Math.min(gs.alturaCm/2,11); tubo3D([0,.5,-.3],[0,-alto+.5,-.3],pf.pesc+1.6,pf.pesc+1.25,{tex:tG,rough,rep:[12,1]},48);
+      tubo3D([0,-alto+1.4,-.3],[0,-alto+.4,-.3],pf.pesc+1.9,pf.pesc+1.7,{tex:tG,rough,rep:[12,1]},48); }
+    else { const ab=aberturaDecote(), h=Math.max(1,gs.alturaCm), N=64; grade3D(N+1,2,(j,i)=>{ const th=Math.PI*2*j/N, ca=Math.cos(th), sa=Math.sin(th), fr=sa>=0;
+        const rx=(ab.rx+.3)-(i?h:0), ry=fr?Math.max(.4,(ab.ry+.3)-(i?h*1.1:0)):1.6+(i?.0:0), x=rx*ca, y=fr?ry*sa:-ry*(-sa)*.7-(i?h*.35:0);
+        const z=fr?zCorpo(x,Math.max(0,y),.55):-(zf*hwG(0)*Math.sqrt(Math.max(0,1-(x/hwG(0))**2)))-.45;
+        return {p:[x,-Math.max(y,fr?pf.ombro(x)*.85:-9),z],t:[j/N*10,i]}; },{tex:tG,rough,rep:[1,1]}); }
+  }
+  $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${Wn} agulhas × ${Hn} carreiras) · arraste para girar`;
+  return fim();
 }
 
 let simModo='man';
