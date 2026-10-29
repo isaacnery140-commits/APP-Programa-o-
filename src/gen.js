@@ -374,11 +374,13 @@ const RAYNEN = (function () {
         const temB = (i, lado) => ult(i, lado).some(back), temF = (i, lado) => ult(i, lado).some(front);
         const base = bO.slice(c * WO, (c + 1) * WO); base[COL_YARN] = 0; base[COL_LOOP] = 0; base[32] = 1;
         const t1 = new Uint8Array(W), t2 = new Uint8Array(W), t3 = new Uint8Array(W);
-        for (let i = lA; i < bs; i++) if (i < lA + 11 || temB(i, 'E')) t1[i] = 110;
-        for (let i = bs + PB; i <= rB; i++) if (i > rB - 12 || temF(i, 'D')) t1[i] = 100;
-        for (let i = bs; i <= rB; i++) t2[i] = 110;
-        for (let i = lA + 12; i < bs; i++) if (temB(i, 'E')) t3[i] = 100;
-        for (let i = bs + PB; i <= rB - 12; i++) if (temB(i, 'D')) t3[i + PB] = 100;
+        // so transfere agulha que tem malha (agulha vazia na transferencia = aviso W020 no Raynen)
+        const agora = (i, lado) => { for (let k = out.length - 1; k >= 0; k--) if (out[k].lado === lado) return out[k].g[i]; return 0; };
+        for (let i = lA; i < bs; i++) if (agora(i, 'E') && temB(i, 'E')) t1[i] = 110;
+        for (let i = bs + PB; i <= rB; i++) if (agora(i, 'D') && temF(i, 'D')) t1[i] = 100;
+        for (let i = bs; i <= rB; i++) if (agora(i, 'D')) t2[i] = 110;
+        for (let i = lA; i < bs; i++) if (agora(i, 'E') && temB(i, 'E')) t3[i] = 100;
+        for (let i = bs + PB; i <= rB; i++) if (agora(i, 'D') && temB(i, 'D')) t3[i + PB] = 100;
         const o2 = base.slice(); o2[28] = 1; o2[29] = PB;
         [[t1, base], [t2, o2], [t3, base]].forEach(([g, o]) => { if (g.some(v => v)) out.push({ c, g, o: o.slice(), ina: null, lado: 'T' }); });
         rA += PB; rB += PB; desl = PB; poloFase = 3; info.carcela.transferencia = c + 1;
@@ -430,8 +432,6 @@ const RAYNEN = (function () {
         poloFecha = true;
       }
     }
-    // 2+ sistemas: o lado direito tece 1 carreira a mais no fim para o guia-fio dele voltar ao lado de saida (passadas pares, sem W002)
-    if (multi && info.divisao != null) { const ud = out.filter(r => r.lado === 'D').pop(); if (ud) out.push({ c: ud.c, g: ud.g.slice(), o: ud.o.slice(), ina: null, lado: 'D', sh: ud.sh, extra: true }); }
     // polo: no fim o lado direito volta as PB agulhas para a esquerda, para nenhuma agulha ficar fora da largura do inicio (W041)
     if (polo && desl) {
       const o = bO.slice((nb - 1) * WO, nb * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
@@ -439,11 +439,21 @@ const RAYNEN = (function () {
       const t1 = new Uint8Array(W), t2 = new Uint8Array(W);
       for (let i = rA; i <= rB; i++) if (ultD.some(r => r.g[i] && !(BACK.has(r.g[i]) || r.g[i] === 5))) t1[i] = 100;   // direito: tudo para tras
       for (let i = lA; i <= lB; i++) if (ultE.some(r => BACK.has(r.g[i]) || r.g[i] === 5 || r.g[i] === 10)) t1[i] = 110;   // esquerdo: tudo para a frente
-      for (let i = rA; i <= rB; i++) t2[i] = 110;
+      for (let i = rA; i <= rB; i++) if (ultD.some(r => r.g[i])) t2[i] = 110;
       const o2 = o.slice(); o2[28] = 0; o2[29] = desl;
       if (t1.some(v => v)) out.push({ c: nb - 1, g: t1, o: o.slice(), ina: null, lado: 'T' });
       out.push({ c: nb - 1, g: t2, o: o2, ina: null, lado: 'T' });
       info.carcela.volta = true;
+    }
+    // 2+ sistemas: como no fim do 25009F, a ultima carreira e tecida pelo guia-fio do lado direito de ponta a ponta
+    // (lado direito, passa pelo decote, lado esquerdo): ele volta ao lado de saida com passadas pares, sem arrasto longo (W002/W028)
+    if (multi && info.divisao != null) {
+      const ud = out.filter(r => r.lado === 'D').pop(), ue = out.filter(r => r.lado === 'E').pop();
+      if (ud) { const g = new Uint8Array(W), d = (polo && desl) ? desl : 0;
+        if (ue) for (let i = 0; i < W; i++) if (ue.g[i]) g[i] = ue.g[i];
+        for (let i = 0; i < W; i++) if (ud.g[i] && i - d >= 0) g[i - d] = g[i - d] || ud.g[i];
+        const o = ud.o.slice(); o[COL_YARN] = yB;
+        out.push({ c: ud.c, g, o, ina: null, lado: 'F', sh: 0, extra: true }); info.ultimaInteira = true; }
     }
     return { rows: out, info };
   }

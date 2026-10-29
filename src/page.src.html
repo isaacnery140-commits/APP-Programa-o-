@@ -683,7 +683,7 @@ details.more>*:not(summary){margin-bottom:10px}
 </div>
 
 
-<div class="aviso-topo" id="aviso-topo" role="status" aria-live="polite" hidden><span id="aviso-txt"></span><span class="aviso-bt"><button type="button" id="aviso-baixa" hidden>Baixar de novo</button><button type="button" id="aviso-ver">Ver</button><button type="button" class="ghost" id="aviso-ok">Ok, vi</button></span></div>
+<div class="aviso-topo" id="aviso-topo" role="status" aria-live="polite" hidden><span id="aviso-txt"></span><span class="aviso-bt"><button type="button" id="aviso-baixa" hidden>Baixar programa com erros e avisos ajustados</button><button type="button" id="aviso-ver">Ver</button><button type="button" class="ghost" id="aviso-ok">Ok, vi</button></span></div>
 <button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema<span class="rel-badge" id="rel-badge" hidden></span></button>
 <div class="rel-back" id="rel-back" hidden>
   <div class="rel-box" role="dialog" aria-modal="true" aria-labelledby="rel-tt">
@@ -694,7 +694,7 @@ details.more>*:not(summary){margin-bottom:10px}
     <img id="rel-prev" alt="Print anexado" hidden>
     <label class="chk" for="rel-sim"><input type="checkbox" id="rel-sim" checked> Incluir a imagem da simulação e as medidas/configurações atuais</label>
     <div class="actions"><button type="button" id="rel-envia">Enviar relato</button><button type="button" class="ghost" id="rel-copia">Copiar texto para o chat</button><span class="status hint" id="rel-st"></span></div>
-    <div class="rel-ajuda" id="rel-ajuda" hidden aria-live="polite"><span class="tt" id="rel-ajuda-tt">Resolvendo pelo manual do Raynen</span><ol class="rel-passos" id="rel-passos"></ol><div id="rel-ajuda-txt" style="white-space:pre-wrap"></div><div class="actions"><button type="button" id="rel-baixa" hidden>Baixar o programa corrigido</button><button type="button" class="ghost" id="rel-desfaz" hidden>Desfazer as mudanças</button></div></div>
+    <div class="rel-ajuda" id="rel-ajuda" hidden aria-live="polite"><span class="tt" id="rel-ajuda-tt">Resolvendo pelo manual do Raynen</span><ol class="rel-passos" id="rel-passos"></ol><div id="rel-ajuda-txt" style="white-space:pre-wrap"></div><div class="actions"><button type="button" id="rel-baixa" hidden>Baixar programa com erros e avisos ajustados</button><button type="button" class="ghost" id="rel-desfaz" hidden>Desfazer as mudanças</button></div></div>
     <div class="rel-lista"><span class="tt">Relatos enviados</span><ul class="mlist" id="rel-list"></ul></div>
   </div>
 </div>
@@ -1261,6 +1261,7 @@ Avisos da compilação do Raynen (janela "Compilation information"; Row = carrei
 - W041: agulhas com malha no fim do desenho fora da largura do começo (ex.: carcela da polo deslocada).
 - W028: guia-fio anda muito sem tecer ("yarn feeder lead is super long"): normalmente no começo do decote, quando o guia-fio de um lado está do outro lado da máquina. O app já divide o decote com cada guia-fio do seu lado (com 2 ou 3 sistemas no corpo); se aparecer, confira os sistemas do corpo (precisam ser 2 ou 3 guia-fios diferentes) ou mude 'Carreiras retas abaixo do decote' em 1 a 3 carreiras.
 - W028: guia-fio anda muito sem tecer ("yarn feeder lead is super long"): normalmente no começo do decote, quando o guia-fio de um lado está do outro lado da máquina. O app já divide o decote com cada guia-fio do seu lado (com 2 ou 3 sistemas no corpo); se aparecer, confira os sistemas do corpo (precisam ser 2 ou 3 guia-fios diferentes) ou mude 'Carreiras retas abaixo do decote' em 1 a 3 carreiras.
+- Correções já feitas no app (29/10): transferências só em agulha com malha (W020 na carcela/cava); última carreira de ponta a ponta com o guia-fio do lado direito, como no 25009F (W028/W002 no fim); carcela volta para a frente e para dentro da largura (W021/W041).
 - Se o aviso vem de um arquivo antigo (gerado antes de uma correção do app), basta gerar de novo e baixar.`;
 // catalogo dos campos que a IA pode mudar: id, nome que aparece na tela, valor e opcoes
 const NAO_MEXE=/^(md-ag|md-cr|sm-|rel-|ml-|pad-|hist-|fi-|reg-|aviso)/;
@@ -1300,7 +1301,8 @@ async function ajudaRelato(r,ref){
   desfazer=fotoPrograma(); let mudou=0;
   const ped=`Você é o técnico de programação do app "Programação Feng Fan" (fábrica A casa do Malharista, máquinas retilíneas Feng Fan, software Raynen). Um programador relatou um problema no programa que o app gerou. RESOLVA você mesmo, mudando os campos do app com as ferramentas, e confira o resultado.
 Ferramentas: ler_programa (estado atual: erros, avisos, passadas por guia-fio), ler_carreira (o que tem numa Row/Col do Raynen), ler_campos (todos os campos do app com id, nome, valor e opções), mudar_campo (muda 1 campo e gera o programa de novo), buscar_manual (manual do Raynen em INGLÊS, passe termos em inglês).
-Regras: não mude "agulhas por cm" nem "passadas por cm". Mude só o necessário. Depois de mudar, chame ler_programa para conferir que os erros sumiram. Se o problema for do próprio aplicativo (código) e não dá para resolver mudando campos, não invente: diga isso.
+Regras: não mude "agulhas por cm" nem "passadas por cm". Mude só o necessário. Seja rápido: no máximo ~12 chamadas de ferramenta; termine sempre com o resumo e a linha RESULTADO.
+IMPORTANTE: o print pode ser de um arquivo gerado ANTES da última atualização do app. Compare o total de carreiras do print (CNT) com ler_programa: se for diferente, o arquivo atual já é outro; confira as carreiras citadas no programa atual e, se o problema não existe mais nele, responda RESOLVIDO dizendo para baixar e processar de novo. Depois de mudar, chame ler_programa para conferir que os erros sumiram. Se o problema for do próprio aplicativo (código) e não dá para resolver mudando campos, não invente: diga isso.
 No fim escreva em português simples, curto (até 120 palavras): o que era, o que você mudou (nome do campo: antes → depois) e o que conferir no Raynen. A ÚLTIMA linha deve ser exatamente uma destas: "RESULTADO: RESOLVIDO" ou "RESULTADO: NAO_RESOLVIDO" ou "RESULTADO: ERRO_DO_APP".
 
 ${CONHECE_APP}
@@ -1313,7 +1315,7 @@ AVISOS NA TELA QUANDO RELATOU: ${r.avisos||'nenhum'}`;
     {name:'ler_programa',description:'Estado do programa atual: erros e avisos do app, agulhas, carreiras, passadas por guia-fio, formas.',inputSchema:{type:'object',properties:{}},execute:async()=>{ passo('Conferindo o programa'); return estadoPrograma(); }},
     {name:'ler_campos',description:'Lista os campos do app (id, nome na tela, valor atual e opções).',inputSchema:{type:'object',properties:{}},execute:async()=>{ passo('Lendo os campos do app'); return catalogo(); }},
     {name:'mudar_campo',description:'Muda o valor de um campo do app pelo id e gera o programa de novo. Para caixa de marcar use true/false; para lista use o valor da opção.',inputSchema:{type:'object',properties:{id:{type:'string'},valor:{type:'string'}},required:['id','valor']},execute:async({id,valor})=>{ const x=mudaCampo(id,valor); if(x.ok){ mudou++; passo(`Mudou ${x.campo}: ${x.antes} → ${x.depois}`); } return Object.assign(x,{depois_estado:estadoPrograma()}); }},
-    {name:'ler_carreira',description:'Mostra o que o programa atual tem numa carreira do BMP (Row do Raynen, 1 = embaixo): parte do programa, guia-fio, códigos nas colunas pedidas (Col do Raynen) com o significado, e as agulhas usadas.',inputSchema:{type:'object',properties:{carreira:{type:'integer'},colunas:{type:'array',items:{type:'integer'}}},required:['carreira']},execute:async({carreira,colunas})=>{ passo(`Olhando a carreira ${carreira} do programa`); return lerCarreira(carreira,colunas||[]); }},
+    {name:'ler_carreira',description:'Mostra o que o programa atual tem em carreiras do BMP (Row do Raynen, 1 = embaixo): parte do programa, guia-fio, códigos nas colunas pedidas (Col do Raynen) com o significado, e as agulhas usadas. Peça várias carreiras de uma vez em "carreiras".',inputSchema:{type:'object',properties:{carreira:{type:'integer'},carreiras:{type:'array',items:{type:'integer'}},colunas:{type:'array',items:{type:'integer'}}}},execute:async({carreira,carreiras,colunas})=>{ const l=(carreiras&&carreiras.length?carreiras:[carreira]).filter(Boolean).slice(0,12); passo(`Olhando a(s) carreira(s) ${l.join(', ')} do programa`); return l.map(n=>lerCarreira(n,colunas||[])); }},
     {name:'buscar_manual',description:'Busca trechos do manual do Raynen (em inglês). Passe palavras-chave em inglês.',inputSchema:{type:'object',properties:{termos:{type:'string'}},required:['termos']},execute:async({termos})=>{ passo('Procurando no manual: '+termos); return buscaManual(termos); }}];
   const opts={modelTier:'complex', cache:false, tools, onText:({text})=>{ out.textContent=text.replace(/RESULTADO:.*$/m,'').trim(); }};
   try{
@@ -1323,12 +1325,16 @@ AVISOS NA TELA QUANDO RELATOU: ${r.avisos||'nenhum'}`;
     out.textContent=limpo||'Não consegui uma resposta agora.';
     const semErro=!RAYNEN.check(readSpec()).erros.length;
     let upd={ajuda:limpo.slice(0,6000)};
+    const ajustou=semErro&&(mudou>0||resu==='RESOLVIDO');
+    if(ajustou){   // o app mudou o programa: sempre avisa para baixar de novo, mesmo que ainda falte conferir algo
+      await salvaHistorico(true); if(mudou) $('rel-desfaz').hidden=false; $('rel-baixa').hidden=false;
+      mostraAviso(`✓ Programa ${readSpec().nome} com erros e avisos ajustados pelo app${resu==='RESOLVIDO'?'':' (confira no Raynen; o que faltou ficou para o Claude)'}.`,{baixar:true,programa:readSpec().nome,vistos:[]});
+    }
     if(resu==='RESOLVIDO'&&semErro){
       $('rel-ajuda-tt').textContent='✓ Resolvido pelo app';
-      if(mudou){ await salvaHistorico(true); $('rel-desfaz').hidden=false; }
-      $('rel-baixa').hidden=false;
       upd=Object.assign(upd,{status:'resolvido',resposta:'Resolvido pelo app: '+limpo.split('\n').filter(Boolean)[0].slice(0,200),por:'app',resolvido:Date.now()});
     } else if(resu==='ERRO_DO_APP'){ $('rel-ajuda-tt').textContent='Parece erro do aplicativo'; out.textContent+='\n\nFicou registrado para o Claude corrigir. O app te avisa quando puder baixar de novo.'; upd.status='aberto'; }
+    else if(ajustou){ $('rel-ajuda-tt').textContent='✓ Programa ajustado — falta conferir no Raynen'; out.textContent+='\n\nO programa já foi ajustado: baixe e processe no Raynen. O que faltou ficou registrado para o Claude; o app te avisa quando ele terminar.'; upd=Object.assign(upd,{status:'aberto',ajustado:Date.now(),resposta:'Ajustado pelo app (falta conferir): '+limpo.split('\n').filter(Boolean)[0].slice(0,180)}); }
     else { $('rel-ajuda-tt').textContent='Não consegui resolver sozinho'; out.textContent+='\n\nFicou registrado para o Claude resolver. O app te avisa quando puder baixar de novo.'; }
     try{ if(ref&&ref.update) await ref.update(upd); else { const o=lsLoad(); const it=(o.problemas||[]).find(x=>x.id===r.id); if(it){ Object.assign(it,upd); lsSave(o); RELATOS=o.problemas; renderRelatos(); checaResolvidos(); } } }catch(e){}
   }catch(e){ $('rel-ajuda-tt').textContent='Não consegui resolver agora'; out.textContent=(e.code==='rate_limited'?'Muitos pedidos agora; tente de novo em alguns minutos.':e.code==='not_granted'?'A IA precisa de permissão para resolver.':'Erro: '+(e.message||e.code))+' O relato ficou salvo para o Claude.'; }
@@ -1516,7 +1522,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29g', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -1561,7 +1567,7 @@ function renderRelatos(){
     const sm=document.createElement('small'); sm.textContent=`${new Date(r.criado).toLocaleString('pt-BR')} · `; const st=document.createElement('span'); st.textContent=r.status==='resolvido'?'resolvido ✓':'aberto'; if(r.status==='resolvido') st.className='rel-ok'; sm.appendChild(st); sp.appendChild(sm);
     if(r.resposta){ const rs=document.createElement('small'); rs.textContent='Resposta do Claude: '+r.resposta; sp.appendChild(rs); }
     if(r.ajuda){ const dt=document.createElement('details'), su=document.createElement('summary'), pr=document.createElement('div'); su.textContent='Ajuda do manual'; pr.style.whiteSpace='pre-wrap'; pr.style.fontSize='12px'; pr.textContent=r.ajuda; dt.append(su,pr); sp.appendChild(dt); }
-    if(r.status==='resolvido'&&r.programa){ const bb=document.createElement('button'); bb.type='button'; bb.className='ghost'; bb.textContent='Baixar de novo'; bb.addEventListener('click',()=>{ relFecha(); baixaDeNovo(r.programa); }); li.appendChild(bb); }
+    if((r.status==='resolvido'||r.ajustado)&&r.programa){ const bb=document.createElement('button'); bb.type='button'; bb.className='ghost'; bb.textContent='Baixar programa com erros e avisos ajustados'; bb.addEventListener('click',()=>{ relFecha(); baixaDeNovo(r.programa); }); li.appendChild(bb); }
     li.appendChild(sp); ul.appendChild(li); });
 }
 function relAbre(){ $('rel-prog').textContent=`O app vai corrigir o programa que está aberto agora: ${readSpec().nome}. Se o erro é de outro programa, abra ele no Histórico de programas antes.`; $('rel-back').hidden=false; $('rel-st').textContent=''; renderRelatos(); setTimeout(()=>$('rel-txt').focus(),30); }
