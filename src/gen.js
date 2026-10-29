@@ -47,7 +47,7 @@ const RAYNEN = (function () {
     const f = n.forma || {};
     n.forma = {
       cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
-      decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2 }, f.decote || {}),
+      decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
       cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {})
@@ -199,15 +199,19 @@ const RAYNEN = (function () {
   }
   const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo)));
   const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
+  const ehPolo = d => !!(d && d.ativo && d.tipo === 'polo');
+  // decote polo (25009F): abre uma carcela reta no meio; o decote da gola (passos) so comeca na carreira 'colar'
+  const evDec = d => ehPolo(d) ? ((+d.colar || 0) > 0 ? agenda(+d.colar - 1, parsePassos(d.passos).filter(p => !p.erro)) : []) : evList(d);
+  const carcelaAg = d => ehPolo(d) ? Math.max(3, Math.min(30, Math.round(+d.carcela || 9))) : 0;
   // aumento depois do decote: comeca 'depois' carreiras apos a ultima diminuicao do decote (ou da cava)
   function inicioAum2(f) {
-    let base = 0; [f.decote, f.cava].some(x => { const ev = evList(x); if (ev.length) { base = ev[ev.length - 1][0] + 1; return true; } return false; });
+    let base = 0; [f.decote, f.cava].some(x => { const ev = x === f.decote ? evDec(x) : evList(x); if (ev.length) { base = ev[ev.length - 1][0] + 1; return true; } return false; });
     return base + Math.max(0, +f.aumento2.depois || 0) + 1;
   }
   function eventos(f) {
     const ct = f.cintura || {}, cd = ct.ativo ? agenda((+ct.inicio || 1) - 1, parsePassos(ct.dim).filter(p => !p.erro)) : [];
     const ca = ct.ativo ? agenda((cd.length ? cd[cd.length - 1][0] + 1 : (+ct.inicio || 1) - 1) + Math.max(0, +ct.retas || 0), parsePassos(ct.aum).filter(p => !p.erro)) : [];
-    return { cintD: cd, cintA: ca, cava: evList(f.cava), decote: evList(f.decote), aum: evList(f.aumento),
+    return { cintD: cd, cintA: ca, cava: evList(f.cava), decote: evDec(f.decote), aum: evList(f.aumento),
       aum2: f.aumento2 && f.aumento2.ativo ? agenda(inicioAum2(f) - 1, parsePassos(f.aumento2.passos).filter(p => !p.erro)) : [] };
   }
   // agulhas a mais de cada lado (largura inicial + aumentos = largura maxima)
@@ -251,10 +255,10 @@ const RAYNEN = (function () {
       ps.forEach(x => { if (x.erro) erros.push(`${nm}: passo "${x.erro}" inválido. Use carreiras-agulhas-vezes, ex.: 2-1-6.`); else if (x.ag < 1 || x.ag > 7) erros.push(`${nm}: cada diminuição pode andar de 1 a 7 agulhas (passo ${x.txt}).`); else if (x.cada < 1) erros.push(`${nm}: carreiras do passo ${x.txt} precisam ser 1 ou mais.`); });
       if (!(f.inicio >= 1 && f.inicio < N)) erros.push(`${nm}: começa na carreira ${f.inicio} do corpo, mas o corpo tem ${N} carreiras.`);
       if (!(f.borda >= 1 && f.borda <= 7)) erros.push(`${nm}: borda (agulhas que andam) de 1 a 7.`);
-      const ev = agenda(f.inicio - 1, ps.filter(x => !x.erro));
+      const ev = nm === 'Decote' && ehPolo(f) ? evDec(f) : agenda(f.inicio - 1, ps.filter(x => !x.erro));
       const fora = ev.filter(e => e[0] >= N); if (fora.length) avisos.push({ tipo: 'nota', txt: `${nm}: ${fora.length} diminuição(ões) passam do fim do corpo e ficam de fora. Aumente as carreiras.` });
       const soma = ev.filter(e => e[0] < N).reduce((a, e) => a + e[1], 0);
-      tot += nm === 'Cava' ? 2 * soma : 2 * soma + (f.tipo === 'redondo' ? +f.meio || 0 : 0);
+      tot += nm === 'Cava' ? 2 * soma : 2 * soma + (f.tipo === 'redondo' ? +f.meio || 0 : 0) + (ehPolo(f) ? carcelaAg(f) : 0);
     });
     const fa = s.forma.aumento, fb = s.forma.aumento2;
     [['Aumento antes da cava', fa], ['Aumento depois do decote', fb]].forEach(([nm, f]) => {
@@ -286,20 +290,29 @@ const RAYNEN = (function () {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
       if (p.tipo !== 'jacquard' && s.fios[0] === s.guiaFio) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do A.');
       if (dc.tipo === 'redondo' && !(dc.meio >= 2 && dc.meio < W / 2)) erros.push('Decote redondo: agulhas do meio entre 2 e metade da largura.');
+      if (dc.tipo === 'polo') {
+        if (p.tipo === 'jacquard') erros.push('Decote polo (carcela): ainda não funciona no jacquard. Use um ponto de um guia-fio.');
+        const cb = +dc.carcela || 0; if (!(cb >= 3 && cb <= 30)) erros.push('Decote polo: a carcela precisa de 3 a 30 agulhas.');
+        if (W + cb > 1000) erros.push('Decote polo: a peça mais a carcela passa de 1000 agulhas.');
+        if ((+dc.colar || 0) > 0 && +dc.colar <= dc.inicio) erros.push('Decote polo: o decote da gola tem que começar depois do começo da carcela.');
+        avisos.push({ tipo: 'nota', txt: `Decote polo (como o 25009F): na carreira ${dc.inicio} a peça divide no meio, as ${cb} agulhas do meio tecem a carcela dos dois lados (esquerda na frente, direita atrás), depois 3 carreiras de transferência com deslocamento de ${cb} agulhas (lado direito vai ${cb} agulhas para a direita) e cada lado segue com a sua carcela em ribana dupla por ${+dc.calt || 0} carreiras.${(+dc.colar || 0) > 0 ? ` O decote da gola começa na carreira ${dc.colar} (${dc.passos}).` : ''} Confira a transferência (linha de deslocamento) na simulação do Raynen.` });
+      }
       if (dc.tipo === 'redondo') avisos.push({ tipo: 'nota', txt: `Decote redondo: as ${dc.meio} agulhas do meio param de tecer na divisão e ficam presas na agulha até o fim (o Raynen pode avisar W020/W021). Defina no Raynen o acabamento do fundo do decote (fio de descarte ou rebater), como na ficha de processo.` });
-      if (p.tipo !== 'jacquard') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
+      if (p.tipo !== 'jacquard' && dc.tipo !== 'polo') avisos.push({ tipo: 'nota', txt: `Decote: a partir da carreira ${dc.inicio} a peça se divide; o lado esquerdo tece com o guia-fio A (${s.guiaFio}) e o direito com o B (${s.fios[0]}), 2 carreiras de cada lado alternando, igual ao 25009F.` });
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
-    const evD = dc.ativo ? new Map(agenda(dc.inicio - 1, parsePassos(dc.passos).filter(x => !x.erro))) : new Map();
+    const evD = new Map(evDec(dc));
+    const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
+    let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0;
     const split = dc.ativo ? 2 * Math.floor((dc.inicio - 1) / 2) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
     const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
     const evWd = new Map(evs.cintD), evWa = new Map(evs.cintA), ct = s.forma.cintura || {};
-    let L = ex, R = W - 1 - ex;                 // limites da peca inteira (antes da divisao); comeca estreita se tiver aumentos
+    let L = ex, R = W - 1 - ex - PB;                 // limites da peca inteira (antes da divisao); comeca estreita se tiver aumentos
     const mid = Math.floor(W / 2), meio = dc.ativo && dc.tipo === 'redondo' ? +dc.meio : 0;
     let lA = 0, lB = 0, rA = 0, rB = 0;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
     const borda = (f, k) => Math.max(+f.borda || 2, k);
@@ -338,14 +351,39 @@ const RAYNEN = (function () {
       if (info.divisao == null) {
         info.divisao = c + 1;
         lA = L; lB = mid - Math.ceil(meio / 2) - (meio ? 0 : 1) + (W % 2 && !meio ? 1 : 0); rA = lB + 1 + meio; rB = R;
+        if (polo) { bs = L + Math.floor((R - L + 1 - PB) / 2) - 1; lB = bs + PB - 1; rA = bs; info.carcela = { inicio: c + 1, agulhas: PB, carreiras: cAlt }; }
+      }
+      // polo: depois de 2 blocos (8 carreiras) com a carcela compartilhada, transfere e desloca o lado direito PB agulhas
+      if (polo && poloFase === 2) {
+        const ult = (i, lado) => { const v = []; for (let k = out.length - 1; k >= 0 && v.length < 2; k--) if (out[k].lado === lado) v.push(out[k].g[i]); return v; };
+        const back = v => BACK.has(v) || v === 5 || v === 10, front = v => v && !(BACK.has(v) || v === 5);
+        const temB = (i, lado) => ult(i, lado).some(back), temF = (i, lado) => ult(i, lado).some(front);
+        const base = bO.slice(c * WO, (c + 1) * WO); base[COL_YARN] = 0; base[COL_LOOP] = 0; base[32] = 1;
+        const t1 = new Uint8Array(W), t2 = new Uint8Array(W), t3 = new Uint8Array(W);
+        for (let i = lA; i < bs; i++) if (i < lA + 11 || temB(i, 'E')) t1[i] = 110;
+        for (let i = bs + PB; i <= rB; i++) if (i > rB - 12 || temF(i, 'D')) t1[i] = 100;
+        for (let i = bs; i <= rB; i++) t2[i] = 110;
+        for (let i = lA + 12; i < bs; i++) if (temB(i, 'E')) t3[i] = 100;
+        for (let i = bs + PB; i <= rB - 12; i++) if (temB(i, 'D')) t3[i + PB] = 100;
+        const o2 = base.slice(); o2[28] = 1; o2[29] = PB;
+        [[t1, base], [t2, o2], [t3, base]].forEach(([g, o]) => { if (g.some(v => v)) out.push({ c, g, o: o.slice(), ina: null, lado: 'T' }); });
+        rA += PB; rB += PB; desl = PB; poloFase = 3; info.carcela.transferencia = c + 1;
       }
       // blocos de 2 carreiras: esquerda c, c+1 depois direita c, c+1
       const cs = [c, c + 1].filter(x => x < nb);
       const lados = [['E', yA], ['D', yB]];
       for (const [lado, yarn] of lados) for (const cc of cs) {
-        const row = bG.slice(cc * W, cc * W + W);
+        let row = bG.slice(cc * W, cc * W + W);
         const [a, b] = lado === 'E' ? [lA, lB] : [rA, rB];
+        if (lado === 'D' && desl) { const src = row; row = new Uint8Array(W); for (let i = a; i <= b; i++) row[i] = i - desl >= 0 ? src[i - desl] : 0; }   // a malha andou: mantem o ponto de cada agulha
         for (let i = 0; i < W; i++) if (i < a || i > b) row[i] = 0;
+        if (polo) {   // carcela: 8/9 dos dois lados nas mesmas agulhas; depois 10,9,8,9... (ribana dupla) e fecha com 2
+          const b0 = lado === 'E' ? bs : bs + desl;
+          let v;
+          if (poloFase < 3) v = lado === 'E' ? 8 : 9;
+          else { const k = poloK[lado]++; v = k >= cAlt ? 1 : k === cAlt - 1 ? 2 : k === 0 ? 10 : (k % 2 === 0 ? 8 : 9); }
+          for (let i = b0; i < b0 + PB; i++) if (i >= a && i <= b) row[i] = v;
+        }
         let na = a, nb2 = b;
         if (evC.has(cc)) { const k = evC.get(cc); if (lado === 'E') [na] = dim(row, na, nb2, 'L', k, cv); else [, nb2] = dim(row, na, nb2, 'R', k, cv); }
         if (evD.has(cc)) { const k = evD.get(cc); if (lado === 'E') [, nb2] = dim(row, na, nb2, 'R', k, dc); else [na] = dim(row, na, nb2, 'L', k, dc); }
@@ -368,7 +406,7 @@ const RAYNEN = (function () {
         } else o[COL_YARN] = yarn;
         out.push({ c: cc, g: row, o, ina, lado });
       }
-      c += 2;
+      c += 2; if (polo && poloFase < 2) poloFase++;
     }
     return { rows: out, info };
   }
@@ -415,7 +453,8 @@ const RAYNEN = (function () {
       const sp = 2 * Math.floor((s0.forma.decote.inicio - 1) / 2); if ((N - sp) % 2) N++;
     }
     const EX = s0.forma ? extraLado(s0.forma) : 0, W0 = s0.largura;          // aumentos: largura inicial W0, maxima W0 + 2*EX
-    const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX });
+    const PB = s0.forma ? carcelaAg(s0.forma.decote) : 0;   // polo: o lado direito anda PB agulhas para a direita
+    const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX + PB });
     const body = bodyRows(s, N);
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;

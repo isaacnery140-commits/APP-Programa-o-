@@ -214,7 +214,7 @@ details.more>*:not(summary){margin-bottom:10px}
               <label for="ml-ombro">Largura nos ombros<small class="dica">de uma ponta do ombro à outra, no molde</small><input id="ml-ombro" type="number" min="0" step="0.5"></label>
             </div>
             <div class="row">
-              <label for="ml-dtipo">Decote<small class="dica">formato da abertura</small><select id="ml-dtipo"><option value="redondo">Redondo</option><option value="V">V</option><option value="">Sem decote</option></select></label>
+              <label for="ml-dtipo">Decote<small class="dica">formato da abertura</small><select id="ml-dtipo"><option value="redondo">Redondo</option><option value="V">V</option><option value="polo">Polo gola V (carcela)</option><option value="">Sem decote</option></select></label>
               <label for="ml-dlarg">Largura do decote<small class="dica">abertura de um lado ao outro</small><input id="ml-dlarg" type="number" min="0" step="0.5"></label>
               <label for="ml-dprof">Profundidade do decote<small class="dica">do ombro até o fundo do decote</small><input id="ml-dprof" type="number" min="0" step="0.5"></label>
             </div>
@@ -254,7 +254,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="md-cent">Cava: entra de cada lado<small class="dica">quanto estreita em cada lateral</small><input id="md-cent" type="number" min="0" step="0.5" value="4"></label>
           </div>
           <div class="row">
-            <label for="md-dtipo">Decote<small class="dica">formato da abertura</small><select id="md-dtipo"><option value="">Sem decote</option><option value="redondo" selected>Redondo</option><option value="V">V</option></select></label>
+            <label for="md-dtipo">Decote<small class="dica">formato da abertura</small><select id="md-dtipo"><option value="">Sem decote</option><option value="redondo" selected>Redondo</option><option value="V">V</option><option value="polo">Polo gola V (carcela)</option></select></label>
             <label for="md-dlarg">Largura do decote<small class="dica">abertura de um lado ao outro</small><input id="md-dlarg" type="number" min="0" step="0.5" value="16"></label>
             <label for="md-dprof">Profundidade do decote<small class="dica">do ombro até o fundo do decote</small><input id="md-dprof" type="number" min="0" step="0.5" value="8"></label>
           </div>
@@ -422,9 +422,13 @@ details.more>*:not(summary){margin-bottom:10px}
           <label class="chk" for="fd-on"><input id="fd-on" type="checkbox"> Fazer decote</label>
           <div id="fd-box" hidden>
             <div class="row">
-              <label for="fd-tipo">Tipo<select id="fd-tipo"><option value="V">Decote V</option><option value="redondo">Decote redondo</option></select></label>
+              <label for="fd-tipo">Tipo<select id="fd-tipo"><option value="V">Decote V</option><option value="redondo">Decote redondo</option><option value="polo">Polo gola V (carcela, como o 25009F)</option></select></label>
               <label for="fd-ini">Carreiras retas abaixo do decote<input id="fd-ini" type="number" min="0" value="79"></label>
               <label for="fd-meio" id="lbl-fdmeio">Agulhas no meio (fundo)<input id="fd-meio" type="number" min="2" value="12"></label>
+            </div>
+            <div class="row" id="fd-polo" hidden>
+              <label for="fd-carc">Agulhas da carcela<small class="dica">largura da tira do meio (25009F: 9)</small><input id="fd-carc" type="number" min="3" max="30" value="9"></label>
+              <label for="fd-colar">Carreiras da carcela<small class="dica">da abertura até começar o decote da gola</small><input id="fd-colar" type="number" min="10" value="66"></label>
             </div>
             <div class="row">
               <label for="fd-pas">Passos do decote (cada lado)<input id="fd-pas" value="2-1-12" autocomplete="off"></label>
@@ -757,7 +761,7 @@ function readSpec(){
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
-           decote:{ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:num('fd-ini')+1+Math.max(0,num('fx-antes')||0),meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor')}},
+           decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:ini+col,calt:Math.max(4,col-8)}; })()},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
 }
 function writeSpec(s){
@@ -775,7 +779,7 @@ function writeSpec(s){
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
     $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
-    $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; }
+    $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; }
   if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
   update();
 }
@@ -912,7 +916,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fd-carc','fd-colar','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -959,7 +963,7 @@ function update(){
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
-  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo';
+  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -1107,6 +1111,11 @@ function calcularMedidas(){
     const dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
     $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
     if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
+    else if(dt==='polo'){   // carcela reta no meio (25009F) e o decote da gola so no alto
+      let pb=Math.max(5,Math.round(1.5*ag)); if(pb%2===0) pb++; $('fd-carc').value=pb;
+      const neck=Math.round(Math.min(7,dp*.5)*cr); $('fd-colar').value=Math.max(10,dRows-neck);
+      $('fd-pas').value=passosAuto(Math.max(1,(dAg-pb)/2),Math.round(neck*.75),true);
+    }
     else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
     $('fd-bor').value=2;
   }
@@ -1169,7 +1178,7 @@ const MODELOS={
  regata:   {nome:'Regata', pubs:['fem','masc','inf'], desc:'sem manga; cava mais funda e mais cavada, decote maior com acabamento fino', comp:d=>d.comp-2, folga:1.5, cavaAdd:3, centAdd:1.5, dlAdd:3, dpAdd:3, gola:'careca', galt:1, manga:'sem'},
  sueter:   {nome:'Suéter (gola careca)', pubs:['fem','masc','inf'], desc:'mais folgado e um pouco mais comprido, manga longa com punho', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, gola:'careca', manga:'longa'},
  suetervV: {nome:'Suéter gola V', pubs:['fem','masc'], desc:'folgado, decote em V fundo', comp:d=>d.comp+2, folga:4, cavaAdd:1.5, dtipo:'V', dpV:d=>meio(d.cava+3), dlAdd:2, gola:'', manga:'longa'},
- polov:    {nome:'Polo gola V (tricô)', pubs:['fem','masc'], desc:'polo de tricô com decote em V e gola polo (tira de ribana com pontas), manga curta, folga levemente solta', comp:d=>d.comp, folga:2.5, dtipo:'V', dpV:d=>meio(d.cava*.75), dlAdd:1, gola:'', polo:true, manga:'curta'},
+ polov:    {nome:'Polo gola V (tricô)', pubs:['fem','masc'], desc:'polo de tricô com carcela reta no meio (como o 25009F) e gola polo costurada, que forma o V; manga curta, folga levemente solta', comp:d=>d.comp, folga:2.5, dtipo:'polo', dpV:d=>meio(d.cava*.75), dlAdd:1, gola:'', polo:true, manga:'curta'},
  garrafinha:{nome:'Garrafinha (gola alta)', pubs:['fem','masc','inf'], desc:'decote redondo menor com gola alta dobrada', comp:d=>d.comp, folga:2, dlAdd:-2, dpAdd:-2, gola:'garrafinha', manga:'longa'},
  vcurto:   {nome:'Vestido curto', pubs:['fem','inf'], desc:'acima do joelho, marcado na cintura', comp:d=>meio(d.costas*2.05), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
  vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
@@ -1180,12 +1189,12 @@ function pecaPadrao(t){
   const base=m.quadril?Math.max(d.busto,d.quad):d.busto;
   const larg=meio(base/2+m.folga), barra=m.barra?Math.min(m.barra,d.barra+1):d.barra, comp=meio(m.comp(d));
   const cava=meio(d.cava+2+(m.cavaAdd||0)), cent=Math.max(1.5,meio((larg-d.ombro)/2+(m.centAdd||0)));
-  const dtipo=m.dtipo||'redondo', dl=Math.max(8,d.dl+(m.dlAdd||0)), dp=dtipo==='V'?Math.min(m.dpV(d),comp-barra-4):Math.max(3,d.dp+(m.dpAdd||0));
+  const dtipo=m.dtipo||'redondo', dl=Math.max(8,d.dl+(m.dlAdd||0)), dp=dtipo==='V'||dtipo==='polo'?Math.min(m.dpV(d),comp-barra-4):Math.max(3,d.dp+(m.dpAdd||0));
   const galt=m.gola==='garrafinha'?(inf?12:18):m.gola==='careca'?(m.galt||(inf?2.5:3)):0;
   const mc=m.manga==='longa'?meio(d.manga+(inf?2:3)):m.manga==='curta'?meio(Math.max(6,d.manga*.33)):0;
   const mlarg=meio(d.braco/2+(m.folga>=4?3:2)), punho=m.manga==='curta'?mlarg:meio(Math.max(6,d.braco*.33+1.5));
   const hcint=Math.max(3,meio(comp-d.costas-barra+(m.quadril?0:0)));
-  const polo=m.polo?{alt:inf?5:7, comp:meio(2*Math.hypot(dl/2,dp)+dl+2)}:null;
+  const polo=m.polo?{alt:inf?5:7, comp:meio(Math.PI*(dl/2+Math.min(7,dp*.5))/2+dl+2)}:null;
   return {larg, comp, barra, cava, cent, dtipo, dl, dp, cint:meio(d.cint/2+2), hcint, gola:m.gola, galt, polo,
     manga:m.manga, mc, mlarg, punho, cabeca:meio(cava*.7), mpunho:barra};
 }
@@ -1203,7 +1212,7 @@ function mostraPadrao(){
   linhas($('pad-peca'),[
     ['Largura da frente',(m.quadril?'metade do quadril':'metade do '+peito.toLowerCase())+' + folga',k.larg,A(k.larg)],['Comprimento total','do ombro até o fim da barra',k.comp,C(k.comp)],['Altura da barra','ribana do começo',k.barra],
     ['Altura da cava','do começo da cava até o ombro',k.cava],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent],
-    ['Decote','formato',k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
+    ['Decote','formato',k.dtipo==='polo'?'Polo (carcela)':k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
     ['Cintura (se acinturada)','largura da frente na cintura',k.cint],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint]]);
   linhas($('pad-manga'),[
     k.manga==='sem'?['Manga','sem manga (regata): a cava leva acabamento','—']:null,
@@ -1213,9 +1222,9 @@ function mostraPadrao(){
     k.manga!=='sem'?['Largura na ponta',k.manga==='curta'?'boca da manga':'no punho',k.punho,A(k.punho)]:null,
     k.manga==='longa'?['Altura do punho','ribana da ponta da manga',k.mpunho]:null,
     k.manga!=='sem'?['Cabeça da manga','altura da parte que entra na cava',k.cabeca,C(k.cabeca)]:null,
-    k.polo?['Gola','tira de ribana costurada no decote V','Polo']:null,
+    k.polo?['Gola','tira de ribana costurada no decote e na carcela','Polo']:null,
     k.polo?['Altura da gola polo','largura da tira (sem dobra)',k.polo.alt,C(k.polo.alt)]:null,
-    k.polo?['Comprimento da gola polo','lados do V + costas, de ponta a ponta',k.polo.comp,A(k.polo.comp)]:null,
+    k.polo?['Comprimento da gola polo','volta do decote + costas, de ponta a ponta',k.polo.comp,A(k.polo.comp)]:null,
     k.polo?null:['Gola','acabamento do decote',k.gola==='garrafinha'?'Garrafinha':k.gola==='careca'?(k.galt<=1?'Acabamento fino':'Careca'):(k.dtipo==='V'?'Ribana do V':'—')],
     k.galt?['Altura da gola',k.gola==='garrafinha'?'com a dobra':'ribana pronta',k.galt,C(k.galt)]:null]);
 }
