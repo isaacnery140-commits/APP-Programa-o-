@@ -823,7 +823,14 @@ const RAYNEN = (function () {
   const NONE = new Set([0, 15, 16, 17, 100, 110, 18, 19, 224, 225, 254, 255]);
   // 4 = malha frente que anda p/ esquerda (inclinada), 5 = anda p/ direita (diminuicoes/aumentos)
   const LEAN_L = new Set([...R(21, 27), ...R(61, 67), ...R(101, 104), 228, 229, 230]), LEAN_R = new Set([...R(31, 37), ...R(71, 77), 88, 89, 98, 99, 231, 232, 233]);
-  function stitchType(v) { if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1; if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1; }
+  // tipos da simulacao: 1 frente, 2 tras, 3 carregado frente, 4/5 inclinado (transferencia), 6 tranca por baixo, 7 tranca por cima, 8 carregado atras, 9 tras sem ligacao
+  const CAB_UNDER = new Set([28, 48, 38, 58]), CAB_OVER = new Set([29, 49, 39, 59]);
+  function stitchType(v) {
+    if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1;
+    if (CAB_UNDER.has(v)) return 6; if (CAB_OVER.has(v)) return 7;
+    if (v === 5) return 8; if (v === 4 || v === 14) return 3; if (v === 6) return 1; if (v === 7) return 2; if (v === 9) return 9;
+    if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1;
+  }
   function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
     const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
     const map = new Map(), order = [];
@@ -836,7 +843,10 @@ const RAYNEN = (function () {
         if (!cur.typ[i] || (t === 1 && cur.typ[i] === 3)) { cur.typ[i] = t; cur.col[i] = col; }
       }
     });
-    return { cols: W, cursos: order.map(k => map.get(k)).filter(c => c.typ.some(Boolean)) };
+    // carreira so com 9 (tras sem ligacao, ex. camada de ar) fica escondida atras da frente; misturada vira malha tras
+    const cursos = order.map(k => map.get(k)).filter(c => c.typ.some(t => t && t !== 9));
+    cursos.forEach(c => { for (let i = 0; i < W; i++) if (c.typ[i] === 9) c.typ[i] = 2; });
+    return { cols: W, cursos };
   }
 
   function build(spec) {
@@ -1737,51 +1747,76 @@ function hexRgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),
 // textura de malha: cada ponto desenhado como a laçada real (V da meia malha, ondinha do avesso, carregado aberto)
 const FIBRAS={acrilico:{brilho:1.15,pelo:.25,fosco:.95},la:{brilho:.95,pelo:.6,fosco:.9},modal:{brilho:1.4,pelo:.08,fosco:1.02},poliester:{brilho:1.6,pelo:.04,fosco:1.05},algodao:{brilho:1.0,pelo:.12,fosco:.92},viscose:{brilho:1.5,pelo:.05,fosco:1.04}};
 const fibraAtual=()=>FIBRAS[($('f-fio')&&$('f-fio').value)||'acrilico']||FIBRAS.acrilico;
-function tileMalha(tipo, rgb, sx, sy, fundo, fib){
-  fib=fib||FIBRAS.acrilico;
-  const oy=Math.ceil(sy*.55), c=document.createElement('canvas'); c.width=sx+Math.ceil(sx*.7); c.height=sy+oy+Math.ceil(sy*.15); const g=c.getContext('2d');
-  const ox=Math.ceil(sx*.35);   // folga lateral para a lacada inclinada
+// ---- desenho de um ponto (fio como tubo com volume, brilho, torcao e pelo conforme a fibra) ----
+function pincelFio(g, rgb, fib, semente){
   const m=(f,a=1)=>`rgba(${Math.min(255,rgb[0]*f)|0},${Math.min(255,rgb[1]*f)|0},${Math.min(255,rgb[2]*f)|0},${a})`;
-  if(fundo){ g.fillStyle=fundo; g.fillRect(ox,oy,sx,sy); }
-  // fio como um tubo: borda escura, corpo e brilho
-  let sem=(rgb[0]*7+rgb[1]*13+rgb[2]*17+tipo*31+sx)|0; const rnd=()=>{ sem=(sem*1103515245+12345)&0x7fffffff; return sem/0x7fffffff; };
-  const tubo=(desenha,w)=>{ g.lineCap='round'; g.lineJoin='round';
-    if(fib.pelo>.15){ g.strokeStyle=m(.9*fib.fosco,.10+fib.pelo*.12); g.lineWidth=w*(1.25+fib.pelo*.5); desenha(0); g.stroke(); }   // halo de pelo (lã)
-    g.strokeStyle=m(.22); g.lineWidth=w; desenha(0); g.stroke();
-    g.strokeStyle=m(.70*fib.fosco); g.lineWidth=w*.74; desenha(0); g.stroke();
-    g.strokeStyle=m(.98*fib.fosco); g.lineWidth=w*.46; desenha(-w*.07); g.stroke();
-    g.strokeStyle=m(1.12*fib.brilho,.55+.3*Math.min(1,fib.brilho-.9)); g.lineWidth=w*.18; desenha(-w*.15); g.stroke();
-    // torcao do fio: tracinhos diagonais escuros
-    g.save(); g.globalAlpha=.18; g.strokeStyle=m(.35); g.lineWidth=Math.max(.5,w*.07); g.setLineDash([Math.max(1,w*.18),Math.max(1,w*.22)]); desenha(w*.05); g.stroke(); g.restore();
-    if(fib.pelo>.15){ g.strokeStyle=m(1.05,.25*fib.pelo); g.lineWidth=Math.max(.4,w*.05); for(let k=0;k<Math.round(6*fib.pelo*w/4);k++){ g.beginPath(); const x=rnd()*c.width, y=rnd()*c.height; g.moveTo(x,y); g.lineTo(x+(rnd()-.5)*w*.6,y+(rnd()-.5)*w*.6); g.stroke(); } } };
-  if(tipo===2){   // malha tras: arcos horizontais (cabecas das lacadas)
-    const w=sy*.42;
-    for(const yy of [.32,.82]) tubo(d=>{ g.beginPath(); g.moveTo(ox+sx*.02,oy+sy*yy+sy*.12+d); g.quadraticCurveTo(ox+sx*.5,oy+sy*(yy-.32)+d,ox+sx*.98,oy+sy*yy+sy*.12+d); }, w);
-    return {c,ox,oy};
+  let sem=semente|0; const rnd=()=>{ sem=(sem*1103515245+12345)&0x7fffffff; return sem/0x7fffffff; };
+  return (desenha,w,luz=1)=>{ g.lineCap='round'; g.lineJoin='round';
+    if(fib.pelo>.15){ g.strokeStyle=m(.9*fib.fosco*luz,.10+fib.pelo*.12); g.lineWidth=w*(1.25+fib.pelo*.5); desenha(0); g.stroke(); }
+    g.strokeStyle=m(.18*luz); g.lineWidth=w; desenha(0); g.stroke();
+    g.strokeStyle=m(.68*fib.fosco*luz); g.lineWidth=w*.76; desenha(0); g.stroke();
+    g.strokeStyle=m(.97*fib.fosco*luz); g.lineWidth=w*.46; desenha(-w*.07); g.stroke();
+    g.strokeStyle=m(1.12*fib.brilho*luz,.5+.3*Math.min(1,fib.brilho-.9)); g.lineWidth=w*.17; desenha(-w*.15); g.stroke();
+    g.save(); g.globalAlpha=.18; g.strokeStyle=m(.3*luz); g.lineWidth=Math.max(.5,w*.07); g.setLineDash([Math.max(1,w*.18),Math.max(1,w*.22)]); desenha(w*.05); g.stroke(); g.restore();
+    if(fib.pelo>.15){ g.strokeStyle=m(1.05*luz,.22*fib.pelo); g.lineWidth=Math.max(.4,w*.05); const bb=g.__bb||[0,0,40,40]; for(let k=0;k<Math.round(6*fib.pelo*w/4);k++){ g.beginPath(); const x=bb[0]+rnd()*bb[2], y=bb[1]+rnd()*bb[3]; g.moveTo(x,y); g.lineTo(x+(rnd()-.5)*w*.6,y+(rnd()-.5)*w*.6); g.stroke(); } } };
+}
+// x,y = canto de cima da casa; pe = deslocamento (px) do pe do V (tranca: a lacada vem da agulha vizinha); alto = carreiras de altura
+function desenhaPonto(g, x, y, sx, sy, rgb, fib, tipo, op){
+  op=op||{}; const luz=op.luz||1, pe=op.pe||0, alto=op.alto||1;
+  g.__bb=[x-sx*.3,y-sy*.6,sx*1.6,sy*(alto+.8)];
+  const tubo=pincelFio(g,rgb,fib,(rgb[0]*7+rgb[1]*13+rgb[2]*17+tipo*31+Math.round(x)*3+Math.round(y))|0);
+  if(tipo===2||tipo===8){   // malha tras (e carregado atras): cabecas em arco, mais fundas
+    const w=sy*.44, l=luz*(tipo===8?.8:.92);
+    for(const yy of [.30,.80]) tubo(d=>{ g.beginPath(); g.moveTo(x+sx*.0,y+sy*yy+sy*.13+d); g.quadraticCurveTo(x+sx*.5,y+sy*(yy-.34)+d,x+sx*1.0,y+sy*yy+sy*.13+d); }, w, l);
+    if(tipo===8) tubo(d=>{ g.beginPath(); g.moveTo(x+sx*.1,y+sy*.55+d); g.quadraticCurveTo(x+sx*.5,y+sy*.35+d,x+sx*.9,y+sy*.55+d); }, w*.7, l*.85);
+    return;
   }
-  // meia malha: dois bracos do V, do alto (entrando na lacada de cima) ate o pe no centro
-  const lean=tipo===4?-.42:tipo===5?.42:0, ab=tipo===3?1.18:1, w=Math.min(sx*.47,sy*.78)*ab;
-  const px=ox+sx*(.5+lean*.9), py=oy+sy*1.0;                  // pe do V
+  if(tipo===3){ // carregado: lacada presa atras (arco) + V mais aberto e alongado
+    tubo(d=>{ g.beginPath(); g.moveTo(x+sx*.02,y+sy*.62+d); g.quadraticCurveTo(x+sx*.5,y+sy*.25+d,x+sx*.98,y+sy*.62+d); }, sy*.36, luz*.75);
+  }
+  const lean=tipo===4?-.42:tipo===5?.42:0, ab=tipo===3?1.2:1, w=Math.min(sx*.47,sy*.78)*ab;
+  const px=x+sx*(.5+lean*.9)+pe, py=y+sy*(alto*1.0);           // pe do V (onde a lacada de baixo prende)
   for(const lado of [-1,1]){
-    const tx=ox+sx*(.5+lado*.34+lean*.3), ty=oy-sy*.40;       // topo do braco (abre para os lados, como o V da meia malha)
-    const cx1=ox+sx*(.5+lado*.26+lean*.6), cy1=oy+sy*.36;
-    tubo(d=>{ g.beginPath(); g.moveTo(tx+d*lado*.5,ty+d); g.quadraticCurveTo(cx1+d*lado*.5,cy1+d,px+d*lado*.3,py+d); }, w);
+    const tx=x+sx*(.5+lado*.34*ab+lean*.3), ty=y-sy*.40;
+    const cx1=x+sx*(.5+lado*.26*ab+lean*.6)+pe*.35, cy1=y+sy*(.36+(alto-1)*.45);
+    tubo(d=>{ g.beginPath(); g.moveTo(tx+d*lado*.5,ty+d); g.quadraticCurveTo(cx1+d*lado*.5,cy1+d,px+d*lado*.3,py+d); }, w, luz);
   }
-  if(lean){ // ponto que recebeu a transferencia: lacada dupla
-    const dx=-lean*sx*.55;
-    tubo(d=>{ g.beginPath(); g.moveTo(ox+sx*.5+dx+d,oy-sy*.3+d); g.quadraticCurveTo(ox+sx*.5+dx*.3+d,oy+sy*.4+d,px+d,py+d); }, w*.8);
-  }
-  return {c,ox,oy};
+  if(lean){ const dx=-lean*sx*.55; tubo(d=>{ g.beginPath(); g.moveTo(x+sx*.5+dx+d,y-sy*.3+d); g.quadraticCurveTo(x+sx*.5+dx*.3+d,y+sy*.4+d,px+d,py+d); }, w*.8, luz); }
+}
+function tileMalha(tipo, rgb, sx, sy, fundo, fib, luz){
+  const oy=Math.ceil(sy*.6), ox=Math.ceil(sx*.4), c=document.createElement('canvas'); c.width=sx+2*ox; c.height=sy+oy+Math.ceil(sy*.25);
+  const g=c.getContext('2d'); desenhaPonto(g,ox,oy,sx,sy,rgb,fib||FIBRAS.acrilico,tipo,{luz}); return {c,ox,oy};
 }
 function texturaPeca(sim, sx, sy, cores, fundo){
   const W=sim.cols, H=sim.cursos.length, cv=document.createElement('canvas'); cv.width=W*sx; cv.height=H*sy;
   const ctx=cv.getContext('2d'), rgb=cores.map(hexRgb), cache={}, fib=fibraAtual();
   if(fundo){ ctx.fillStyle=fundo; ctx.fillRect(0,0,cv.width,cv.height); }
-  const tile=(t,c)=>{ const k=t+'_'+c; return cache[k]||(cache[k]=tileMalha(t,rgb[c-1],sx,sy,null,fib)); };
-  for(let r=H-1;r>=0;r--){ const cu=sim.cursos[r], y0=(H-1-r)*sy;   // de cima para baixo: as lacadas de baixo ficam por cima
-    for(let i=0;i<W;i++){ const t=cu.typ[i]; if(!t) continue; const tl=tile(t,cu.col[i]||1); ctx.drawImage(tl.c,i*sx-tl.ox,y0-tl.oy); }
+  const tile=(t,c,l)=>{ const k=t+'_'+c+'_'+l; return cache[k]||(cache[k]=tileMalha(t,rgb[c-1],sx,sy,null,fib,l)); };
+  for(let r=H-1;r>=0;r--){ const cu=sim.cursos[r], y0=(H-1-r)*sy, T=cu.typ;   // de cima para baixo: as lacadas de baixo ficam por cima
+    // malha tras entre colunas de frente fica mais funda (ribana/canelado)
+    for(let i=0;i<W;i++){ const t=T[i]; if(!t||t===6||t===7) continue;
+      let l=1; if((t===2||t===8)&&((T[i-1]===1||T[i-1]===7||T[i-1]===6)||(T[i+1]===1||T[i+1]===6||T[i+1]===7))) l=.72;
+      const tl=tile(t,cu.col[i]||1,l); ctx.drawImage(tl.c,i*sx-tl.ox,y0-tl.oy); }
+    // trancas: grupo de baixo (28/48) depois o de cima (29/49), cada lacada vindo da agulha de onde saiu
+    let i=0;
+    while(i<W){
+      if(T[i]!==6&&T[i]!==7){ i++; continue; }
+      const a0=i, t0=T[i]; while(i<W&&T[i]===t0) i++; const a1=i; if(i>=W||(T[i]!==6&&T[i]!==7)) { // grupo sozinho: desenha reto
+        for(let k=a0;k<a1;k++){ const tl=tile(1,cu.col[k]||1,1); ctx.drawImage(tl.c,k*sx-tl.ox,y0-tl.oy); } continue; }
+      const t1=T[i], b0=i; while(i<W&&T[i]===t1) i++; const b1=i;
+      const nA=a1-a0, nB=b1-b0;   // grupo A (esquerda) vai para a direita nB agulhas, grupo B vai para a esquerda nA
+      const grupos=[[a0,a1,t0,-nB*sx,nB],[b0,b1,t1,nA*sx,-nA]];   // a lacada da agulha k cai em k+desl; o pe fica onde ela estava
+      grupos.sort((p,q)=>(p[2]===6?0:1)-(q[2]===6?0:1));  // 6 = por baixo primeiro
+      for(let k=a0;k<b1;k++){ const tl=tile(1,cu.col[k]||1,.5); ctx.drawImage(tl.c,k*sx-tl.ox,y0-tl.oy); }   // fundo da carreira do cruzamento
+      for(const [s0,s1,tt,pe,desl] of grupos){
+        const de=tt===7;
+        if(de){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=sx*.5; ctx.shadowOffsetY=sy*.15; }
+        const alto=1.3+.6*Math.max(nA,nB);   // o cruzamento se espalha por algumas carreiras, como a corda da tranca
+        for(let k=s0;k<s1;k++) desenhaPonto(ctx,(k+desl)*sx,y0-sy*(alto-1),sx,sy,rgb[(cu.col[k]||1)-1],fib,1,{pe,alto,luz:de?1.08:.72});
+        if(de) ctx.restore();
+      }
+    }
   }
-  // corta o que passou da borda (lacadas sobem acima da ultima carreira)
   return cv;
 }
 function perfilManequim(busto){

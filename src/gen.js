@@ -379,7 +379,14 @@ const RAYNEN = (function () {
   const NONE = new Set([0, 15, 16, 17, 100, 110, 18, 19, 224, 225, 254, 255]);
   // 4 = malha frente que anda p/ esquerda (inclinada), 5 = anda p/ direita (diminuicoes/aumentos)
   const LEAN_L = new Set([...R(21, 27), ...R(61, 67), ...R(101, 104), 228, 229, 230]), LEAN_R = new Set([...R(31, 37), ...R(71, 77), 88, 89, 98, 99, 231, 232, 233]);
-  function stitchType(v) { if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1; if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1; }
+  // tipos da simulacao: 1 frente, 2 tras, 3 carregado frente, 4/5 inclinado (transferencia), 6 tranca por baixo, 7 tranca por cima, 8 carregado atras, 9 tras sem ligacao
+  const CAB_UNDER = new Set([28, 48, 38, 58]), CAB_OVER = new Set([29, 49, 39, 59]);
+  function stitchType(v) {
+    if (NONE.has(v)) return 0; if (v >= 120 && v <= 183) return 1;
+    if (CAB_UNDER.has(v)) return 6; if (CAB_OVER.has(v)) return 7;
+    if (v === 5) return 8; if (v === 4 || v === 14) return 3; if (v === 6) return 1; if (v === 7) return 2; if (v === 9) return 9;
+    if (PURL.has(v)) return 2; if (TUCK.has(v)) return 3; if (LEAN_L.has(v)) return 4; if (LEAN_R.has(v)) return 5; return 1;
+  }
   function simData(s, W, rowsList) {   // rowsList: [{key, g (Uint8Array W), yarn, cor?: (i)=>indice}]
     const yarnIdx = y => y === s.guiaFio ? 1 : y === s.fios[0] ? 2 : y === s.fios[1] ? 3 : y === s.fios[2] ? 4 : 0;
     const map = new Map(), order = [];
@@ -392,7 +399,10 @@ const RAYNEN = (function () {
         if (!cur.typ[i] || (t === 1 && cur.typ[i] === 3)) { cur.typ[i] = t; cur.col[i] = col; }
       }
     });
-    return { cols: W, cursos: order.map(k => map.get(k)).filter(c => c.typ.some(Boolean)) };
+    // carreira so com 9 (tras sem ligacao, ex. camada de ar) fica escondida atras da frente; misturada vira malha tras
+    const cursos = order.map(k => map.get(k)).filter(c => c.typ.some(t => t && t !== 9));
+    cursos.forEach(c => { for (let i = 0; i < W; i++) if (c.typ[i] === 9) c.typ[i] = 2; });
+    return { cols: W, cursos };
   }
 
   function build(spec) {
