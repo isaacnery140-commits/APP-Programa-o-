@@ -134,6 +134,7 @@ section label{font-size:14px}
 .molde[hidden]{display:none}
 .alerta{display:block;margin:8px 0 0;padding:7px 10px;border-radius:6px;border:1px solid #d9a400;background:#fff5d1;color:#6b4e00;font-weight:600;font-size:13px}
 @media (prefers-color-scheme:dark){.alerta{background:#3a2f0a;color:#ffd866;border-color:#8a6d00}}
+.rapport-ed[hidden],.cable-head[hidden]{display:none}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -323,11 +324,12 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
           <label for="f-ponto" class="ai">Qual ponto você quer?<input id="f-ponto" value="Meia malha" autocomplete="off" placeholder="Ex.: piquet duplo, canelado 2x1, favo"></label>
         <div class="cable m" id="motif-box">
-            <div class="cable-head"><span>Rapport do ponto</span><span class="hint" id="motif-size"></span></div>
+            <div class="cable-head" hidden><span>Rapport do ponto</span><span class="hint" id="motif-size"></span></div>
             <p class="hint" id="motif-src" hidden></p>
             <label for="f-pdesc" class="ai">Detalhes do ponto (opcional)<textarea id="f-pdesc" style="min-height:60px" placeholder="Ex.: piquet com carregado na trás a cada 2 carreiras, rapport de 2 agulhas"></textarea></label>
             <div class="actions ai"><button id="btn-motif" type="button">Criar ponto com IA</button><span id="motif-status" class="status hint"></span></div>
             <div id="motif-out" class="ai-out" hidden></div>
+            <div class="rapport-ed" hidden>
             <div class="row">
               <label for="f-mw">Rapport: agulhas<input id="f-mw" type="number" min="1" max="64" value="2"></label>
               <label for="f-mh">Rapport: carreiras<input id="f-mh" type="number" min="1" max="64" value="2"></label>
@@ -335,6 +337,7 @@ details.more>*:not(summary){margin-bottom:10px}
             </div>
             <div class="bed" style="max-height:320px;padding:8px"><canvas id="mcv" width="10" height="10" aria-label="Editor do rapport: clique numa casa para pintar com o código escolhido"></canvas></div>
             <p class="hint">Clique numa casa para trocar o código. A coluna da esquerda (A/B/C/D) é o guia-fio de cada carreira: clique para trocar. A carreira 1 do rapport fica embaixo.</p>
+            </div>
           </div>
           <div class="cable j" id="jq-box">
             <div class="cable-head"><span>Jacquard</span><span class="hint" id="jq-size"></span></div>
