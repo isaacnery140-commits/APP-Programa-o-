@@ -1547,7 +1547,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29j', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-29k', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2573,7 +2573,7 @@ function iniciar3D(){
   const sh=(t,s)=>{ const o=gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o); if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
   const pg=gl.createProgram(); gl.attachShader(pg,sh(gl.VERTEX_SHADER,V3VS)); gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,V3FS)); gl.linkProgram(pg);
   const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),t:gl.getAttribLocation(pg,'t'),o:gl.getAttribLocation(pg,'o')}; ['mv','pr','tx','useTx','alphaT','rough','cor','rep','pele'].forEach(k=>loc[k]=gl.getUniformLocation(pg,k));
-  const bar=document.createElement('div'); bar.className='v3-bar';
+  const bar=document.createElement('div'); bar.className='v3-bar'; bar.style.display='none';
   bar.innerHTML='<button type="button" data-v="0">Frente</button><button type="button" data-v="-35">3/4</button><button type="button" data-v="90">Lado</button><button type="button" data-v="180">Costas</button><button type="button" data-z="-1" aria-label="Aproximar">＋</button><button type="button" data-z="1" aria-label="Afastar">－</button><button type="button" data-a="1" aria-pressed="false">Girar sozinho</button>';
   box.insertBefore(bar,cv.nextSibling);
   V3={gl,pg,loc,cv,bar,ext32,malhas:[],rotY:-.35,rotX:.06,dist:1,auto:false,alvoY:-30,altura:100};
