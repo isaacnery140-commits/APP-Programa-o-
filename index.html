@@ -121,6 +121,11 @@ section label{font-size:14px}
 .medidas[open] summary{margin-bottom:6px}
 .medidas>*:not(summary){margin-bottom:8px}
 .dica{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;margin-top:-2px}
+.pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.pad-t{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+.pad-t td{padding:3px 6px;border-bottom:1px solid var(--line,#ddd)}
+.pad-t td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.pad-t small{display:block;color:var(--muted);font-size:11px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -468,7 +473,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <label for="sm-ag">Agulhas / 10 cm<input id="sm-ag" type="number" min="5" max="120" value="28"></label>
           <label for="sm-cr">Carreiras / 10 cm<input id="sm-cr" type="number" min="5" max="200" value="40"></label>
           <label for="sm-enq">Enquadrar<select id="sm-enq"><option value="detalhe">Detalhe do busto (ver o ponto)</option><option value="tronco" selected>Tronco</option><option value="inteiro">Manequim inteiro</option></select></label>
-          <label for="sm-tam">Manequim<select id="sm-tam"><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option></select></label>
+          <label for="sm-tam">Manequim<select id="sm-tam"><option value="78">PP (busto 78)</option><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option><option value="116">XG (busto 116)</option></select></label>
         </div>
         <div class="row">
           <label for="sm-man">Capa do manequim<select id="sm-man"><option value="linho">Linho bege</option><option value="preto">Preto</option><option value="branco">Branco</option><option value="cinza">Cinza</option></select></label>
@@ -491,6 +496,20 @@ details.more>*:not(summary){margin-bottom:10px}
           <label for="sm-pt" id="lbl-smpt" hidden style="flex-direction:row;align-items:center;gap:8px">Tamanho do ponto<input id="sm-pt" type="range" min="8" max="34" value="18" style="width:140px"></label>
         </div>
         <div class="bed" id="perto-box" hidden style="max-height:640px;background:#000"><canvas id="perto-cv" width="10" height="10" aria-label="Simulação da malha vista de perto"></canvas></div>
+
+        <details class="medidas" id="pad-box" open>
+          <summary><span class="tt">Medidas padrões (tricô)</span></summary>
+          <div class="tabs" role="tablist" id="pad-tams"></div>
+          <div class="pad-grid">
+            <div><b>Corpo</b><small class="dica">medida da pessoa, sem folga</small><table class="pad-t" id="pad-corpo"></table></div>
+            <div><b>Peça de tricô sugerida (frente)</b><small class="dica">já com folga, pronta para o cálculo</small><table class="pad-t" id="pad-peca"></table></div>
+          </div>
+          <div class="actions">
+            <label style="flex-direction:row;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="pad-cint" style="width:auto;flex:none"> Acinturada (usa a cintura)</label>
+            <button type="button" id="pad-usar">Usar este tamanho na peça</button><span class="status hint" id="pad-st"></span>
+          </div>
+          <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Peça: frente = metade do busto + 2 cm de folga; comprimento do ombro até o fim da barra para blusa no quadril. Confira sempre com a sua amostra e o seu molde.</p>
+        </details>
         <div class="sim" id="man-box"><canvas id="sim-cv" width="1000" height="1280" aria-label="Simulação da peça vestida no manequim"></canvas></div>
         <p class="hint">Simulação aproximada da frente da peça vestida, em escala pela densidade (agulhas e carreiras por 10 cm medidas na amostra lavada). Meia malha aparece como V, malha trás como ondinha e carregado mais aberto. Use para conferir tamanho, forma e desenho; o caimento real depende do fio e da densidade.</p>
       </section>
@@ -1636,6 +1655,52 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// ---- Medidas padrões (tricô)
+const PADROES={
+ PP:{busto:78, cint:60, quad:86, ombro:36,  cava:16,   braco:25,   manga:42,   costas:42,   comp:56, dl:15, dp:7},
+ P: {busto:84, cint:66, quad:92, ombro:37.5,cava:17,   braco:26,   manga:43,   costas:43,   comp:58, dl:16, dp:8},
+ M: {busto:92, cint:74, quad:100,ombro:40,  cava:18,   braco:28,   manga:43,   costas:43.5, comp:60, dl:16, dp:8},
+ G: {busto:100,cint:82, quad:108,ombro:42.5,cava:19.5, braco:30.5, manga:44.5, costas:44.5, comp:62, dl:17, dp:9},
+ GG:{busto:108,cint:90, quad:116,ombro:44.5,cava:21,   braco:34.5, manga:44.5, costas:45,   comp:64, dl:17, dp:9},
+ XG:{busto:116,cint:98, quad:124,ombro:45.5,cava:22,   braco:39.5, manga:45.5, costas:45.5, comp:66, dl:18, dp:10}
+};
+let padSel='M';
+const meio=v=>Math.round(v*2)/2, fmt=v=>String(v).replace('.',',')+' cm';
+function pecaPadrao(t){
+  const d=PADROES[t], larg=meio(d.busto/2+2), barra=5;
+  return {larg, comp:d.comp, barra, cava:d.cava+2, cent:Math.max(2,meio((larg-d.ombro)/2)),
+    dl:d.dl, dp:d.dp, cint:meio(d.cint/2+2), hcint:Math.max(3,meio(d.comp-d.costas-barra))};
+}
+function linhas(el,rows){ el.innerHTML=rows.map(([t,e,v])=>`<tr><td>${t}<small>${e}</small></td><td>${fmt(v)}</td></tr>`).join(''); }
+function mostraPadrao(){
+  const d=PADROES[padSel], k=pecaPadrao(padSel);
+  [...$('pad-tams').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t===padSel));
+  linhas($('pad-corpo'),[
+    ['Busto','volta na parte mais cheia do peito',d.busto],['Cintura','volta na parte mais fina',d.cint],['Quadril','volta na parte mais larga',d.quad],
+    ['Ombro a ombro','de uma ponta do ombro à outra, pelas costas',d.ombro],['Profundidade da cava','do ombro até a axila',d.cava],
+    ['Braço','volta na parte mais grossa',d.braco],['Manga','da axila até o pulso',d.manga],['Costas até a cintura','da nuca até a cintura',d.costas]]);
+  linhas($('pad-peca'),[
+    ['Largura da frente','metade do busto + folga',k.larg],['Comprimento total','do ombro até o fim da barra',k.comp],['Altura da barra','ribana do começo',k.barra],
+    ['Altura da cava','do começo da cava até o ombro',k.cava],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent],
+    ['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
+    ['Cintura (se acinturada)','largura da frente na cintura',k.cint],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint]]);
+}
+$('pad-tams').innerHTML=Object.keys(PADROES).map(t=>`<button type="button" role="tab" data-t="${t}">${t}</button>`).join('');
+$('pad-tams').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; padSel=b.dataset.t; mostraPadrao();
+  $('sm-tam').value=String(PADROES[padSel].busto); if(typeof simular==='function') simular(); });
+$('pad-usar').addEventListener('click',()=>{
+  const k=pecaPadrao(padSel), set=(id,v)=>{$(id).value=v;};
+  set('md-larg',k.larg); set('md-comp',k.comp); set('md-barra',k.barra); set('md-cava',k.cava); set('md-cent',k.cent);
+  if(!$('md-dtipo').value) $('md-dtipo').value='redondo';
+  if($('md-dtipo').value==='redondo'){ set('md-dlarg',k.dl); set('md-dprof',k.dp); } else set('md-dlarg',k.dl);
+  set('md-cint',$('pad-cint').checked?k.cint:0); set('md-hcint',k.hcint);
+  $('sm-tam').value=String(PADROES[padSel].busto);
+  calcularMedidas();
+  $('pad-st').textContent=`Tamanho ${padSel} aplicado nas Medidas da peça e calculado.`;
+  $('med-box').open=true; $('med-box').scrollIntoView({behavior:'smooth',block:'start'});
+});
+mostraPadrao();
+
 ['md-ag','md-cr'].forEach(id=>$(id).addEventListener('change',()=>{ $(id).value=Math.max(1,Math.round(+$(id).value||6)); }));
 $('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
