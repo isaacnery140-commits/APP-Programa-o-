@@ -319,7 +319,7 @@ const RAYNEN = (function () {
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     const evD = new Map(evDec(dc));
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
-    let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0;
+    let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0, poloFecha = false;
     const split = dc.ativo ? splitRow(s, dc.inicio) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
     const evA = new Map(evs.aum), evB = new Map(evs.aum2), ex = extraLado(s.forma);
@@ -419,6 +419,27 @@ const RAYNEN = (function () {
         out.push({ c: cc, g: row, o, ina, lado, sh: lado === 'D' ? desl : 0 });
       }
       c += 2; if (polo && poloFase < 2) poloFase++;
+      // polo: quando a carcela dos dois lados termina, as malhas da ribana que ficaram atras voltam para a frente (sem agulha de tras parada: W021)
+      if (polo && poloFase === 3 && !poloFecha && poloK.E >= cAlt && poloK.D >= cAlt) {
+        const t = new Uint8Array(W), o = bO.slice((c - 1) * WO, c * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
+        for (let i = bs; i < bs + PB; i++) if (i >= lA && i <= lB) t[i] = 110;
+        for (let i = bs + desl; i < bs + desl + PB; i++) if (i >= rA && i <= rB) t[i] = 110;
+        if (t.some(v => v)) out.push({ c: c - 1, g: t, o, ina: null, lado: 'T' });
+        poloFecha = true;
+      }
+    }
+    // polo: no fim o lado direito volta as PB agulhas para a esquerda, para nenhuma agulha ficar fora da largura do inicio (W041)
+    if (polo && desl) {
+      const o = bO.slice((nb - 1) * WO, nb * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
+      const ultD = out.filter(r => r.lado === 'D').slice(-2), ultE = out.filter(r => r.lado === 'E').slice(-2);
+      const t1 = new Uint8Array(W), t2 = new Uint8Array(W);
+      for (let i = rA; i <= rB; i++) if (ultD.some(r => r.g[i] && !(BACK.has(r.g[i]) || r.g[i] === 5))) t1[i] = 100;   // direito: tudo para tras
+      for (let i = lA; i <= lB; i++) if (ultE.some(r => BACK.has(r.g[i]) || r.g[i] === 5 || r.g[i] === 10)) t1[i] = 110;   // esquerdo: tudo para a frente
+      for (let i = rA; i <= rB; i++) t2[i] = 110;
+      const o2 = o.slice(); o2[28] = 0; o2[29] = desl;
+      if (t1.some(v => v)) out.push({ c: nb - 1, g: t1, o: o.slice(), ina: null, lado: 'T' });
+      out.push({ c: nb - 1, g: t2, o: o2, ina: null, lado: 'T' });
+      info.carcela.volta = true;
     }
     return { rows: out, info };
   }
