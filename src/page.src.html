@@ -107,6 +107,14 @@ section label{font-size:14px}
 .chat-log .ia{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:6px 10px;max-width:90%;white-space:pre-wrap}
 .chat-in{display:flex;gap:8px;align-items:flex-end}
 .chat-in textarea{min-height:44px}
+.paleta{display:flex;flex-direction:column;gap:6px}
+.paleta-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px}
+.paleta-fio{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.paleta-fio label{flex-direction:row;gap:3px;align-items:center;color:var(--ink)}
+.paleta-fio input{width:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer;box-shadow:inset 0 -3px 6px rgba(0,0,0,.25),inset 0 3px 5px rgba(255,255,255,.25)}
+.chip[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
 .mod{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;font:inherit;color:var(--ink);font-weight:400;font-size:12px;line-height:1.25;text-align:center}
 .mod canvas{image-rendering:pixelated;width:64px;height:48px;background:#141816;border-radius:2px}
@@ -334,6 +342,20 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
         </div>
 
+        <div class="opts" id="gola">
+          <div class="opts-head"><span class="lt tt">Tipo de gola</span></div>
+          <div class="row">
+            <label for="gl-tipo">Gola<select id="gl-tipo"><option value="">Sem gola</option><option value="careca">Gola careca (ribana baixa)</option><option value="garrafinha">Gola garrafinha / gola alta</option></select></label>
+            <label for="gl-rib" class="glx">Ribana<select id="gl-rib"><option value="1x1">1x1</option><option value="2x2">2x2</option></select></label>
+          </div>
+          <div class="row glx">
+            <label for="gl-alt">Altura da gola (cm)<input id="gl-alt" type="number" min="1" max="40" step="0.5" value="3"></label>
+            <label for="gl-per">Volta do decote (cm)<input id="gl-per" type="number" min="20" max="90" step="0.5" value="52"></label>
+          </div>
+          <p class="hint glx" id="gl-info"></p>
+          <p class="hint glx">Como na ficha de processo do Raynen (golas são acessórios): a gola sai como um programa separado (NOME_GOLA) no mesmo .zip, em ribana com início tubular e fio de descarte no fim para cerzir (remalhar) no decote. A garrafinha sai com o dobro da altura, para dobrar.</p>
+        </div>
+
         <details class="more">
           <summary>Guia-fios</summary>
           <div class="row">
@@ -416,10 +438,17 @@ details.more>*:not(summary){margin-bottom:10px}
           <label for="sm-tam">Manequim<select id="sm-tam"><option value="86">P (busto 86)</option><option value="92" selected>M (busto 92)</option><option value="100">G (busto 100)</option><option value="108">GG (busto 108)</option></select></label>
         </div>
         <div class="row">
+          <label for="sm-man">Capa do manequim<select id="sm-man"><option value="linho">Linho bege</option><option value="preto">Preto</option><option value="branco">Branco</option><option value="cinza">Cinza</option></select></label>
           <label for="sm-c1">Cor do fio A<input id="sm-c1" type="color" value="#e9e3d3"></label>
           <label for="sm-c2">Cor do fio B<input id="sm-c2" type="color" value="#3d42a0"></label>
           <label for="sm-c3">Cor do fio C<input id="sm-c3" type="color" value="#b8913f"></label>
           <label for="sm-c4">Cor do fio D<input id="sm-c4" type="color" value="#c8372d"></label>
+        </div>
+        <div class="paleta">
+          <div class="paleta-head"><span class="tt">Cores da peça</span>
+            <span class="paleta-fio" role="radiogroup" aria-label="Aplicar a cor no fio">Aplicar no fio:
+              <label><input type="radio" name="pfio" value="1" checked> A</label><label><input type="radio" name="pfio" value="2"> B</label><label><input type="radio" name="pfio" value="3"> C</label><label><input type="radio" name="pfio" value="4"> D</label></span></div>
+          <div class="chips" id="chips"></div>
         </div>
         <div class="actions">
           <div class="tabs" role="tablist">
@@ -874,7 +903,7 @@ function renderFacts(){
     jacquard:()=>`Jacquard ${s.ponto.cores} cores (${s.ponto.desenho[0].length}×${s.ponto.desenho.length})`, base:()=>'Programa da base'}[s.ponto.tipo]();
   const ps=Object.entries(last.passes).map(([g,n])=>`${g}: ${n}`).join(' · ');
   const items=[['Largura',last.forma&&last.forma.larguraInicial!==s.largura?`${last.forma.larguraInicial} → ${s.largura} agulhas`:`${s.largura} agulhas`],['Carreiras no desenho',`${last.rows} (${last.start} ${s.base?'da base':'início/ribana'} + ${last.bodyRows}${last.rows-last.start-last.bodyRows?` + ${last.rows-last.start-last.bodyRows} do módulo`:''})`],
-    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],['Forma',last.forma?[s.forma.cintura&&s.forma.cintura.ativo?'acinturado':'',s.forma.aumento.ativo?'aumento':'',s.forma.cava.ativo?'cava':'',s.forma.decote.ativo?`decote ${s.forma.decote.tipo}`:'',s.forma.aumento2.ativo?'aumento':''].filter(Boolean).join(' + '):'reta'],
+    ['Ponto do corpo',pt],['Tranças',s.trancas.length?s.trancas.map(t=>`${2*t.grupo} ag. a cada ${t.intervalo}`).join(', '):'nenhuma'],['Gola',(()=>{const g=golaSpec();return g?(g.tipoGola==='careca'?'careca':'garrafinha')+` (${g.largura} ag.)`:'sem';})()],['Forma',last.forma?[s.forma.cintura&&s.forma.cintura.ativo?'acinturado':'',s.forma.aumento.ativo?'aumento':'',s.forma.cava.ativo?'cava':'',s.forma.decote.ativo?`decote ${s.forma.decote.tipo}`:'',s.forma.aumento2.ativo?'aumento':''].filter(Boolean).join(' + '):'reta'],
     ['Passadas por guia-fio',ps],['Cruzamentos',last.crosses.length?last.crosses.slice(0,6).join(', ')+(last.crosses.length>6?'…':''):'—']];
   items.forEach(([k,v])=>{const d=document.createElement('div');const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;d.append(dt,dd);f.appendChild(d);});
 }
@@ -886,6 +915,7 @@ function ficha(){
     `  ${last.start+1}-${last.rows} corpo, densidade segmento 8`,
     `Ponto: ${s.ponto.tipo==='base'?`programa da base "${$('f-barra').selectedOptions[0].textContent}" como está (corpo das carreiras ${last.start+1} a ${last.rows})`:s.ponto.tipo==='quadriculado'?`links quadriculado ${s.ponto.bx} agulhas x ${s.ponto.by} carreiras (1 frente / 2 trás)`:s.ponto.tipo==='links'?'malha trás (2)':s.ponto.tipo==='motivo'?`${s.ponto.nome||'personalizado'} - rapport ${s.ponto.motivo[0].length} agulhas x ${s.ponto.motivo.length} carreiras`:s.ponto.tipo==='jacquard'?(s.ponto.metodo==='modulo'?`jacquard 2 cores em MÓDULO (igual ao 45018FG): desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} com 120 = cor 1 (guia-fio ${s.guiaFio}) e 121 = cor 2 (guia-fio ${s.fios[0]}); definição do módulo a partir da carreira ${last.modDef.linha} (coluna ${last.modDef.coluna}): 4 páginas de 2 passadas, identificação 102, função 201 col.3 = 2`:s.ponto.metodo==='expandido'?`jacquard ${s.ponto.cores} cores expandido, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length}, uma passada por cor, avesso 1x1 (9 nas agulhas pares)`:`jacquard ${s.ponto.cores} cores COMPACTO, desenho ${s.ponto.desenho[0].length} x ${s.ponto.desenho.length} (${s.ponto.modo==='centro'?'centralizado':'repetido'}): BMP com malha frente, camada .INA com o guia-fio de cada ponto, função 216 = ${s.ponto.cores} cores / avesso ${s.ponto.avesso} (colunas 54/55 do .opt)`):'meia malha (1)'}`);
   const gf=[s.guiaFio,...s.fios]; l.push('Guia-fios: '+gf.map((g,i)=>`${'ABCD'[i]}=${g}`).join(' '));
+  { const gs=golaInfo(); if(gs) l.push(`Gola ${gs.tipoGola}: programa ${gs.nome} (${gs.largura} agulhas, ribana ${gs.ponto.nome.slice(7)}, ${gs.alturaCm} cm${gs.tipoGola==='garrafinha'?' para dobrar':''}, volta do decote ${gs.perCm} cm), início tubular do 25009F e 8 carreiras de fio de descarte (guia-fio 7) no fim para cerzir.`); }
   if(last.forma){ const f=s.forma, fi=last.forma;
     if(f.cintura&&f.cintura.ativo) l.push(`Acinturado: diminui ${f.cintura.dim}, ${f.cintura.retas} carreiras retas na cintura, aumenta ${f.cintura.aum} (${f.cintura.modo==='16'?'cor 16':'transferência'}); carreiras do corpo ${fi.cintura.join(', ')}`);
     if(f.aumento.ativo) l.push(`Aumento antes da cava: passos ${f.aumento.passos}, borda ${f.aumento.borda}; nas carreiras do corpo ${fi.aumento.join(', ')} (largura ${fi.larguraInicial} → ${s.largura})`);
@@ -900,12 +930,35 @@ function ficha(){
   return l.join('\r\n');
 }
 let downloads=null;
+
+// ---- gola (programa separado) ----
+function golaSpec(){
+  const t=$('gl-tipo').value; if(!t) return null;
+  const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40);
+  const per=Math.max(20,+$('gl-per').value||52), alt=Math.max(1,+$('gl-alt').value||3)*(t==='garrafinha'?2:1);
+  let W=Math.round(per*ag/10); if(W%2===0) W++;
+  const rows=Math.max(4,Math.round(alt*cr*1.15/10));           // ribana encolhe: um pouco mais de carreiras
+  const corpo=Math.max(2,rows-10); const rib=$('gl-rib').value;
+  return {nome:(($('f-nome').value.trim()||'NOVO')+'_GOLA').replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,40), largura:Math.min(1000,W), carreiras:corpo+(corpo%2), barra:rib, ribanaRep:1,
+    guiaFio:parseInt($('f-guia').value,10)||3, fios:[parseInt($('f-gb').value,10)||5,parseInt($('f-gc').value,10)||4,parseInt($('f-gd').value,10)||6],
+    ponto:{tipo:'motivo',nome:'Ribana '+rib,motivo:[rib==='2x2'?[1,1,2,2]:[1,2]],fios:[1]}, descarte:8, tipoGola:t, alturaCm:alt, perCm:per};
+}
+function golaInfo(){
+  const g=golaSpec(); document.querySelectorAll('.glx').forEach(el=>el.hidden=!g);
+  if(!g){ $('gl-info').textContent=''; return null; }
+  const c=RAYNEN.check(g);
+  $('gl-info').textContent=c.erros.length?('Gola: '+c.erros.join(' ')):`Programa da gola: ${g.largura} agulhas × ${25+g.carreiras+g.descarte} carreiras (${g.alturaCm} cm de ribana ${g.ponto.nome.slice(7)}${g.tipoGola==='garrafinha'?', dobrada fica com '+(g.alturaCm/2)+' cm':''}).`;
+  return c.erros.length?null:g;
+}
+$('gl-tipo').addEventListener('change',()=>{ const t=$('gl-tipo').value; if(t==='careca'){ $('gl-alt').value=3; $('gl-per').value=52; $('gl-rib').value='1x1'; } if(t==='garrafinha'){ $('gl-alt').value=18; $('gl-per').value=50; $('gl-rib').value='2x2'; } golaInfo(); simular(); });
+['gl-rib','gl-alt','gl-per'].forEach(id=>$(id).addEventListener('input',()=>{ golaInfo(); simular(); }));
 $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
 
   const n=last.spec.nome, files=[{name:n+'.BMP',data:last.bmp},{name:n+'.opt',data:last.opt}];
   if(last.ina){ files.push({name:n+'.INA',data:last.ina},{name:n+'.JQD',data:last.jqd}); }
   files.push({name:n+'_ficha.txt',data:ficha()});
+  const gs=golaInfo(); if(gs){ const gb=RAYNEN.build(gs); files.push({name:gs.nome+'.BMP',data:gb.bmp},{name:gs.nome+'.opt',data:gb.opt}); }
   const data=RAYNEN.zip(files);
   $('dl-status').textContent='Preparando…';
   if(!downloads){ // fora do Claude (ex.: GitHub Pages): download comum do navegador
@@ -1239,41 +1292,117 @@ function perfilManequim(busto){
   const ombro=x=>{ const ax=Math.abs(x); if(ax<=3.6) return 0; if(ax<=O){ const t=(ax-3.6)/(O-3.6); return 0.5+t*3.6+t*t*1.6; } return 5.7+(ax-O)*1.8; };
   return {hw, ombro, O, B, C, Q, fim:73};
 }
-function desenhaManequim(ctx, cx, y0, s, pf){
-  const L=[],Rr=[]; for(let y=-7;y<=pf.fim;y+=.5){ const w=pf.hw(y); if(y<0){ L.push([cx-w*s,y0+y*s]); Rr.push([cx+w*s,y0+y*s]); } }
-  ctx.save();
-  // pescoco
-  const gN=ctx.createLinearGradient(cx-3.6*s,0,cx+3.6*s,0); gN.addColorStop(0,'#25262a'); gN.addColorStop(.45,'#5a5b61'); gN.addColorStop(1,'#202125');
-  ctx.fillStyle=gN; ctx.fillRect(cx-3.3*s,y0-7*s,6.6*s,8*s);
-  ctx.fillStyle='#b08d57'; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.3*s,1*s,0,0,Math.PI*2); ctx.fill();
-  // tronco: contorno pela linha do ombro + perfil
-  ctx.beginPath(); ctx.moveTo(cx-3.6*s,y0);
-  for(let x=-3.6;x>=-pf.O*.88;x-=.5) ctx.lineTo(cx+x*s,y0+pf.ombro(x)*s);
-  ctx.quadraticCurveTo(cx-pf.O*1.02*s,y0+pf.ombro(pf.O*.9)*s,cx-pf.hw(9)*s,y0+9*s);
-  for(let y=9;y<=pf.fim;y+=.5) ctx.lineTo(cx-pf.hw(y)*s,y0+y*s);
-  ctx.quadraticCurveTo(cx,y0+(pf.fim+2.5)*s,cx+pf.hw(pf.fim)*s,y0+pf.fim*s);
-  for(let y=pf.fim;y>=9;y-=.5) ctx.lineTo(cx+pf.hw(y)*s,y0+y*s);
-  ctx.quadraticCurveTo(cx+pf.O*1.02*s,y0+pf.ombro(pf.O*.9)*s,cx+pf.O*.88*s,y0+pf.ombro(pf.O*.88)*s);
-  for(let x=pf.O*.88;x>=3.6;x-=.5) ctx.lineTo(cx+x*s,y0+pf.ombro(x)*s);
-  ctx.closePath();
-  const g=ctx.createLinearGradient(cx-pf.Q*s,0,cx+pf.Q*s,0); g.addColorStop(0,'#141518'); g.addColorStop(.18,'#2b2c31'); g.addColorStop(.42,'#5c5d64'); g.addColorStop(.6,'#3d3e44'); g.addColorStop(1,'#111214');
-  ctx.fillStyle=g; ctx.fill();
-  ctx.save(); ctx.clip();
-  // volume do busto e do quadril
-  for(const lado of [-1,1]){
-    const bx=cx+lado*pf.B*.52*s, by=y0+21*s, rg=ctx.createRadialGradient(bx-lado*1.5*s,by-2*s,0,bx,by,7.5*s);
-    rg.addColorStop(0,'rgba(255,255,255,.16)'); rg.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,7.5*s,0,Math.PI*2); ctx.fill();
+// manequim de costura pintado ponto a ponto: corpo oval com luz, capa de linho, costuras princesa, tampa de madeira e pé de metal
+const LUZ=(()=>{ const l=[-.38,-.48,.79], n=Math.hypot(...l); return l.map(v=>v/n); })();
+function normalCorpo(xc, ycm, a, da){   // normal da superficie (corpo de secao eliptica, b = 0.72a)
+  const nx=Math.max(-1,Math.min(1,xc/a)), nz=Math.sqrt(Math.max(0,1-nx*nx))*1.25, ny=-da*Math.abs(nx)*1.6;
+  const L=Math.hypot(nx,ny,nz)||1; return [nx/L,ny/L,nz/L];
+}
+function iluminar(n, brilho, exp){
+  const d=Math.max(0,n[0]*LUZ[0]+n[1]*LUZ[1]+n[2]*LUZ[2]);
+  const rz=2*d*n[2]-LUZ[2];                       // reflexo visto de frente
+  return {d, sp:Math.pow(Math.max(0,rz),exp)*brilho};
+}
+function pintaManequim(D, Wc, Hc, cx, y0, s, pf, capa){
+  const base={linho:[222,211,190],preto:[38,38,42],branco:[236,234,229],cinza:[150,150,152]}[capa]||[222,211,190];
+  const ymax=Math.min(Hc-1,Math.ceil(y0+(pf.fim+2.2)*s));
+  for(let Y=Math.max(0,Math.floor(y0-7*s)); Y<=ymax; Y++){
+    const ycm=(Y+.5-y0)/s; let a, da;
+    if(ycm<0.6){ a=3.3; da=0; }
+    else { a=pf.hw(Math.min(ycm,pf.fim)); da=(pf.hw(Math.min(ycm+.5,pf.fim))-pf.hw(Math.max(0,ycm-.5))); if(ycm>pf.fim-2) a*=Math.sqrt(Math.max(0,1-((ycm-(pf.fim-2))/4.2)**2)); }
+    const x0=Math.max(0,Math.floor(cx-a*s)), x1=Math.min(Wc-1,Math.ceil(cx+a*s));
+    for(let X=x0;X<=x1;X++){
+      const xc=(X+.5-cx)/s; if(Math.abs(xc)>a) continue;
+      if(ycm>=0.6 && ycm<pf.ombro(xc)) continue;              // acima da linha do ombro
+      if(ycm<0.6 && Math.abs(xc)>3.3) continue;
+      const n=normalCorpo(xc,ycm,a,da);
+      // volume do busto
+      const bz=Math.exp(-(((Math.abs(xc)-pf.B*.52)**2)/(2*4.6**2)+((ycm-21)**2)/(2*4.4**2)));
+      n[0]+=Math.sign(xc)*bz*.12*Math.sign(Math.abs(xc)-pf.B*.52); n[1]+=bz*.25*Math.sign(ycm-21)*Math.min(1,Math.abs(ycm-21)/3);
+      const {d,sp}=iluminar(n,capa==='preto'?.35:.18,capa==='preto'?18:10);
+      let f=.32+.78*d;
+      const nx=Math.abs(xc)/a;
+      if(Math.abs(nx-.46)<.012||Math.abs(xc)<.07) f*=.82;                 // costuras princesa e do centro
+      if(ycm>27.6&&ycm<28.2&&nx<.7) f*=.85;                              // costura sob o busto
+      const hs=Math.sin(X*12.9898+Y*78.233)*43758.5453, ru=1+((hs-Math.floor(hs))-.5)*.07+(((X+Y)&1)?.012:-.012);   // trama do linho
+      const o=(Y*Wc+X)*4;
+      D[o]=Math.min(255,base[0]*f*ru+sp*255); D[o+1]=Math.min(255,base[1]*f*ru+sp*255); D[o+2]=Math.min(255,base[2]*f*ru+sp*255); D[o+3]=255;
+    }
   }
-  const sb=ctx.createLinearGradient(0,y0+26*s,0,y0+31*s); sb.addColorStop(0,'rgba(0,0,0,0)'); sb.addColorStop(.6,'rgba(0,0,0,.22)'); sb.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=sb; ctx.fillRect(cx-pf.B*s,y0+26*s,2*pf.B*s,5*s);
+}
+function desenhaSuporte(ctx, cx, y0, s, pf){
+  ctx.save();
+  // tampa de madeira do pescoco
+  const gw=ctx.createLinearGradient(cx-3.4*s,0,cx+3.4*s,0); gw.addColorStop(0,'#6b4a2b'); gw.addColorStop(.45,'#c39a64'); gw.addColorStop(1,'#5a3d22');
+  ctx.fillStyle=gw; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.4*s,1.1*s,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#d9b27a'; ctx.beginPath(); ctx.ellipse(cx-.4*s,y0-7.2*s,2.6*s,.7*s,0,0,Math.PI*2); ctx.fill();
+  // haste de metal
+  const yb=y0+(pf.fim+1.5)*s, hp=26*s;
+  const gm=ctx.createLinearGradient(cx-1*s,0,cx+1*s,0); gm.addColorStop(0,'#5d6066'); gm.addColorStop(.35,'#e9ecef'); gm.addColorStop(.6,'#9aa0a6'); gm.addColorStop(1,'#46494e');
+  ctx.fillStyle=gm; ctx.fillRect(cx-.9*s,yb,1.8*s,hp);
+  ctx.fillStyle='#7d8188'; ctx.fillRect(cx-1.5*s,yb+hp*.45,3*s,1.2*s);   // regulagem
+  // tripe
+  ctx.strokeStyle='#3b3e43'; ctx.lineCap='round'; ctx.lineWidth=1.3*s;
+  for(const [dx,dy] of [[-14,4],[14,4],[0,6]]){ ctx.beginPath(); ctx.moveTo(cx,yb+hp); ctx.lineTo(cx+dx*s,yb+hp+dy*s); ctx.stroke(); }
+  ctx.fillStyle='rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(cx,yb+hp+5.5*s,18*s,2.6*s,0,0,Math.PI*2); ctx.fill();
   ctx.restore();
-  // costura central e reflexo
-  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(cx,y0+1*s); ctx.lineTo(cx,y0+pf.fim*s); ctx.stroke();
-  // suporte
-  const gp=ctx.createLinearGradient(cx-1.2*s,0,cx+1.2*s,0); gp.addColorStop(0,'#3a2d1e'); gp.addColorStop(.5,'#8a6a45'); gp.addColorStop(1,'#3a2d1e');
-  ctx.fillStyle=gp; ctx.fillRect(cx-1.1*s,y0+(pf.fim+2)*s,2.2*s,24*s);
-  ctx.fillStyle='#2b2620'; ctx.beginPath(); ctx.ellipse(cx,y0+(pf.fim+26.5)*s,13*s,2.2*s,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(cx,y0+(pf.fim+28.5)*s,20*s,2.6*s,0,0,Math.PI*2); ctx.fill();
+}
+// gola desenhada no manequim: careca = faixa de ribana em volta do decote; garrafinha = tubo de ribana dobrado no pescoco
+// abertura do decote da peca (cm): meia-largura e profundidade, pelos dados do decote
+function aberturaDecote(){
+  const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40);
+  if(!last||!last.spec||!last.spec.forma||!last.spec.forma.decote.ativo) return {rx:7.5,ry:2.2};
+  const d=last.spec.forma.decote, soma=(d.passos||'').split(/[,;]+/).map(x=>x.trim().match(/^(\d+)-(\d+)-(\d+)$/)).filter(Boolean).reduce((a,m)=>a+(+m[2])*(+m[3]),0);
+  const rx=((d.tipo==='redondo'?(+d.meio||0)/2:0)+soma)*10/ag, ry=Math.max(1.5,(last.spec.carreiras-(d.inicio-1))*10/cr);
+  return {rx:Math.max(5,rx)+.8, ry:ry+1.2, v:d.tipo==='V'};
+}
+// gola no manequim: careca = faixa de ribana costurada na borda do decote; garrafinha = tubo de ribana dobrado no pescoco
+function desenhaGola(ctx, cx, y0, s, pf, g, hex){
+  const rgb=hexRgb(hex), ag=Math.max(1,+$('sm-ag').value||28), passo=10/ag, ab=aberturaDecote();
+  const tom=f=>`rgb(${Math.min(255,rgb[0]*f)|0},${Math.min(255,rgb[1]*f)|0},${Math.min(255,rgb[2]*f)|0})`;
+  const rib=g.ponto.motivo[0], yc=y0+.3*s;
+  // faixa radial de ribana entre duas curvas (borda de fora = decote, de dentro = pescoco)
+  function faixa(rxo,ryo,rxi,ryi,yi){
+    const N=Math.max(30,Math.round(Math.PI*(rxo+rxi)/2/passo));
+    for(let k=0;k<N;k++){
+      const t0=Math.PI*(.03+.94*k/N), t1=Math.PI*(.03+.94*(k+1)/N), tm=(t0+t1)/2;
+      const Po=t=>[cx+Math.cos(t)*rxo*s, yc+Math.sin(t)*ryo*s], Pi=t=>[cx+Math.cos(t)*rxi*s, yi+Math.sin(t)*ryi*s];
+      const frente=rib[k%rib.length]===1, luz=(.5+.5*Math.sin(tm)-.12*Math.cos(tm))*(frente?1.1:.6);
+      ctx.fillStyle=tom(luz); ctx.beginPath(); ctx.moveTo(...Pi(t0)); ctx.lineTo(...Pi(t1)); ctx.lineTo(...Po(t1)); ctx.lineTo(...Po(t0)); ctx.closePath(); ctx.fill();
+      if(frente){ ctx.strokeStyle=tom(luz*1.22); ctx.lineWidth=Math.max(.5,s*passo*.35); ctx.beginPath(); ctx.moveTo(...Pi(tm)); ctx.lineTo(...Po(tm)); ctx.stroke(); }
+    }
+  }
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=s*.9; ctx.shadowOffsetY=s*.35;
+  ctx.fillStyle='rgba(0,0,0,.001)'; ctx.fillRect(0,0,1,1); ctx.shadowColor='transparent';
+  if(g.tipoGola==='careca'){
+    const h=g.alturaCm, rxo=ab.rx+.4, ryo=ab.ry+.4, rxi=Math.max(3.9,rxo-h*1.05), ryi=Math.max(1.4,ryo-h*1.1);
+    // sombra da gola sobre a peca
+    ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,yc+.4*s,rxo*s,ryo*s,0,0,Math.PI); ctx.fill();
+    faixa(rxo,ryo,rxi,ryi,yc);
+    ctx.strokeStyle=tom(1.0); ctx.lineWidth=s*.3; ctx.beginPath(); ctx.ellipse(cx,yc,rxi*s,ryi*s,0,0,Math.PI); ctx.stroke();   // borda tubular
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=s*.12; ctx.beginPath(); ctx.ellipse(cx,yc,rxo*s,ryo*s,0,0,Math.PI); ctx.stroke(); // costura
+  } else {
+    const alto=Math.min(g.alturaCm/2,11), R=4.3, yt=y0-(alto-2)*s, ybase=yc+.6*s;
+    // base: ribana preenchendo a abertura do decote ate o tubo
+    ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,yc+.4*s,(ab.rx+.4)*s,(ab.ry+.4)*s,0,0,Math.PI); ctx.fill();
+    faixa(ab.rx+.4,ab.ry+.4,R+.3,1.4,ybase);
+    // tubo
+    const N=Math.max(24,Math.round(Math.PI*R/passo));
+    for(let k=0;k<N;k++){
+      const t0=-Math.PI/2+Math.PI*k/N, t1=-Math.PI/2+Math.PI*(k+1)/N, tm=(t0+t1)/2;
+      const x0=cx+Math.sin(t0)*R*s, x1=cx+Math.sin(t1)*R*s, x0b=cx+Math.sin(t0)*(R+.3)*s, x1b=cx+Math.sin(t1)*(R+.3)*s;
+      const frente=rib[k%rib.length]===1, luz=(.42+.6*Math.cos(tm)-.12*Math.sin(tm))*(frente?1.1:.6);
+      const ytp=yt+Math.cos(tm)*1.1*s, ybt=ybase+Math.cos(tm)*1.4*s;
+      ctx.fillStyle=tom(luz); ctx.beginPath(); ctx.moveTo(x0,ytp); ctx.lineTo(x1,ytp); ctx.lineTo(x1b,ybt); ctx.lineTo(x0b,ybt); ctx.closePath(); ctx.fill();
+    }
+    // dobra (punho virado): faixa mais clara com a borda e a linha da dobra
+    const yd=yt+alto*.42*s;
+    const gd=ctx.createLinearGradient(cx-R*s,0,cx+R*s,0); gd.addColorStop(0,tom(.45)); gd.addColorStop(.42,tom(1.05)); gd.addColorStop(1,tom(.4));
+    ctx.globalAlpha=.35; ctx.fillStyle=gd; ctx.fillRect(cx-R*s,yt,2*R*s,yd-yt+1.1*s); ctx.globalAlpha=1;
+    ctx.strokeStyle=tom(.38); ctx.lineWidth=s*.3; ctx.beginPath(); ctx.ellipse(cx,yd,(R+.1)*s,1.15*s,0,0,Math.PI); ctx.stroke();
+    ctx.fillStyle=tom(1.12); ctx.beginPath(); ctx.ellipse(cx,yt,R*s,1.1*s,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tom(.32); ctx.beginPath(); ctx.ellipse(cx,yt+.1*s,(R-.6)*s,.7*s,0,0,Math.PI*2); ctx.fill();
+  }
   ctx.restore();
 }
 function simular(){
@@ -1287,13 +1416,18 @@ function simular(){
   const enq=$('sm-enq').value, perto=enq!=='inteiro', altV=enq==='detalhe'?30:perto?Math.max(30,Math.min(pf.fim,hcm)+6):Math.max(pf.fim,hcm+6)+38;
   const s=enq==='detalhe'?Math.min((Hc-40)/34,(Wc-20)/(pf.O*2.3)):Math.min((Hc-40)/(altV+(perto?8:0)), (Wc-30)/(Math.max(pf.Q*2.2, Math.min(wcm,pf.Q*3.2))));
   const cx=Wc/2, y0=26+8*s;
-  desenhaManequim(ctx,cx,y0,s,pf);
+  // fundo de estudio
+  const bg=ctx.createRadialGradient(Wc*.5,Hc*.35,Hc*.1,Wc*.5,Hc*.5,Hc*.8); bg.addColorStop(0,'#f4f2ee'); bg.addColorStop(1,'#cfcac1'); ctx.fillStyle=bg; ctx.fillRect(0,0,Wc,Hc);
+  desenhaSuporte(ctx,cx,y0,s,pf);
+  { const im=ctx.getImageData(0,0,Wc,Hc); pintaManequim(im.data,Wc,Hc,cx,y0,s,pf,$('sm-man').value); ctx.putImageData(im,0,0); }
+  desenhaSuporte.tampa=true;
+  { const gw=ctx.createLinearGradient(cx-3.4*s,0,cx+3.4*s,0); gw.addColorStop(0,'#6b4a2b'); gw.addColorStop(.45,'#c39a64'); gw.addColorStop(1,'#5a3d22'); ctx.fillStyle=gw; ctx.beginPath(); ctx.ellipse(cx,y0-7*s,3.4*s,1.1*s,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d9b27a'; ctx.beginPath(); ctx.ellipse(cx-.4*s,y0-7.2*s,2.6*s,.7*s,0,0,Math.PI*2); ctx.fill(); }
   // textura no tamanho de tela (com suavizacao do navegador) para amostrar
   const sx=Math.max(6,Math.min(18,Math.floor(4200/W))), sy=Math.max(4,Math.round(sx*ag/cr));
   const tx=texturaPeca(sim,sx,sy,[1,2,3,4].map(k=>$('sm-c'+k).value));
   const tw=Math.max(8,Math.round(wcm*s*1.25)), th=Math.max(8,Math.round(hcm*s*1.25));
   const t2=document.createElement('canvas'); t2.width=tw; t2.height=th; const c2=t2.getContext('2d'); c2.imageSmoothingQuality='high'; c2.drawImage(tx,0,0,tw,th);
-  const T=c2.getImageData(0,0,tw,th).data;
+  const T=c2.getImageData(0,0,tw,th).data, fib=fibraAtual();
   // corpo como secao oval: arco desde o centro da frente -> posicao x vista de frente
   const out=ctx.getImageData(0,0,Wc,Hc), O=out.data;
   const mask=new Uint8Array(Wc*Hc);
@@ -1317,12 +1451,18 @@ function simular(){
       const al=T[i00+3]*(1-ax)*(1-ay)+T[i10+3]*ax*(1-ay)+T[i01+3]*(1-ax)*ay+T[i11+3]*ax*ay; if(al<60) continue;
       const bl=k=>(T[i00+k]*(1-ax)*(1-ay)+T[i10+k]*ax*(1-ay)+T[i01+k]*(1-ax)*ay+T[i11+k]*ax*ay)*255/Math.max(1,al);
       const pr=bl(0), pg=bl(1), pb=bl(2), ru=1+((X*7919+Y*104729)%97/97-.5)*.06;   // leve "pelo" do fio
-      // luz: frontal + de cima a esquerda
-      const nx=Math.sin(phi)*Math.sign(xc);
-      const busto=Math.exp(-(((Math.abs(xc)-pf.B*.52)**2)/(2*4.8**2) + ((ycm-21)**2)/(2*4.6**2)));
+      // luz pela normal do corpo (mesma do manequim) + brilho da fibra + oclusao nas bordas + dobras onde a malha solta do corpo
+      const nn=normalCorpo(xc,ycm,a,0);
+      const bz=Math.exp(-(((Math.abs(xc)-pf.B*.52)**2)/(2*4.8**2)+((ycm-21)**2)/(2*4.6**2)));
+      nn[1]+=bz*.22*Math.sign(ycm-21)*Math.min(1,Math.abs(ycm-21)/3);
+      const il=iluminar(nn,fib.brilho-.85,fib.brilho>1.3?14:8);
       const sob=Math.exp(-((ycm-28.5)**2)/(2*2.2**2))*Math.exp(-(xc*xc)/(2*(pf.B*.7)**2));
-      const luz=Math.max(.25, (.6+.4*Math.cos(phi) - .12*nx) * (1+.22*busto) * (1-.16*sob)) * (ycm<6?.93:1);
-      const oi=(Y*Wc+X)*4, L2=luz*ru; O[oi]=Math.min(255,pr*L2); O[oi+1]=Math.min(255,pg*L2); O[oi+2]=Math.min(255,pb*L2); O[oi+3]=255; mask[Y*Wc+X]=1;
+      const solta=Math.max(0,a-real);                                   // malha afastada do corpo (cintura)
+      const dobra=solta>.3?(.5+.5*Math.sin(xc*1.9+Math.sin(ycm*.35)*1.3))*Math.min(1,solta/2.5):0;
+      const borda=Math.min(1,Math.min(u,1-u)*wcm/1.2)*Math.min(1,v*hcm/1.0+.35);
+      const luz=Math.max(.2,(.3+.82*il.d)*(1-.18*sob)*(1-.16*dobra)*(.82+.18*borda));
+      const spec=il.sp*120*(1-dobra*.5);
+      const oi=(Y*Wc+X)*4, L2=luz*ru; O[oi]=Math.min(255,pr*L2+spec); O[oi+1]=Math.min(255,pg*L2+spec); O[oi+2]=Math.min(255,pb*L2+spec); O[oi+3]=255; mask[Y*Wc+X]=1;
     }
   }
   // sombra suave da peca sobre o manequim (embaixo da barra e nas bordas)
@@ -1333,6 +1473,7 @@ function simular(){
   const base=ctx.getImageData(0,0,Wc,Hc), BD=base.data;
   for(let i=0;i<mask.length;i++) if(mask[i]){ const o=i*4; BD[o]=O[o]; BD[o+1]=O[o+1]; BD[o+2]=O[o+2]; BD[o+3]=255; }
   ctx.putImageData(base,0,0);
+  { const gs=golaSpec(); if(gs) desenhaGola(ctx,cx,y0,s,pf,gs,$('sm-c1').value); }
   $('sim-med').textContent=`Peça ≈ ${wcm.toFixed(1)} cm de largura × ${hcm.toFixed(1)} cm de comprimento (${W} agulhas × ${H} carreiras)`;
 }
 
@@ -1351,6 +1492,14 @@ function trocaSim(m){ simModo=m; $('tab-man').setAttribute('aria-selected',Strin
   $('man-box').hidden=m!=='man'; $('perto-box').hidden=m!=='perto'; $('lbl-smpt').hidden=m!=='perto'; simular(); }
 $('tab-man').addEventListener('click',()=>trocaSim('man')); $('tab-perto').addEventListener('click',()=>trocaSim('perto'));
 $('sm-pt').addEventListener('input',()=>simular());
+const CORES_FIO=[['Off-white','#efe9dc'],['Branco','#f7f7f4'],['Bege','#d9c7a6'],['Camelo','#c19a6b'],['Caramelo','#a8743f'],['Chocolate','#4e3426'],['Preto','#1d1d1f'],['Grafite','#44464b'],['Cinza mescla','#8d8f93'],['Marinho','#1f2a4d'],['Azul royal','#2f4fb3'],['Azul bebê','#a9c6e8'],['Vinho','#6d1f2e'],['Vermelho','#b3232b'],['Terracota','#b5573a'],['Laranja','#d9692b'],['Mostarda','#c9952b'],['Amarelo','#e9c43c'],['Verde musgo','#5b6a3a'],['Verde militar','#4b5a3c'],['Verde bandeira','#1f7a3f'],['Rosa','#e3a1b4'],['Rosa chá','#d8b1a3'],['Lilás','#a58fc4']];
+function renderChips(){ const box=$('chips'); box.textContent=''; const k=(document.querySelector('input[name=pfio]:checked')||{value:'1'}).value, atual=$('sm-c'+k).value.toLowerCase();
+  CORES_FIO.forEach(([n,c])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.style.background=c; b.title=n; b.setAttribute('aria-label',n); b.setAttribute('aria-pressed',String(c.toLowerCase()===atual));
+    b.addEventListener('click',()=>{ $('sm-c'+k).value=c; renderChips(); simular(); }); box.appendChild(b); }); }
+document.querySelectorAll('input[name=pfio]').forEach(r=>r.addEventListener('change',renderChips));
+['sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',renderChips));
+renderChips();
+$('sm-man').addEventListener('change',()=>simular());
 $('f-maq').addEventListener('change',()=>{ const [a,c]=$('f-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); });
 $('f-fio').addEventListener('change',()=>simular());
 ['sm-ag','sm-cr','sm-tam','sm-enq','sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',simular));
@@ -1484,7 +1633,7 @@ async function iniciaPasta(){
   }
 }
 
-setMotif(motivo,motivoFios); renderMods(); fillJPaint(); drawJq(); renderCables(); update();
+setMotif(motivo,motivoFios); renderMods(); fillJPaint(); drawJq(); renderCables(); golaInfo(); update();
 (async()=>{
   const c=window.claude;
   if(!c||!c.use){ $('btn-ia').disabled=true; $('ia-off').hidden=false; iniciaPasta(); return; }

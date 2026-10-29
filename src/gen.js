@@ -422,7 +422,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0);
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0);
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -477,6 +477,16 @@ const RAYNEN = (function () {
       if (body[rw.c] && body[rw.c].jq) for (let k = 1; k <= s.ponto.cores; k++) { const gy = rw.lado === 'D' ? yarnOf(s, k + 2) : yarnOf(s, k); passes[gy] = (passes[gy] || 0) + 1; }
       if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
     });
+    // fio de descarte no fim (gola/acessorio para cerzir): carreiras de meia malha com o guia-fio de descarte
+    const ND = Math.max(0, +s.descarte || 0);
+    if (ND) {
+      opt[(S0 + bodyOut.length - 1) * WO + COL_END] = 0;
+      for (let k = 0; k < ND; k++) {
+        const y = S0 + bodyOut.length + k, o = tmpl.slice(); o[COL_YARN] = +s.fioDescarte || 7; o[COL_END] = k === ND - 1 ? 1 : 0;
+        for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
+        opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
+      }
+    }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
     // simulacao: inicio/barra + corpo agrupado por curso
     const simRows = [];
@@ -499,7 +509,7 @@ const RAYNEN = (function () {
       simRows.push({ key, g: rw.g, yarn: rw.o[COL_YARN], cor });
     });
     const sim = simData(s, W, simRows);
-    const rows = S0 + bodyOut.length + (isMod ? 29 : 0);
+    const rows = S0 + bodyOut.length + ND + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
