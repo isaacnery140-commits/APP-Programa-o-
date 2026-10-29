@@ -131,6 +131,8 @@ section label{font-size:14px}
 .pad-pop button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .pad-pop button[aria-checked="true"]::before{content:"✓ ";color:var(--accent)}
 .molde[hidden]{display:none}
+.alerta{margin:0;padding:7px 10px;border-radius:6px;border:1px solid #d9a400;background:#fff5d1;color:#6b4e00;font-weight:600;font-size:13px}
+@media (prefers-color-scheme:dark){.alerta{background:#3a2f0a;color:#ffd866;border-color:#8a6d00}}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -177,6 +179,7 @@ details.more>*:not(summary){margin-bottom:10px}
                 <button type="button" role="menuitemradio" data-v="molde" aria-checked="false">Medidas do meu molde</button>
               </span></span></summary>
           <div id="pad-padrao">
+            <p class="alerta" role="note">⚠ Medidas de peça pronta. Cuidado: os fios podem encolher.</p>
           <div class="row">
             <label for="pad-pub">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label>
             <label for="pad-mod">Modelo da peça<select id="pad-mod"></select></label>
@@ -236,6 +239,7 @@ details.more>*:not(summary){margin-bottom:10px}
         </details>
         <details class="medidas" id="med-box" open>
           <summary><span class="tt">Medidas da peça (cm) - cálculo automático</span></summary>
+          <p class="alerta" role="note">⚠ Medidas de peça pronta. Cuidado: os fios podem encolher.</p>
           <div class="row">
             <label for="md-ag">Agulhas por cm<small class="dica">🔒 preencher à mão · quantas agulhas dão 1 cm de largura (número inteiro)</small><input id="md-ag" type="number" min="1" max="20" step="1" inputmode="numeric" value="6"></label>
             <label for="md-cr">Passadas por cm<small class="dica">🔒 preencher à mão · quantas carreiras dão 1 cm de altura (número inteiro)</small><input id="md-cr" type="number" min="1" max="30" step="1" inputmode="numeric" value="6"></label>
