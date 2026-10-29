@@ -237,6 +237,7 @@ const RAYNEN = (function () {
   function fimForma(f) {
     let fim = 0;
     const e = eventos(f); [e.cava, e.decote, e.aum, e.aum2, e.cintD, e.cintA].forEach(ev => { if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
+    if (ehPolo(f.decote)) fim = Math.max(fim, (+f.decote.inicio || 1) + Math.max(2, Math.round(+f.decote.calt || 60)) + 12);   // a carcela tem que caber inteira
     return fim;
   }
   // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
@@ -320,7 +321,8 @@ const RAYNEN = (function () {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     const evD = new Map(evDec(dc));
-    const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
+    const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
+    let unido = false, kU = 0;
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0, poloFecha = false;
     const split = dc.ativo ? splitRow(s, dc.inicio) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
@@ -385,6 +387,27 @@ const RAYNEN = (function () {
         [[t1, base], [t2, o2], [t3, base]].forEach(([g, o]) => { if (g.some(v => v)) out.push({ c, g, o: o.slice(), ina: null, lado: 'T' }); });
         rA += PB; rB += PB; desl = PB; poloFase = 3; info.carcela.transferencia = c + 1;
       }
+      // polo com "fechar o pano": quando a carcela termina, o lado direito volta as PB agulhas (as duas carcelas se juntam)
+      // e a peca segue inteira, sem decote da gola, com os sistemas alternando como antes da divisao
+      if (fechaPano && poloFecha && !unido) {
+        const agora = (i, lado) => { for (let k = out.length - 1; k >= 0; k--) if (out[k].lado === lado) return out[k].g[i]; return 0; };
+        const ehB = v => BACK.has(v) || v === 5, o = bO.slice(Math.max(0, c - 1) * WO, Math.max(1, c) * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
+        const t1 = new Uint8Array(W), t2 = new Uint8Array(W), t3 = new Uint8Array(W);
+        for (let i = rA; i <= rB; i++) { const v = agora(i, 'D'); if (v && !ehB(v)) t1[i] = 100; }
+        for (let i = lA; i <= lB; i++) { const v = agora(i, 'E'); if (v && ehB(v)) t1[i] = 110; }
+        for (let i = rA; i <= rB; i++) if (agora(i, 'D')) t2[i] = 110;
+        for (let i = lA; i <= lB; i++) if (ehB(agora(i, 'E'))) t3[i] = 100;
+        for (let i = rA; i <= rB; i++) if (ehB(agora(i, 'D'))) t3[i - desl] = 100;
+        const o2 = o.slice(); o2[28] = 0; o2[29] = desl;
+        [[t1, o], [t2, o2], [t3, o]].forEach(([g, oo]) => { if (g.some(v => v)) out.push({ c, g, o: oo.slice(), ina: null, lado: 'T' }); });
+        L = lA; R = rB - desl; desl = 0; unido = true; info.carcela.fechaPano = c + 1;
+      }
+      if (unido) {   // peca inteira de novo (uma carreira por vez)
+        const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
+        if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = kU % 2 === 0 ? yB : yA; kU++;
+        out.push({ c, g: row, o, ina: null, lado: 'F' }); c++; continue;
+      }
       // blocos de 2 carreiras: esquerda c, c+1 depois direita c, c+1
       const cs = [c, c + 1].filter(x => x < nb);
       const lados = [['E', yA], ['D', yB]];
@@ -447,7 +470,11 @@ const RAYNEN = (function () {
     }
     // 2+ sistemas: como no fim do 25009F, a ultima carreira e tecida pelo guia-fio do lado direito de ponta a ponta
     // (lado direito, passa pelo decote, lado esquerdo): ele volta ao lado de saida com passadas pares, sem arrasto longo (W002/W028)
-    if (multi && info.divisao != null) {
+    if (unido) {   // passadas pares: completa com 1 carreira inteira do guia-fio que ficou impar
+      const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y) cnt[y] = (cnt[y] || 0) + 1; });
+      const ult = out.filter(r => r.lado === 'F').pop();
+      [yB, yA].forEach(y => { if (ult && cnt[y] % 2) { const o = ult.o.slice(); o[COL_YARN] = y; out.push({ c: ult.c, g: ult.g.slice(), o, ina: null, lado: 'F' }); } });
+    } else if (multi && info.divisao != null) {
       const ud = out.filter(r => r.lado === 'D').pop(), ue = out.filter(r => r.lado === 'E').pop();
       if (ud) { const g = new Uint8Array(W), d = (polo && desl) ? desl : 0;
         if (ue) for (let i = 0; i < W; i++) if (ue.g[i]) g[i] = ue.g[i];

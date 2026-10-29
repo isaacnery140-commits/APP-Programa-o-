@@ -181,6 +181,8 @@ section label{font-size:14px}
 .rel-aj li{list-style:none;margin-left:-18px}
 .rel-passos{margin:6px 0;padding-left:18px;font-size:12px;color:var(--muted)}
 .rel-passos li{margin:2px 0}
+.rel-ajuste{border:1px solid var(--accent);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+.rel-ajuste textarea{width:100%;font:inherit}
 .molde{display:flex;flex-direction:column;gap:8px}
 
 .pad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
@@ -481,7 +483,8 @@ details.more>*:not(summary){margin-bottom:10px}
             </div>
             <div class="row" id="fd-polo" hidden>
               <label for="fd-carc">Agulhas da carcela<small class="dica">largura da tira do meio (25009F: 9)</small><input id="fd-carc" type="number" min="3" max="30" value="9"></label>
-              <label for="fd-colar">Carreiras da carcela<small class="dica">da abertura até começar o decote da gola</small><input id="fd-colar" type="number" min="10" value="66"></label>
+              <label for="fd-colar">Carreiras da carcela<small class="dica">da abertura até começar o decote da gola (ou até fechar o pano)</small><input id="fd-colar" type="number" min="10" value="66"></label>
+              <label class="chk" for="fd-fecha"><input id="fd-fecha" type="checkbox"> Fechar o pano depois da carcela (sem o cavado da gola)</label>
             </div>
             <div class="row">
               <label for="fd-pas">Passos do decote (cada lado)<input id="fd-pas" value="2-1-12" autocomplete="off"></label>
@@ -685,10 +688,14 @@ details.more>*:not(summary){margin-bottom:10px}
 
 
 <div class="aviso-topo" id="aviso-topo" role="status" aria-live="polite" hidden><span id="aviso-txt"></span><span class="aviso-bt"><button type="button" id="aviso-baixa" hidden>Baixar programa com erros e avisos ajustados</button><button type="button" id="aviso-ver">Ver</button><button type="button" class="ghost" id="aviso-ok">Ok, vi</button></span></div>
-<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema<span class="rel-badge" id="rel-badge" hidden></span></button>
+<button type="button" class="rel-fab" id="rel-abre" aria-haspopup="dialog">⚠ Relatar problema / ajustar<span class="rel-badge" id="rel-badge" hidden></span></button>
 <div class="rel-back" id="rel-back" hidden>
   <div class="rel-box" role="dialog" aria-modal="true" aria-labelledby="rel-tt">
-    <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
+    <div class="rel-head"><span class="tt" id="rel-tt">Relatar problema ou ajustar o programa</span><button type="button" class="ghost" id="rel-fecha" aria-label="Fechar">✕</button></div>
+    <div class="rel-ajuste">
+      <label for="rel-aj"><span class="tt">Ajustar o programa</span><small class="dica">explique o que quer mudar e o app faz no programa aberto. Ex.: "polo decote V: depois do V feche o pano e não faça o cavado da gola"</small><textarea id="rel-aj" rows="3" placeholder="Descreva o ajuste"></textarea></label>
+      <div class="actions"><button type="button" id="rel-ajusta">Ajustar programa</button><span class="status hint" id="rel-aj-st"></span></div>
+    </div>
     <label for="rel-txt">O que deu errado?<small class="dica">ex.: a gola não encaixou na simulação; o Raynen deu erro W002 na carreira 120</small><textarea id="rel-txt" rows="4" placeholder="Descreva o problema"></textarea></label>
     <p class="hint" id="rel-prog"></p>
     <label for="rel-img">Anexar print (opcional)<small class="dica">foto da tela do app ou a janela de compilação do Raynen com os avisos (W021, W041…)</small><input id="rel-img" type="file" accept="image/*"></label>
@@ -944,6 +951,7 @@ const RAYNEN = (function () {
   function fimForma(f) {
     let fim = 0;
     const e = eventos(f); [e.cava, e.decote, e.aum, e.aum2, e.cintD, e.cintA].forEach(ev => { if (ev.length) fim = Math.max(fim, ev[ev.length - 1][0] + 1); });
+    if (ehPolo(f.decote)) fim = Math.max(fim, (+f.decote.inicio || 1) + Math.max(2, Math.round(+f.decote.calt || 60)) + 12);   // a carcela tem que caber inteira
     return fim;
   }
   // agenda: lista de [carreira do corpo (0-base), agulhas] a partir de inicio
@@ -1027,7 +1035,8 @@ const RAYNEN = (function () {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     const evD = new Map(evDec(dc));
-    const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60));
+    const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
+    let unido = false, kU = 0;
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0, poloFecha = false;
     const split = dc.ativo ? splitRow(s, dc.inicio) : Infinity;   // divide em carreira par (guia-fio A volta ao lado certo)
     const evs = eventos(s.forma), fa = s.forma.aumento, fb = s.forma.aumento2;
@@ -1092,6 +1101,27 @@ const RAYNEN = (function () {
         [[t1, base], [t2, o2], [t3, base]].forEach(([g, o]) => { if (g.some(v => v)) out.push({ c, g, o: o.slice(), ina: null, lado: 'T' }); });
         rA += PB; rB += PB; desl = PB; poloFase = 3; info.carcela.transferencia = c + 1;
       }
+      // polo com "fechar o pano": quando a carcela termina, o lado direito volta as PB agulhas (as duas carcelas se juntam)
+      // e a peca segue inteira, sem decote da gola, com os sistemas alternando como antes da divisao
+      if (fechaPano && poloFecha && !unido) {
+        const agora = (i, lado) => { for (let k = out.length - 1; k >= 0; k--) if (out[k].lado === lado) return out[k].g[i]; return 0; };
+        const ehB = v => BACK.has(v) || v === 5, o = bO.slice(Math.max(0, c - 1) * WO, Math.max(1, c) * WO); o[COL_YARN] = 0; o[COL_LOOP] = 0; o[32] = 1;
+        const t1 = new Uint8Array(W), t2 = new Uint8Array(W), t3 = new Uint8Array(W);
+        for (let i = rA; i <= rB; i++) { const v = agora(i, 'D'); if (v && !ehB(v)) t1[i] = 100; }
+        for (let i = lA; i <= lB; i++) { const v = agora(i, 'E'); if (v && ehB(v)) t1[i] = 110; }
+        for (let i = rA; i <= rB; i++) if (agora(i, 'D')) t2[i] = 110;
+        for (let i = lA; i <= lB; i++) if (ehB(agora(i, 'E'))) t3[i] = 100;
+        for (let i = rA; i <= rB; i++) if (ehB(agora(i, 'D'))) t3[i - desl] = 100;
+        const o2 = o.slice(); o2[28] = 0; o2[29] = desl;
+        [[t1, o], [t2, o2], [t3, o]].forEach(([g, oo]) => { if (g.some(v => v)) out.push({ c, g, o: oo.slice(), ina: null, lado: 'T' }); });
+        L = lA; R = rB - desl; desl = 0; unido = true; info.carcela.fechaPano = c + 1;
+      }
+      if (unido) {   // peca inteira de novo (uma carreira por vez)
+        const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
+        if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = kU % 2 === 0 ? yB : yA; kU++;
+        out.push({ c, g: row, o, ina: null, lado: 'F' }); c++; continue;
+      }
       // blocos de 2 carreiras: esquerda c, c+1 depois direita c, c+1
       const cs = [c, c + 1].filter(x => x < nb);
       const lados = [['E', yA], ['D', yB]];
@@ -1154,7 +1184,11 @@ const RAYNEN = (function () {
     }
     // 2+ sistemas: como no fim do 25009F, a ultima carreira e tecida pelo guia-fio do lado direito de ponta a ponta
     // (lado direito, passa pelo decote, lado esquerdo): ele volta ao lado de saida com passadas pares, sem arrasto longo (W002/W028)
-    if (multi && info.divisao != null) {
+    if (unido) {   // passadas pares: completa com 1 carreira inteira do guia-fio que ficou impar
+      const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y) cnt[y] = (cnt[y] || 0) + 1; });
+      const ult = out.filter(r => r.lado === 'F').pop();
+      [yB, yA].forEach(y => { if (ult && cnt[y] % 2) { const o = ult.o.slice(); o[COL_YARN] = y; out.push({ c: ult.c, g: ult.g.slice(), o, ina: null, lado: 'F' }); } });
+    } else if (multi && info.divisao != null) {
       const ud = out.filter(r => r.lado === 'D').pop(), ue = out.filter(r => r.lado === 'E').pop();
       if (ud) { const g = new Uint8Array(W), d = (polo && desl) ? desl : 0;
         if (ue) for (let i = 0; i < W; i++) if (ue.g[i]) g[i] = ue.g[i];
@@ -1538,7 +1572,7 @@ function readSpec(){
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
-           decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:ini+col,calt:Math.max(4,col-8)}; })()},
+           decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
 }
 function writeSpec(s){
@@ -1557,7 +1591,7 @@ function writeSpec(s){
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
     $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
-    $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; }
+    $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; $('fd-fecha').checked=!!d.fecha; }
   if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
   update();
 }
@@ -1694,7 +1728,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fd-carc','fd-colar','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1918,6 +1952,21 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+let carrAntesFecha=0; $('fd-fecha').addEventListener('click',()=>{ carrAntesFecha=+$('f-carr').value||0; },true);
+$('fd-fecha').addEventListener('change',()=>{ const antes=carrAntesFecha||(+$('f-carr').value||0); update(); const d=antes-(+$('f-carr').value||0); if(d){ $('fa-acima').value=Math.max(0,(+$('fa-acima').value||0)+d); update(); } });
+$('rel-ajusta').addEventListener('click',async()=>{
+  const st=$('rel-aj-st'), t=$('rel-aj').value.trim(); if(!t){ st.textContent='Escreva o ajuste que quer.'; $('rel-aj').focus(); return; }
+  $('rel-ajusta').disabled=true; st.textContent='Ajustando…';
+  try{
+    const r={texto:t, tipo:'ajuste', criado:Date.now(), status:'aberto', resposta:'', versao:document.title, avisos:($('msgs').textContent||'').replace(/\s+/g,' ').slice(0,3000), erros:[], spec:specResumo(), programa:readSpec().nome};
+    salvaHistorico(true); let ref=null;
+    if(db) ref=await db.collection('problemas').add(r); else { const o=lsLoad(); o.problemas=o.problemas||[]; r.id=String(Date.now()); o.problemas.push(r); lsSave(o); RELATOS=o.problemas; }
+    st.textContent='Pedido registrado. Veja abaixo o que o app está mudando.'; $('rel-aj').value='';
+    await ajudaRelato(r,ref);
+  }catch(e){ st.textContent='Não consegui registrar: '+(e.code==='not_granted'?'sem permissão para gravar.':e.message); }
+  finally{ $('rel-ajusta').disabled=false; }
+});
+
 $('fi-foto').addEventListener('change',async()=>{ const f=$('fi-foto').files[0]; if(!f) return;
   try{ const url=URL.createObjectURL(f); fotoModelo=await imagemCabe(url,700); URL.revokeObjectURL(url); renderFicha(); }catch(e){ $('dl-status')&&($('dl-status').textContent='Não consegui ler a foto: '+e.message); } });
 
@@ -1942,6 +1991,7 @@ Avisos da compilação do Raynen (janela "Compilation information"; Row = carrei
 - W041: agulhas com malha no fim do desenho fora da largura do começo (ex.: carcela da polo deslocada).
 - W028: guia-fio anda muito sem tecer ("yarn feeder lead is super long"): normalmente no começo do decote, quando o guia-fio de um lado está do outro lado da máquina. O app já divide o decote com cada guia-fio do seu lado (com 2 ou 3 sistemas no corpo); se aparecer, confira os sistemas do corpo (precisam ser 2 ou 3 guia-fios diferentes) ou mude 'Carreiras retas abaixo do decote' em 1 a 3 carreiras.
 - W028: guia-fio anda muito sem tecer ("yarn feeder lead is super long"): normalmente no começo do decote, quando o guia-fio de um lado está do outro lado da máquina. O app já divide o decote com cada guia-fio do seu lado (com 2 ou 3 sistemas no corpo); se aparecer, confira os sistemas do corpo (precisam ser 2 ou 3 guia-fios diferentes) ou mude 'Carreiras retas abaixo do decote' em 1 a 3 carreiras.
+- Polo: campo "Fechar o pano depois da carcela (sem o cavado da gola)" (id fd-fecha): depois da carcela as duas tiras se juntam e a peça segue inteira até o fim, sem decote da gola; "Carreiras da carcela" (fd-colar) = altura da abertura.
 - Correções já feitas no app (29/10): transferências só em agulha com malha (W020 na carcela/cava); última carreira de ponta a ponta com o guia-fio do lado direito, como no 25009F (W028/W002 no fim); carcela volta para a frente e para dentro da largura (W021/W041).
 - Se o aviso vem de um arquivo antigo (gerado antes de uma correção do app), basta gerar de novo e baixar.`;
 // catalogo dos campos que a IA pode mudar: id, nome que aparece na tela, valor e opcoes
@@ -1978,9 +2028,10 @@ async function ajudaRelato(r,ref){
   const box=$('rel-ajuda'), out=$('rel-ajuda-txt'), passos=$('rel-passos'); box.hidden=false; passos.textContent=''; $('rel-baixa').hidden=true; $('rel-desfaz').hidden=true;
   const passo=t=>{ const li=document.createElement('li'); li.textContent=t; passos.appendChild(li); };
   if(!sample){ $('rel-ajuda-tt').textContent='Resolver sozinho'; out.textContent='A IA não está disponível nesta visualização. O relato ficou salvo para o Claude resolver.'; return; }
-  $('rel-ajuda-tt').textContent='Resolvendo pelo manual do Raynen…'; out.textContent='';
+  $('rel-ajuda-tt').textContent=r.tipo==='ajuste'?'Ajustando o programa…':'Resolvendo pelo manual do Raynen…'; out.textContent='';
   desfazer=fotoPrograma(); let mudou=0;
-  const ped=`Você é o técnico de programação do app "Programação Feng Fan" (fábrica A casa do Malharista, máquinas retilíneas Feng Fan, software Raynen). Um programador relatou um problema no programa que o app gerou. RESOLVA você mesmo, mudando os campos do app com as ferramentas, e confira o resultado.
+  const ajuste=r.tipo==='ajuste';
+  const ped=(ajuste?`PEDIDO DE AJUSTE (não é erro): o programador quer MUDAR o programa aberto como ele descreve abaixo. Faça a mudança mudando os campos do app (ler_campos mostra todos: decote, carcela, carreiras, passos, gola, ponto, guia-fios...). Interprete termos de malharia: "fechar o pano" = voltar a tecer a largura inteira / não deixar abertura; "cavado/calado da gola" = o decote arredondado da gola (passos do decote); "carcela" = abertura reta da polo. Se não existir campo que faça o pedido, NÃO invente: explique o que faltaria no app e termine com RESULTADO: ERRO_DO_APP (vai para o Claude implementar).\n\n`:'')+`Você é o técnico de programação do app "Programação Feng Fan" (fábrica A casa do Malharista, máquinas retilíneas Feng Fan, software Raynen). Um programador relatou um problema no programa que o app gerou. RESOLVA você mesmo, mudando os campos do app com as ferramentas, e confira o resultado.
 Ferramentas: ler_programa (estado atual: erros, avisos, passadas por guia-fio), ler_carreira (o que tem numa Row/Col do Raynen), ler_campos (todos os campos do app com id, nome, valor e opções), mudar_campo (muda 1 campo e gera o programa de novo), buscar_manual (manual do Raynen em INGLÊS, passe termos em inglês).
 Regras: não mude "agulhas por cm" nem "passadas por cm". Mude só o necessário. Seja rápido: no máximo ~12 chamadas de ferramenta; termine sempre com o resumo e a linha RESULTADO.
 IMPORTANTE: o print pode ser de um arquivo gerado ANTES da última atualização do app. Compare o total de carreiras do print (CNT) com ler_programa: se for diferente, o arquivo atual já é outro; confira as carreiras citadas no programa atual e, se o problema não existe mais nele, responda RESOLVIDO dizendo para baixar e processar de novo. Depois de mudar, chame ler_programa para conferir que os erros sumiram. Se o problema for do próprio aplicativo (código) e não dá para resolver mudando campos, não invente: diga isso.
@@ -1989,7 +2040,7 @@ No fim escreva em português simples, curto (até 120 palavras): o que era, o qu
 ${CONHECE_APP}
 
 Se veio um print da compilação do Raynen, leia cada aviso (código Wxxx, Row e Col) e trate um por um.
-RELATO: ${r.texto||'(sem texto: leia o print anexado, que deve ser a janela de compilação do Raynen)'}
+${ajuste?'AJUSTE PEDIDO':'RELATO'}: ${r.texto||'(sem texto: leia o print anexado, que deve ser a janela de compilação do Raynen)'}
 PROGRAMA ABERTO NO APP: ${r.programa||''}
 AVISOS NA TELA QUANDO RELATOU: ${r.avisos||'nenhum'}`;
   const tools=[
@@ -2014,7 +2065,7 @@ AVISOS NA TELA QUANDO RELATOU: ${r.avisos||'nenhum'}`;
     if(resu==='RESOLVIDO'&&semErro){
       $('rel-ajuda-tt').textContent='✓ Resolvido pelo app';
       upd=Object.assign(upd,{status:'resolvido',resposta:'Resolvido pelo app: '+limpo.split('\n').filter(Boolean)[0].slice(0,200),por:'app',resolvido:Date.now()});
-    } else if(resu==='ERRO_DO_APP'){ $('rel-ajuda-tt').textContent='Parece erro do aplicativo'; out.textContent+='\n\nFicou registrado para o Claude corrigir. O app te avisa quando puder baixar de novo.'; upd.status='aberto'; }
+    } else if(resu==='ERRO_DO_APP'){ $('rel-ajuda-tt').textContent=r.tipo==='ajuste'?'Esse ajuste precisa de uma mudança no app':'Parece erro do aplicativo'; out.textContent+='\n\nFicou registrado para o Claude corrigir. O app te avisa quando puder baixar de novo.'; upd.status='aberto'; }
     else if(ajustou){ $('rel-ajuda-tt').textContent='✓ Programa ajustado — falta conferir no Raynen'; out.textContent+='\n\nO programa já foi ajustado: baixe e processe no Raynen. O que faltou ficou registrado para o Claude; o app te avisa quando ele terminar.'; upd=Object.assign(upd,{status:'aberto',ajustado:Date.now(),resposta:'Ajustado pelo app (falta conferir): '+limpo.split('\n').filter(Boolean)[0].slice(0,180)}); }
     else { $('rel-ajuda-tt').textContent='Não consegui resolver sozinho'; out.textContent+='\n\nFicou registrado para o Claude resolver. O app te avisa quando puder baixar de novo.'; }
     try{ if(ref&&ref.update) await ref.update(upd); else { const o=lsLoad(); const it=(o.problemas||[]).find(x=>x.id===r.id); if(it){ Object.assign(it,upd); lsSave(o); RELATOS=o.problemas; renderRelatos(); checaResolvidos(); } } }catch(e){}
@@ -2244,7 +2295,7 @@ function renderRelatos(){
   if(!RELATOS.length){ const li=document.createElement('li'); li.textContent='Nenhum relato ainda.'; ul.appendChild(li); return; }
   const novos=new Set(novosResolvidos().map(r=>r.id));
   RELATOS.slice().sort((a,b)=>b.criado-a.criado).slice(0,15).forEach(r=>{ const li=document.createElement('li'); if(novos.has(r.id)) li.className='rel-novo'; const sp=document.createElement('span');
-    const b=document.createElement('b'); b.textContent=(r.texto||'(sem texto)').slice(0,90); sp.appendChild(b);
+    const b=document.createElement('b'); b.textContent=(r.tipo==='ajuste'?'Ajuste: ':'')+(r.texto||'(sem texto)').slice(0,90); sp.appendChild(b);
     const sm=document.createElement('small'); sm.textContent=`${new Date(r.criado).toLocaleString('pt-BR')} · `; const st=document.createElement('span'); st.textContent=r.status==='resolvido'?'resolvido ✓':'aberto'; if(r.status==='resolvido') st.className='rel-ok'; sm.appendChild(st); sp.appendChild(sm);
     if(r.resposta){ const rs=document.createElement('small'); rs.textContent='Resposta do Claude: '+r.resposta; sp.appendChild(rs); }
     if(r.ajuda){ const dt=document.createElement('details'), su=document.createElement('summary'), pr=document.createElement('div'); su.textContent='Ajuda do manual'; pr.style.whiteSpace='pre-wrap'; pr.style.fontSize='12px'; pr.textContent=r.ajuda; dt.append(su,pr); sp.appendChild(dt); }
