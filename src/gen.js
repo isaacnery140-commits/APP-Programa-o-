@@ -50,7 +50,8 @@ const RAYNEN = (function () {
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
-      cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {})
+      cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {}),
+      parcial: Object.assign({ ativo: false, carreiras: 12 }, f.parcial || {})
     };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
@@ -106,8 +107,12 @@ const RAYNEN = (function () {
       return rows;
     }
     const m = p.tipo === 'motivo' ? p.motivo : null, fm = m && Array.isArray(p.fios) ? p.fios : null;
-    if (m && m.flat().some(v => NOCONN.has(v))) for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
+    // faixas: pontos diferentes empilhados de baixo para cima; o ponto principal fica no resto da peca
+    const fx = []; let acc = 0; (Array.isArray(s.faixas) ? s.faixas : []).forEach(f => { const h = Math.max(0, Math.round(+f.carreiras || 0)); if (h && Array.isArray(f.motivo) && f.motivo.length && f.motivo[0].length) { fx.push({ a: acc, b: acc + h, m: f.motivo }); acc += h; } });
+    if ((m && m.flat().some(v => NOCONN.has(v))) || fx.some(f => f.m.flat().some(v => NOCONN.has(v)))) for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
     for (let r = 0; r < N; r++) {
+      const fa = fx.find(f => r >= f.a && r < f.b);
+      if (fa) { const row = fa.m[(r - fa.a) % fa.m.length]; rows.push({ v: i => row[i % row.length], f: 1, r, faixa: true }); continue; }
       let v;
       if (p.tipo === 'links') v = () => 2;
       else if (p.tipo === 'quadriculado') v = i => ((Math.floor(i / p.bx) + Math.floor(r / p.by)) % 2 === 0) ? 1 : 2;
@@ -215,7 +220,7 @@ const RAYNEN = (function () {
     });
     return out;
   }
-  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo)));
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo) || (s.forma.parcial && s.forma.parcial.ativo)));
   const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
   const ehPolo = d => !!(d && d.ativo && d.tipo === 'polo');
   // decote polo (25009F): abre uma carcela reta no meio; o decote da gola (passos) so comeca na carreira 'colar'
@@ -393,6 +398,11 @@ const RAYNEN = (function () {
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
     const sisC = sistemas(s), multi = !!(sisC && sisC.length > 1), yA = multi ? sisC[1] : sisC ? sisC[0] : s.guiaFio, yB = multi ? sisC[0] : s.fios[0];
+    // PARCIAL (ombro): nas ultimas carreiras da peca as agulhas param de tecer em escada, da borda da cava para o pescoco,
+    // e ficam com a malha presa na agulha (parcial); o fio de descarte no fim tece todas de novo (como o "铲肩" da ficha de processo)
+    const pc = s.forma.parcial || {}, pcR = pc.ativo ? Math.max(2, 2 * Math.floor((+pc.carreiras || 0) / 2)) : 0, pcIni = pcR ? Math.max(0, nb - pcR) : Infinity, pcN = pcR / 2;
+    const pcS = {};   // largura de cada lado quando o parcial comeca
+    const pcH = (lado, w, cc) => { if (cc < pcIni) return 0; if (pcS[lado] == null) pcS[lado] = w; const k = Math.max(1, Math.floor(pcS[lado] / (pcN + 1))), j = Math.floor((cc - pcIni) / 2) + 1; return Math.min(pcS[lado] - k, j * k); };
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -403,6 +413,7 @@ const RAYNEN = (function () {
         if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
         if (evWa.has(c)) { const k = evWa.get(c); [L] = aumC(row, L, R, 'L', k); [, R] = aumC(row, L + k, R, 'R', k); info.cintura.push(c + 1); }
         if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
+        if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
         out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
         continue;
@@ -469,6 +480,7 @@ const RAYNEN = (function () {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
         protege(row, L, R, c);
         if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = kU % 2 === 0 ? yB : yA; kU++;
         out.push({ c, g: row, o, ina: null, lado: 'F' }); c++; continue;
       }
@@ -502,6 +514,7 @@ const RAYNEN = (function () {
         if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
         if (lado === 'E' && evC.has(cc)) info.cava.push(cc + 1);
         if (lado === 'E' && evD.has(cc)) info.decote.push(cc + 1);
+        if (cs[0] >= pcIni) { if (lado === 'E') { const h = pcH('E', lB - lA + 1, cs[0]); for (let i = lA; i < lA + h; i++) row[i] = 0; } else { const h = pcH('D', rB - rA + 1, cs[0]); for (let i = rB; i > rB - h; i--) row[i] = 0; } }
         const o = bO.slice(cc * WO, (cc + 1) * WO);
         let ina = null;
         if (jq[cc]) {   // jacquard: o lado direito troca A->C e B->D (sem fio passando pelo decote)
@@ -550,6 +563,7 @@ const RAYNEN = (function () {
     // passadas pares para cada guia-fio (W002): o que ficou impar tece mais uma vez a sua ultima carreira
     { const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y && r.lado !== 'T') cnt[y] = (cnt[y] || 0) + 1; });
       Object.keys(cnt).forEach(y => { if (cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
+    if (pcR) info.parcial = { inicio: pcIni + 1, carreiras: pcR, faixas: info.divisao != null && !unido ? [[lA, lB], [rA, rB]] : [[L, R]] };
     return { rows: out, info };
   }
 
@@ -604,7 +618,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0);
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12;
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -629,7 +643,7 @@ const RAYNEN = (function () {
       const y = S0 + k0, row = k0 * W - X0, r = br.r;    // row: indice em bG (coluna X0 = 0)
       for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
       if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
-      if (r != null) s.trancas.forEach((t, k) => {
+      if (r != null && !br.faixa) s.trancas.forEach((t, k) => {
         const cx = X0 + EX + t.agulha - 1, g = t.grupo;
         for (let j = 0; j < 2 * g; j++) bG[row + cx + j] = 1;
         for (let j = 0; j < t.lateral; j++) { bG[row + cx - 1 - j] = 2; bG[row + cx + 2 * g + j] = 2; }
@@ -668,12 +682,12 @@ const RAYNEN = (function () {
       if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
     });
     // fio de descarte no fim (gola/acessorio para cerzir): carreiras de meia malha com o guia-fio de descarte
-    const ND = Math.max(0, +s.descarte || 0);
+    const pinf = fr.info && fr.info.parcial, ND = Math.max(0, +s.descarte || 0, pinf ? 10 : 0);
     if (ND) {
       opt[(S0 + bodyOut.length - 1) * WO + COL_END] = 0;
       for (let k = 0; k < ND; k++) {
         const y = S0 + bodyOut.length + k, o = tmpl.slice(); o[COL_YARN] = +s.fioDescarte || 7; o[COL_END] = k === ND - 1 ? 1 : 0;
-        for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
+        if (pinf) pinf.faixas.forEach(([a, b]) => { for (let i = a; i <= b; i++) grid[y * WB + X0 + i] = 1; }); else for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
         opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
       }
     }

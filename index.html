@@ -54,6 +54,17 @@ button:disabled{opacity:.5;cursor:default}
 .msg{font-size:13px;border-radius:4px;padding:7px 10px}
 .msg.err{background:var(--err-bg);color:var(--err)}
 .cm-eq{display:block;color:var(--accent);font-size:11.5px;font-weight:600;margin-top:2px}
+.fx-onde{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;font-size:13px}
+.faixas{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.faixas ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column-reverse;gap:6px}
+.faixas li{display:grid;grid-template-columns:auto 34px 1fr auto auto;align-items:center;gap:8px;font-size:13px;padding:6px 8px;border-radius:8px;background:var(--panel)}
+.faixas li canvas{width:34px;height:24px;image-rendering:pixelated;border-radius:4px}
+.faixas li .fxn{font-weight:700;color:var(--accent);min-width:1.4em}
+.faixas li input{width:64px}
+.faixas li .bts{display:flex;gap:4px}
+.faixas li .bts button{padding:2px 7px;min-height:0}
+.faixas li.resto{background:transparent;border:1px dashed var(--line)}
+.faixas li small{display:block;color:var(--muted,#667);font-size:11px}
 .obrig{border-color:var(--err)!important;box-shadow:0 0 0 2px var(--err-bg)}
 .dens-av{color:var(--err);font-size:13px;font-weight:600;margin:4px 0 0}
 .msg.warn{background:var(--warn-bg);color:var(--warn)}
@@ -225,6 +236,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <summary><span class="tt">Histórico de programas</span> <span class="hint" id="hist-count">— abra um programa feito antes, sem preencher tudo de novo</span></summary>
           <div class="hist-bar"><label for="hist-busca" class="sr">Buscar pelo nome</label><input id="hist-busca" type="search" placeholder="Buscar pelo nome do programa" autocomplete="off"></div>
           <ul class="mlist hist-list" id="hist-list"></ul>
+          <div class="actions"><button type="button" id="hist-novo">＋ Gerar um novo programa</button></div>
           <span class="status hint" id="hist-st"></span>
         </details>
         <div class="row">
@@ -382,6 +394,11 @@ details.more>*:not(summary){margin-bottom:10px}
             <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>aproximado</b> foram montados pelo nome do módulo e pela tabela de cores (confira bem no Raynen). Os marcados <b>pronto</b> já têm a grade de códigos (básicos, tranças e aran X montados pela tabela de cores do manual: confira no Raynen); os de <b>jacquard</b> abrem o jacquard do app com o número de cores certo; os <b>pendentes</b> ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
             <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
             <div class="mods" id="mods" role="listbox" aria-label="Módulos de ponto"></div>
+            <div class="fx-onde" id="fx-onde"><span id="fx-sel">Ponto escolhido: —</span><span class="fx-bt"><button type="button" class="ghost" id="fx-add">＋ Colocar numa faixa da peça</button></span></div>
+          </div>
+          <div class="faixas" id="faixas" hidden>
+            <span class="tt">Pontos da peça (de baixo para cima)</span>
+            <ol id="fx-list"></ol>
           </div>
           <label for="f-ponto" class="ai">Qual ponto você quer?<input id="f-ponto" value="Meia malha" autocomplete="off" placeholder="Ex.: piquet duplo, canelado 2x1, favo"></label>
         <div class="cable m" id="motif-box">
@@ -499,6 +516,11 @@ details.more>*:not(summary){margin-bottom:10px}
             </div>
             <p class="hint" style="display:none"></p>
             
+          </div>
+          <label class="chk" for="fp-on"><input id="fp-on" type="checkbox"> Fazer parcial no ombro</label>
+          <div class="row" id="fp-box" hidden>
+            <label for="fp-carr">Carreiras de parcial<input id="fp-carr" type="number" min="2" max="80" step="2" value="12"></label>
+            <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
           <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
           <div id="ct-box" hidden>
@@ -765,7 +787,8 @@ const RAYNEN = (function () {
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
-      cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {})
+      cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {}),
+      parcial: Object.assign({ ativo: false, carreiras: 12 }, f.parcial || {})
     };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
@@ -821,8 +844,12 @@ const RAYNEN = (function () {
       return rows;
     }
     const m = p.tipo === 'motivo' ? p.motivo : null, fm = m && Array.isArray(p.fios) ? p.fios : null;
-    if (m && m.flat().some(v => NOCONN.has(v))) for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
+    // faixas: pontos diferentes empilhados de baixo para cima; o ponto principal fica no resto da peca
+    const fx = []; let acc = 0; (Array.isArray(s.faixas) ? s.faixas : []).forEach(f => { const h = Math.max(0, Math.round(+f.carreiras || 0)); if (h && Array.isArray(f.motivo) && f.motivo.length && f.motivo[0].length) { fx.push({ a: acc, b: acc + h, m: f.motivo }); acc += h; } });
+    if ((m && m.flat().some(v => NOCONN.has(v))) || fx.some(f => f.m.flat().some(v => NOCONN.has(v)))) for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
     for (let r = 0; r < N; r++) {
+      const fa = fx.find(f => r >= f.a && r < f.b);
+      if (fa) { const row = fa.m[(r - fa.a) % fa.m.length]; rows.push({ v: i => row[i % row.length], f: 1, r, faixa: true }); continue; }
       let v;
       if (p.tipo === 'links') v = () => 2;
       else if (p.tipo === 'quadriculado') v = i => ((Math.floor(i / p.bx) + Math.floor(r / p.by)) % 2 === 0) ? 1 : 2;
@@ -930,7 +957,7 @@ const RAYNEN = (function () {
     });
     return out;
   }
-  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo)));
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo) || (s.forma.parcial && s.forma.parcial.ativo)));
   const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
   const ehPolo = d => !!(d && d.ativo && d.tipo === 'polo');
   // decote polo (25009F): abre uma carcela reta no meio; o decote da gola (passos) so comeca na carreira 'colar'
@@ -1108,6 +1135,11 @@ const RAYNEN = (function () {
     }
     const aumC = (row, a, b, lado, k) => ct.modo === '16' ? aum16(row, a, b, lado, k) : aum(row, a, b, lado, k, ct);
     const sisC = sistemas(s), multi = !!(sisC && sisC.length > 1), yA = multi ? sisC[1] : sisC ? sisC[0] : s.guiaFio, yB = multi ? sisC[0] : s.fios[0];
+    // PARCIAL (ombro): nas ultimas carreiras da peca as agulhas param de tecer em escada, da borda da cava para o pescoco,
+    // e ficam com a malha presa na agulha (parcial); o fio de descarte no fim tece todas de novo (como o "铲肩" da ficha de processo)
+    const pc = s.forma.parcial || {}, pcR = pc.ativo ? Math.max(2, 2 * Math.floor((+pc.carreiras || 0) / 2)) : 0, pcIni = pcR ? Math.max(0, nb - pcR) : Infinity, pcN = pcR / 2;
+    const pcS = {};   // largura de cada lado quando o parcial comeca
+    const pcH = (lado, w, cc) => { if (cc < pcIni) return 0; if (pcS[lado] == null) pcS[lado] = w; const k = Math.max(1, Math.floor(pcS[lado] / (pcN + 1))), j = Math.floor((cc - pcIni) / 2) + 1; return Math.min(pcS[lado] - k, j * k); };
     let c = 0; const info = { divisao: null, cava: [], decote: [], aumento: [], aumento2: [], cintura: [], larguraInicial: W - 2 * ex };
     while (c < nb) {
       if (c < split) {
@@ -1118,6 +1150,7 @@ const RAYNEN = (function () {
         if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
         if (evWa.has(c)) { const k = evWa.get(c); [L] = aumC(row, L, R, 'L', k); [, R] = aumC(row, L + k, R, 'R', k); info.cintura.push(c + 1); }
         if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
+        if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
         out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
         continue;
@@ -1184,6 +1217,7 @@ const RAYNEN = (function () {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
         protege(row, L, R, c);
         if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = kU % 2 === 0 ? yB : yA; kU++;
         out.push({ c, g: row, o, ina: null, lado: 'F' }); c++; continue;
       }
@@ -1217,6 +1251,7 @@ const RAYNEN = (function () {
         if (lado === 'E') { lA = na; lB = nb2; } else { rA = na; rB = nb2; }
         if (lado === 'E' && evC.has(cc)) info.cava.push(cc + 1);
         if (lado === 'E' && evD.has(cc)) info.decote.push(cc + 1);
+        if (cs[0] >= pcIni) { if (lado === 'E') { const h = pcH('E', lB - lA + 1, cs[0]); for (let i = lA; i < lA + h; i++) row[i] = 0; } else { const h = pcH('D', rB - rA + 1, cs[0]); for (let i = rB; i > rB - h; i--) row[i] = 0; } }
         const o = bO.slice(cc * WO, (cc + 1) * WO);
         let ina = null;
         if (jq[cc]) {   // jacquard: o lado direito troca A->C e B->D (sem fio passando pelo decote)
@@ -1265,6 +1300,7 @@ const RAYNEN = (function () {
     // passadas pares para cada guia-fio (W002): o que ficou impar tece mais uma vez a sua ultima carreira
     { const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y && r.lado !== 'T') cnt[y] = (cnt[y] || 0) + 1; });
       Object.keys(cnt).forEach(y => { if (cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
+    if (pcR) info.parcial = { inicio: pcIni + 1, carreiras: pcR, faixas: info.divisao != null && !unido ? [[lA, lB], [rA, rB]] : [[L, R]] };
     return { rows: out, info };
   }
 
@@ -1319,7 +1355,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0);
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12;
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -1344,7 +1380,7 @@ const RAYNEN = (function () {
       const y = S0 + k0, row = k0 * W - X0, r = br.r;    // row: indice em bG (coluna X0 = 0)
       for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
       if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
-      if (r != null) s.trancas.forEach((t, k) => {
+      if (r != null && !br.faixa) s.trancas.forEach((t, k) => {
         const cx = X0 + EX + t.agulha - 1, g = t.grupo;
         for (let j = 0; j < 2 * g; j++) bG[row + cx + j] = 1;
         for (let j = 0; j < t.lateral; j++) { bG[row + cx - 1 - j] = 2; bG[row + cx + 2 * g + j] = 2; }
@@ -1383,12 +1419,12 @@ const RAYNEN = (function () {
       if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
     });
     // fio de descarte no fim (gola/acessorio para cerzir): carreiras de meia malha com o guia-fio de descarte
-    const ND = Math.max(0, +s.descarte || 0);
+    const pinf = fr.info && fr.info.parcial, ND = Math.max(0, +s.descarte || 0, pinf ? 10 : 0);
     if (ND) {
       opt[(S0 + bodyOut.length - 1) * WO + COL_END] = 0;
       for (let k = 0; k < ND; k++) {
         const y = S0 + bodyOut.length + k, o = tmpl.slice(); o[COL_YARN] = +s.fioDescarte || 7; o[COL_END] = k === ND - 1 ? 1 : 0;
-        for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
+        if (pinf) pinf.faixas.forEach(([a, b]) => { for (let i = a; i <= b; i++) grid[y * WB + X0 + i] = 1; }); else for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
         opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
       }
     }
@@ -1650,9 +1686,10 @@ function readSpec(){
     forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
+           parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),meioModo:$('fd-mmodo').value,passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
-    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
+    barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
 }
 function writeSpec(s){
   $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
@@ -1807,7 +1844,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1846,7 +1883,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   const tp=tipoAtual(), ehBase=tp==='base';
   $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
   // com cava/decote: carreiras do corpo = retas abaixo + diminuições + retas acima
-  const formaOn=!ehBase && ($('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked||$('ct-on').checked);
+  const formaOn=!ehBase && ($('fp-on').checked||$('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked||$('ct-on').checked);
   $('ct-box').hidden=!$('ct-on').checked;
   $('fe-box').hidden=!$('fe-on').checked; $('fg-box').hidden=!$('fg-on').checked;
   $('fa-box').hidden=!formaOn;
@@ -1854,7 +1891,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
-  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
+  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -2291,7 +2328,7 @@ function fotoPrograma(){
   const v={}; campos().forEach(el=>{ v[el.id]=el.type==='checkbox'||el.type==='radio'?el.checked:el.value; });
   const s=readSpec(), nome=s.nome||'NOVO';
   return {nome, salvo:Date.now(), largura:s.largura, carreiras:s.carreiras, ponto:$('f-tipo').selectedOptions[0]?.textContent||'', modelo:typeof padMod!=='undefined'&&pecaAtual?MODELOS[padMod]?.nome||'':'',
-    campos:v, estado:{fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
+    campos:v, estado:{faixas:FAIXAS, fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
 }
 const idHist=n=>String(n||'NOVO').toUpperCase().replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,120)||'NOVO';
 async function salvaHistorico(silencio){
@@ -2317,6 +2354,7 @@ function abrePrograma(h){
     if(e.motivo) { setMotif(e.motivo,e.motivoFios||e.motivo.map(()=>1)); motivoReal=!!e.motivoReal; motifNome=e.motifNome||''; }
     if(e.desenho){ desenho=e.desenho; if(typeof fillJPaint==='function') fillJPaint(); drawJq(); }
     if(e.sisN){ sisN=e.sisN; sisMostra(); }
+    FAIXAS=Array.isArray(e.faixas)?e.faixas:[]; renderFaixas();
     pecaAtual=e.pecaAtual||null; fotoModelo=e.fotoModelo||null; $('fi-foto').value='';
     mostraPadrao(); renderChips(); update(); golaInfo(); simular();
     st.textContent=`"${h.nome}" aberto. Mude o que precisar e baixe de novo.`;
@@ -2344,7 +2382,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2623,7 +2661,7 @@ mostraPadrao(); $('sm-tam').value=String(PADROES[padSel].busto);
 ['md-ag','md-cr'].forEach(id=>$(id).addEventListener('input',()=>{ const ag=+$('md-ag').value, cr=+$('md-cr').value; if(ag>0) $('sm-ag').value=Math.round(ag*10); if(cr>0) $('sm-cr').value=Math.round(cr*10); if(ag>0||cr>0) densOk(true); }));
 
 // ---- equivalência em cm nos campos de cava, decote e acinturado ----
-const CM_UN={'fx-antes':'c','fx-depois':'c','fc-ini':'c','fc-pas':'p','fc-bor':'a','fd-ini':'c','fd-meio':'a','fd-carc':'a','fd-colar':'c','fd-pas':'p','fd-bor':'a','ct-ini':'c','ct-dim':'p','ct-ret':'c','ct-aum':'p','ct-bor':'a','fa-acima':'c'};
+const CM_UN={'fp-carr':'c','fx-antes':'c','fx-depois':'c','fc-ini':'c','fc-pas':'p','fc-bor':'a','fd-ini':'c','fd-meio':'a','fd-carc':'a','fd-colar':'c','fd-pas':'p','fd-bor':'a','ct-ini':'c','ct-dim':'p','ct-ret':'c','ct-aum':'p','ct-bor':'a','fa-acima':'c'};
 function densCm(){ const ag=+$('md-ag').value>0?+$('md-ag').value:(+$('sm-ag').value||28)/10, cr=+$('md-cr').value>0?+$('md-cr').value:(+$('sm-cr').value||40)/10; return {ag,cr}; }
 function mostraCm(){
   const {ag,cr}=densCm(), f=v=>(Math.round(v*10)/10).toString().replace('.',',');
@@ -2638,6 +2676,58 @@ function mostraCm(){
 document.addEventListener('input',e=>{ if(e.target&&(CM_UN[e.target.id]||/^(md-ag|md-cr|sm-ag|sm-cr)$/.test(e.target.id))) mostraCm(); });
 document.addEventListener('change',()=>setTimeout(mostraCm,0));
 setTimeout(mostraCm,300);
+
+// ---- faixas de pontos: varios pontos na mesma peca, de baixo para cima (o ultimo ponto escolhido fica no resto da peca) ----
+let FAIXAS=[];
+const crCm=()=>+$('md-cr').value>0?+$('md-cr').value:(+$('sm-cr').value||40)/10;
+function faixasSpec(tipo){
+  if(!FAIXAS.length||tipo==='jacquard'||tipo==='base'||tipo==='trancas') return [];
+  return FAIXAS.map(f=>({nome:f.nome,motivo:f.motivo,fios:f.fios,carreiras:Math.max(2,2*Math.round((+f.cm||0)*crCm()/2))}));
+}
+function pontoAtualNome(){ return ($('f-ponto').value||'').replace(/<$/,'')||'Meia malha'; }
+function mostraOnde(){ const t=tipoAtual(); $('fx-sel').textContent=`Ponto escolhido: ${pontoAtualNome()}`; const ft=$('f-tipo').value; $('fx-add').disabled=ft==='jacquard'||ft==='base'||ft==='trancas'; }
+function addFaixa(){
+  const sp=readSpec(), p=sp.ponto; let m=null;
+  if(p.tipo==='motivo') m=p.motivo; else if(p.tipo==='links') m=[[2]]; else if(p.tipo==='quadriculado') m=Array.from({length:2*p.by},(_,r)=>Array.from({length:2*p.bx},(_,i)=>((Math.floor(i/p.bx)+Math.floor(r/p.by))%2===0)?1:2)); else m=[[1]];
+  FAIXAS.push({nome:pontoAtualNome(),motivo:m.map(r=>r.slice()),fios:m.map(()=>1),cm:10});
+  renderFaixas(); update(); $('faixas').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderFaixas(){
+  const box=$('faixas'), ol=$('fx-list'); ol.textContent=''; box.hidden=!FAIXAS.length; mostraOnde();
+  if(!FAIXAS.length) return;
+  FAIXAS.forEach((f,k)=>{ const li=document.createElement('li');
+    const n=document.createElement('span'); n.className='fxn'; n.textContent=(k+1)+'.';
+    const cv=document.createElement('canvas'); miniRapport(cv,f.motivo);
+    const nm=document.createElement('span'); nm.textContent=f.nome; const sm=document.createElement('small'); nm.appendChild(sm);
+    const lb=document.createElement('label'); lb.style.cssText='flex-direction:row;align-items:center;gap:4px;font-size:12px'; const inp=document.createElement('input'); inp.type='number'; inp.min='1'; inp.step='0.5'; inp.value=f.cm; inp.setAttribute('aria-label','Altura da faixa em cm');
+    const cr=()=>{ sm.textContent=`${Math.max(2,2*Math.round((+f.cm||0)*crCm()/2))} carreiras`; }; cr();
+    inp.addEventListener('input',()=>{ f.cm=Math.max(0,+inp.value||0); cr(); clearTimeout(renderFaixas.t); renderFaixas.t=setTimeout(update,300); });
+    lb.append(inp,document.createTextNode('cm'));
+    const bts=document.createElement('span'); bts.className='bts';
+    [['↑','Subir',()=>{ if(k<FAIXAS.length-1){ [FAIXAS[k],FAIXAS[k+1]]=[FAIXAS[k+1],FAIXAS[k]]; } }],['↓','Descer',()=>{ if(k>0){ [FAIXAS[k],FAIXAS[k-1]]=[FAIXAS[k-1],FAIXAS[k]]; } }],['✕','Tirar',()=>{ FAIXAS.splice(k,1); }]].forEach(([t,a,fn])=>{ const b=document.createElement('button'); b.type='button'; b.className='ghost'; b.textContent=t; b.setAttribute('aria-label',a); b.addEventListener('click',()=>{ fn(); renderFaixas(); update(); }); bts.appendChild(b); });
+    li.append(n,cv,nm,lb,bts); ol.appendChild(li); });
+  const li=document.createElement('li'); li.className='resto'; const n=document.createElement('span'); n.className='fxn'; n.textContent=(FAIXAS.length+1)+'.';
+  const vazio=document.createElement('span'); const nm=document.createElement('span'); nm.textContent=`${pontoAtualNome()} — resto da peça, até em cima`; const sm=document.createElement('small'); sm.textContent='é o ponto escolhido em Tipo de ponto'; nm.appendChild(sm);
+  li.append(n,vazio,nm,document.createElement('span'),document.createElement('span')); ol.appendChild(li);
+}
+$('fx-add').addEventListener('click',addFaixa);
+['f-ponto','f-tipo'].forEach(id=>$(id).addEventListener('change',()=>setTimeout(renderFaixas,0)));
+$('mods').addEventListener('click',()=>setTimeout(renderFaixas,0));
+setTimeout(renderFaixas,0);
+
+// ---- gerar um novo programa: volta tudo para preencher medidas e pontos ----
+const CAMPOS_PADRAO=(()=>{ const v={}; campos().forEach(el=>{ v[el.id]=el.type==='checkbox'||el.type==='radio'?el.checked:el.value; }); return v; })();
+$('hist-novo').addEventListener('click',()=>{
+  campos().forEach(el=>{ if(!(el.id in CAMPOS_PADRAO)) return; if(el.type==='checkbox'||el.type==='radio') el.checked=!!CAMPOS_PADRAO[el.id]; else el.value=CAMPOS_PADRAO[el.id]; });
+  $('md-ag').value=''; $('md-cr').value=''; FAIXAS=[]; pecaAtual=null; fotoModelo=null; try{ $('fi-foto').value=''; }catch(e){}
+  try{ setMotif([[1]],[1]); motifNome=''; motivoReal=false; }catch(e){}
+  renderFaixas(); update(); try{ trocaAuth(false); }catch(e){}
+  $('hist-st').textContent='Novo programa: preencha as medidas e escolha os pontos.'; $('hist-box').open=false;
+  $('h-novo').scrollIntoView({behavior:'smooth',block:'start'}); setTimeout(()=>$('md-ag').focus({preventScroll:true}),400);
+});
+// parcial: mostra o tamanho de cada passo
+function infoParcial(){ if(!$('fp-on').checked) return; const r=Math.max(2,2*Math.floor((+$('fp-carr').value||0)/2)); $('fp-info').textContent=`${r/2} passos: a cada 2 carreiras as agulhas da borda da cava param de tecer, em escada até o pescoço; no fim o fio de descarte tece todas de novo.`; }
+['fp-on','fp-carr'].forEach(id=>$(id).addEventListener('input',infoParcial)); $('fp-on').addEventListener('change',infoParcial);
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
