@@ -524,6 +524,18 @@ details.more>*:not(summary){margin-bottom:10px}
             <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
           <label class="chk" for="fbo-on"><input id="fbo-on" type="checkbox"> Fechar o fim da peça com band-off (correntinha)</label>
+          <div class="row" id="bo-tipo-box" hidden>
+            <label for="fbo-tipo">Jeito de fechar o band-off<small class="dica">os 8 jeitos do manual do Raynen (Handstitch mode); vale para o fundo do decote e o fim da peça</small><select id="fbo-tipo">
+              <option value="s1">1. Single needles (1) — 1 em 1, frente/trás alternando</option>
+              <option value="s2">2. Single needles (2) — 1 em 1 pela frontura de trás</option>
+              <option value="d1">3. Double needles (1) — 2 em 2</option>
+              <option value="d2">4. Double needles (2) — 2 em 2 com agulha atrás</option>
+              <option value="alt">5. Stepped — escada pulando agulha</option>
+              <option value="main">6. Main yarn doffing — fio do corpo e solta</option>
+              <option value="s3" selected>7. Single needles (3) — escada 71/61</option>
+              <option value="waste">8. Cast-off with waste yarn — fio de descarte e solta</option>
+            </select></label>
+          </div>
           <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
           <div id="ct-box" hidden>
             <div class="row">
@@ -1105,6 +1117,58 @@ const RAYNEN = (function () {
     for (let k = 0, i = de; k < n; k++, i += passo) linha(i, fica && k === n - 1 ? 1 : cod);
     return rows;
   }
+  // ---- MODULO BAND-OFF COM OS 8 JEITOS DO MANUAL DO RAYNEN (11.5.4 "Handstitch mode", pags. 193-196) ----
+  // A = agulha de apoio (comeca o fechamento; tece 8 na carreira de preparo e 10 perto do fim), Z = ultima agulha (so tece no fim).
+  // Desenhado da esquerda p/ direita; Z < A espelha (71->61, 31->21, 51->41, 91->81).
+  // todas = true (main/waste no fim da peca): soltam todas as agulhas A..Z; senao so as do meio.
+  const BO_TIPOS = { s1: 'Single needles (1)', s2: 'Single needles (2)', d1: 'Double needles (1)', d2: 'Double needles (2)', alt: 'Stepped (alternate needle)', main: 'Main yarn doffing', s3: 'Single needles (3)', waste: 'Cast-off with waste yarn' };
+  function moduloBindOff8(W, base, yarn, A, Z, tipo, impar, yDesc, todas) {
+    const p = Z >= A ? 1 : -1, n = Math.abs(Z - A), pos = k => A + p * k, M = { 71: 61, 31: 21, 51: 41, 91: 81 }, cd = v => p > 0 ? v : (M[v] || v);
+    const rows = [], linha = (cel, y) => { const g = new Uint8Array(W); cel.forEach(([i, v]) => { if (i >= 0 && i < W) g[i] = cd(v); }); const o = base.slice(); o[COL_YARN] = y === undefined ? yarn : y; o[COL_LOOP] = 0; o[32] = y === 0 ? 1 : 0; o[28] = 0; o[29] = 0; o[COL_END] = 0;
+      END_TECE.forEach(k => { o[k] = END_BINDOFF; }); END_TRANSF.forEach(k => { o[k] = END_BINDOFF; }); rows.push({ g, o }); };
+    const dez = q => { for (let t = 0; t < q; t++) linha([[A, 10]]); };
+    const faixa = (k0, k1, v) => { const c = []; for (let k = k0; k <= k1; k++) c.push([pos(k), typeof v === 'function' ? v(k) : v]); return c; };
+    tipo = BO_TIPOS[tipo] ? tipo : 's3';
+    if (tipo === 'main' || tipo === 'waste') {
+      const k0 = todas ? 0 : 1, k1 = todas ? n : n - 1, yy = tipo === 'waste' ? (yDesc || 7) : yarn;
+      if (k1 < k0) return rows;
+      const cheia = () => linha(faixa(k0, k1, 8), yy), xadrez = par => linha(faixa(k0, k1, k => ((k - k0) % 2 === par ? 8 : 0)).filter(c => c[1]), yy);
+      for (let t = 0; t < 3; t++) cheia(); xadrez(1); xadrez(0); xadrez(1); for (let t = 0; t < 3; t++) cheia();
+      if (rows.filter(r => r.o[COL_YARN] === yy).length % 2) cheia();   // passadas pares para o guia-fio do descarte
+      linha(faixa(k0, k1, 6), 0); linha(faixa(k0, k1, 6), 0);    // solta as malhas (sem fio)
+    } else if (n >= 2) {
+      const ult = n - 1;   // ultimo passo (k = 1..n-1); Z = pos(n) so tece no fim
+      if (tipo === 's3') {
+        linha([[A, 8], ...faixa(1, n, 1)]);
+        for (let k = 1; k <= ult; k++) { if (k === ult) dez(2); linha([[pos(k), 71]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 's1') {
+        const cod = k => k === ult ? 71 : (k % 2 ? 31 : 51);
+        linha([[A, 8], ...faixa(1, n, k => k < n && cod(k) === 51 ? 20 : 1)]);
+        for (let k = 1; k <= ult; k++) { if (k === ult) dez(2); linha([[pos(k), cod(k)]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 's2') {
+        linha([[A, 8], ...faixa(1, n, k => k < n ? 20 : 1)]);
+        for (let k = 1; k <= ult; k++) { linha([[pos(k), k === ult ? 51 : 91]]); if (k === Math.max(1, ult - 1)) dez(1); linha([[pos(k), 16]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 'd1' || tipo === 'd2') {
+        const d2 = tipo === 'd2';
+        linha([[A, 8], ...faixa(1, n, k => d2 && k > 1 && k < n ? 20 : 1)]);
+        const ul = n - 2;
+        for (let k = 1; k <= ul; k++) { linha(d2 ? [[pos(k), 71], [pos(k + 1), 2]] : [[pos(k), 71], [pos(k + 1), 71]]); if (k === Math.max(1, ul - 1)) dez(2); linha(d2 ? [[pos(k), 16], [pos(k + 1), 110]] : [[pos(k), 16], [pos(k + 1), 16]]); }
+        linha([[pos(n - 1), 1], [pos(n), 1]]);
+      } else if (tipo === 'alt') {
+        linha([[A, 8], ...faixa(1, n, 1)]);
+        const ul = Math.max(0, n - 5);
+        for (let st = 0; st <= ul; st++) { if (st === ul) dez(2); linha([[pos(st), 16], [pos(st + 1), 71], [pos(st + 3), 8], [pos(st + 4), 16]].filter(c => Math.abs(c[0] - A) <= n)); }
+        linha(faixa(Math.max(1, n - 3), n, 1));
+      }
+    }
+    // passadas do guia-fio principal: par (volta ao lado de saida) ou impar
+    const cnt = rows.filter(r => r.o[COL_YARN] === yarn).length;
+    if ((cnt % 2 === 1) !== !!impar) linha([[tipo === 'main' || tipo === 'waste' ? A : pos(n), 1]]);
+    return rows;
+  }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
@@ -1178,7 +1242,7 @@ const RAYNEN = (function () {
             if (t.some(v => v)) { const ot = o.slice(); ot[COL_YARN] = 0; ot[32] = 1; out.push({ c, g: t, o: ot, ina: null, lado: 'T' }); } }
           out.push({ c, g: gE, o: o.slice(), ina: null, lado: 'E' });
           // modulo band-off com numero impar de carreiras: o lado direito sai indo p/ direita
-          moduloBindOff(W, o, yB, M0, M1, true).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          moduloBindOff8(W, o, yB, M0 - 1, M1 + 1, (s.forma.bandoff || {}).tipo, true, +s.fioDescarte || 7, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
           out.push({ c, g: gD, o: o.slice(), ina: null, lado: 'D' });
           info.correntinha = { carreira: c + 1, agulhas: k, guiaFio: yB };
           c++; continue;
@@ -1314,7 +1378,7 @@ const RAYNEN = (function () {
         if (ant) for (let i = a; i <= b; i++) { const v = ant.g[i]; if (v && (BACK.has(v) || PURL.has(v))) t[i] = 110; }
         const base = ult.o.slice(); base[COL_END] = 0;
         if (t.some(v => v)) { const ot = base.slice(); ot[COL_YARN] = 0; ot[32] = 1; ot[28] = 0; ot[29] = 0; out.push({ c: cB, g: t, o: ot, ina: null, lado: 'T' }); }
-        moduloBindOff(W, base, y, dir > 0 ? a : b, dir > 0 ? b : a, false, true).forEach(r => out.push({ c: cB, g: r.g, o: r.o, ina: null, lado: 'B' }));
+        moduloBindOff8(W, base, y, dir > 0 ? a : b, dir > 0 ? b : a, (s.forma.bandoff || {}).tipo, false, +s.fioDescarte || 7, true).forEach(r => out.push({ c: cB, g: r.g, o: r.o, ina: null, lado: 'B' }));
       });
       info.bandoffFim = segs.map(([a, b]) => b - a + 1);
     }
@@ -1373,7 +1437,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12;
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W;
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -1426,6 +1490,7 @@ const RAYNEN = (function () {
     // garantia: toda carreira que tece tem guia-fio (so a carreira de transferencia fica sem, como no 25009F)
     { const ult = {}; bodyOut.forEach(rw => { const o = rw.o, tece = Array.prototype.some.call(rw.g, v => v && v !== 100 && v !== 110 && v !== 16 && v !== 17);
         if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
+        if (rw.lado === 'B') return;   // band-off: carreira de soltar fica sem fio de proposito
         if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
     bodyOut.forEach((rw, k) => {
       const y = S0 + k;
@@ -1549,7 +1614,7 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { moduloBindOff, sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { moduloBindOff, moduloBindOff8, BO_TIPOS, sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 
 
@@ -1712,7 +1777,7 @@ function readSpec(){
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
-           bandoff:{ativo:$('fbo-on').checked},
+           bandoff:{ativo:$('fbo-on').checked,tipo:$('fbo-tipo').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),meioModo:$('fd-mmodo').value,passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
@@ -1870,7 +1935,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fbo-on','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1917,7 +1982,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
-  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
+  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('bo-tipo-box').hidden=!($('fbo-on').checked||($('fd-on').checked&&$('fd-tipo').value==='redondo'&&$('fd-mmodo').value!=='v')); $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -2408,7 +2473,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;

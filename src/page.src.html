@@ -523,6 +523,18 @@ details.more>*:not(summary){margin-bottom:10px}
             <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
           <label class="chk" for="fbo-on"><input id="fbo-on" type="checkbox"> Fechar o fim da peça com band-off (correntinha)</label>
+          <div class="row" id="bo-tipo-box" hidden>
+            <label for="fbo-tipo">Jeito de fechar o band-off<small class="dica">os 8 jeitos do manual do Raynen (Handstitch mode); vale para o fundo do decote e o fim da peça</small><select id="fbo-tipo">
+              <option value="s1">1. Single needles (1) — 1 em 1, frente/trás alternando</option>
+              <option value="s2">2. Single needles (2) — 1 em 1 pela frontura de trás</option>
+              <option value="d1">3. Double needles (1) — 2 em 2</option>
+              <option value="d2">4. Double needles (2) — 2 em 2 com agulha atrás</option>
+              <option value="alt">5. Stepped — escada pulando agulha</option>
+              <option value="main">6. Main yarn doffing — fio do corpo e solta</option>
+              <option value="s3" selected>7. Single needles (3) — escada 71/61</option>
+              <option value="waste">8. Cast-off with waste yarn — fio de descarte e solta</option>
+            </select></label>
+          </div>
           <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
           <div id="ct-box" hidden>
             <div class="row">
@@ -896,7 +908,7 @@ function readSpec(){
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
-           bandoff:{ativo:$('fbo-on').checked},
+           bandoff:{ativo:$('fbo-on').checked,tipo:$('fbo-tipo').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),meioModo:$('fd-mmodo').value,passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
@@ -1054,7 +1066,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fbo-on','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1101,7 +1113,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
-  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
+  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('bo-tipo-box').hidden=!($('fbo-on').checked||($('fd-on').checked&&$('fd-tipo').value==='redondo'&&$('fd-mmodo').value!=='v')); $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -1592,7 +1604,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;

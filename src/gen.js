@@ -366,6 +366,58 @@ const RAYNEN = (function () {
     for (let k = 0, i = de; k < n; k++, i += passo) linha(i, fica && k === n - 1 ? 1 : cod);
     return rows;
   }
+  // ---- MODULO BAND-OFF COM OS 8 JEITOS DO MANUAL DO RAYNEN (11.5.4 "Handstitch mode", pags. 193-196) ----
+  // A = agulha de apoio (comeca o fechamento; tece 8 na carreira de preparo e 10 perto do fim), Z = ultima agulha (so tece no fim).
+  // Desenhado da esquerda p/ direita; Z < A espelha (71->61, 31->21, 51->41, 91->81).
+  // todas = true (main/waste no fim da peca): soltam todas as agulhas A..Z; senao so as do meio.
+  const BO_TIPOS = { s1: 'Single needles (1)', s2: 'Single needles (2)', d1: 'Double needles (1)', d2: 'Double needles (2)', alt: 'Stepped (alternate needle)', main: 'Main yarn doffing', s3: 'Single needles (3)', waste: 'Cast-off with waste yarn' };
+  function moduloBindOff8(W, base, yarn, A, Z, tipo, impar, yDesc, todas) {
+    const p = Z >= A ? 1 : -1, n = Math.abs(Z - A), pos = k => A + p * k, M = { 71: 61, 31: 21, 51: 41, 91: 81 }, cd = v => p > 0 ? v : (M[v] || v);
+    const rows = [], linha = (cel, y) => { const g = new Uint8Array(W); cel.forEach(([i, v]) => { if (i >= 0 && i < W) g[i] = cd(v); }); const o = base.slice(); o[COL_YARN] = y === undefined ? yarn : y; o[COL_LOOP] = 0; o[32] = y === 0 ? 1 : 0; o[28] = 0; o[29] = 0; o[COL_END] = 0;
+      END_TECE.forEach(k => { o[k] = END_BINDOFF; }); END_TRANSF.forEach(k => { o[k] = END_BINDOFF; }); rows.push({ g, o }); };
+    const dez = q => { for (let t = 0; t < q; t++) linha([[A, 10]]); };
+    const faixa = (k0, k1, v) => { const c = []; for (let k = k0; k <= k1; k++) c.push([pos(k), typeof v === 'function' ? v(k) : v]); return c; };
+    tipo = BO_TIPOS[tipo] ? tipo : 's3';
+    if (tipo === 'main' || tipo === 'waste') {
+      const k0 = todas ? 0 : 1, k1 = todas ? n : n - 1, yy = tipo === 'waste' ? (yDesc || 7) : yarn;
+      if (k1 < k0) return rows;
+      const cheia = () => linha(faixa(k0, k1, 8), yy), xadrez = par => linha(faixa(k0, k1, k => ((k - k0) % 2 === par ? 8 : 0)).filter(c => c[1]), yy);
+      for (let t = 0; t < 3; t++) cheia(); xadrez(1); xadrez(0); xadrez(1); for (let t = 0; t < 3; t++) cheia();
+      if (rows.filter(r => r.o[COL_YARN] === yy).length % 2) cheia();   // passadas pares para o guia-fio do descarte
+      linha(faixa(k0, k1, 6), 0); linha(faixa(k0, k1, 6), 0);    // solta as malhas (sem fio)
+    } else if (n >= 2) {
+      const ult = n - 1;   // ultimo passo (k = 1..n-1); Z = pos(n) so tece no fim
+      if (tipo === 's3') {
+        linha([[A, 8], ...faixa(1, n, 1)]);
+        for (let k = 1; k <= ult; k++) { if (k === ult) dez(2); linha([[pos(k), 71]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 's1') {
+        const cod = k => k === ult ? 71 : (k % 2 ? 31 : 51);
+        linha([[A, 8], ...faixa(1, n, k => k < n && cod(k) === 51 ? 20 : 1)]);
+        for (let k = 1; k <= ult; k++) { if (k === ult) dez(2); linha([[pos(k), cod(k)]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 's2') {
+        linha([[A, 8], ...faixa(1, n, k => k < n ? 20 : 1)]);
+        for (let k = 1; k <= ult; k++) { linha([[pos(k), k === ult ? 51 : 91]]); if (k === Math.max(1, ult - 1)) dez(1); linha([[pos(k), 16]]); }
+        linha([[pos(n), 1]]);
+      } else if (tipo === 'd1' || tipo === 'd2') {
+        const d2 = tipo === 'd2';
+        linha([[A, 8], ...faixa(1, n, k => d2 && k > 1 && k < n ? 20 : 1)]);
+        const ul = n - 2;
+        for (let k = 1; k <= ul; k++) { linha(d2 ? [[pos(k), 71], [pos(k + 1), 2]] : [[pos(k), 71], [pos(k + 1), 71]]); if (k === Math.max(1, ul - 1)) dez(2); linha(d2 ? [[pos(k), 16], [pos(k + 1), 110]] : [[pos(k), 16], [pos(k + 1), 16]]); }
+        linha([[pos(n - 1), 1], [pos(n), 1]]);
+      } else if (tipo === 'alt') {
+        linha([[A, 8], ...faixa(1, n, 1)]);
+        const ul = Math.max(0, n - 5);
+        for (let st = 0; st <= ul; st++) { if (st === ul) dez(2); linha([[pos(st), 16], [pos(st + 1), 71], [pos(st + 3), 8], [pos(st + 4), 16]].filter(c => Math.abs(c[0] - A) <= n)); }
+        linha(faixa(Math.max(1, n - 3), n, 1));
+      }
+    }
+    // passadas do guia-fio principal: par (volta ao lado de saida) ou impar
+    const cnt = rows.filter(r => r.o[COL_YARN] === yarn).length;
+    if ((cnt % 2 === 1) !== !!impar) linha([[tipo === 'main' || tipo === 'waste' ? A : pos(n), 1]]);
+    return rows;
+  }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
@@ -439,7 +491,7 @@ const RAYNEN = (function () {
             if (t.some(v => v)) { const ot = o.slice(); ot[COL_YARN] = 0; ot[32] = 1; out.push({ c, g: t, o: ot, ina: null, lado: 'T' }); } }
           out.push({ c, g: gE, o: o.slice(), ina: null, lado: 'E' });
           // modulo band-off com numero impar de carreiras: o lado direito sai indo p/ direita
-          moduloBindOff(W, o, yB, M0, M1, true).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          moduloBindOff8(W, o, yB, M0 - 1, M1 + 1, (s.forma.bandoff || {}).tipo, true, +s.fioDescarte || 7, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
           out.push({ c, g: gD, o: o.slice(), ina: null, lado: 'D' });
           info.correntinha = { carreira: c + 1, agulhas: k, guiaFio: yB };
           c++; continue;
@@ -575,7 +627,7 @@ const RAYNEN = (function () {
         if (ant) for (let i = a; i <= b; i++) { const v = ant.g[i]; if (v && (BACK.has(v) || PURL.has(v))) t[i] = 110; }
         const base = ult.o.slice(); base[COL_END] = 0;
         if (t.some(v => v)) { const ot = base.slice(); ot[COL_YARN] = 0; ot[32] = 1; ot[28] = 0; ot[29] = 0; out.push({ c: cB, g: t, o: ot, ina: null, lado: 'T' }); }
-        moduloBindOff(W, base, y, dir > 0 ? a : b, dir > 0 ? b : a, false, true).forEach(r => out.push({ c: cB, g: r.g, o: r.o, ina: null, lado: 'B' }));
+        moduloBindOff8(W, base, y, dir > 0 ? a : b, dir > 0 ? b : a, (s.forma.bandoff || {}).tipo, false, +s.fioDescarte || 7, true).forEach(r => out.push({ c: cB, g: r.g, o: r.o, ina: null, lado: 'B' }));
       });
       info.bandoffFim = segs.map(([a, b]) => b - a + 1);
     }
@@ -634,7 +686,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12;
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W;
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -687,6 +739,7 @@ const RAYNEN = (function () {
     // garantia: toda carreira que tece tem guia-fio (so a carreira de transferencia fica sem, como no 25009F)
     { const ult = {}; bodyOut.forEach(rw => { const o = rw.o, tece = Array.prototype.some.call(rw.g, v => v && v !== 100 && v !== 110 && v !== 16 && v !== 17);
         if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
+        if (rw.lado === 'B') return;   // band-off: carreira de soltar fica sem fio de proposito
         if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
     bodyOut.forEach((rw, k) => {
       const y = S0 + k;
@@ -810,6 +863,6 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { moduloBindOff, sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { moduloBindOff, moduloBindOff8, BO_TIPOS, sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 if (typeof module !== 'undefined') module.exports = RAYNEN;
