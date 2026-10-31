@@ -51,7 +51,8 @@ const RAYNEN = (function () {
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
       cintura: Object.assign({ ativo: false, inicio: 30, dim: '6-1-6', retas: 10, aum: '6-1-6', borda: 2, modo: '16' }, f.cintura || {}),
-      parcial: Object.assign({ ativo: false, carreiras: 12 }, f.parcial || {})
+      parcial: Object.assign({ ativo: false, carreiras: 12 }, f.parcial || {}),
+      bandoff: Object.assign({ ativo: false }, f.bandoff || {})
     };
     n.nome = String(n.nome || 'NOVO').replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 40) || 'NOVO';
     return n;
@@ -220,7 +221,7 @@ const RAYNEN = (function () {
     });
     return out;
   }
-  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo) || (s.forma.parcial && s.forma.parcial.ativo)));
+  const formaAtiva = s => !!(s.forma && (s.forma.cava.ativo || s.forma.decote.ativo || s.forma.aumento.ativo || s.forma.aumento2.ativo || (s.forma.cintura && s.forma.cintura.ativo) || (s.forma.parcial && s.forma.parcial.ativo) || (s.forma.bandoff && s.forma.bandoff.ativo)));
   const evList = x => x && x.ativo ? agenda((+x.inicio || 1) - 1, parsePassos(x.passos).filter(p => !p.erro)) : [];
   const ehPolo = d => !!(d && d.ativo && d.tipo === 'polo');
   // decote polo (25009F): abre uma carcela reta no meio; o decote da gola (passos) so comeca na carreira 'colar'
@@ -356,12 +357,13 @@ const RAYNEN = (function () {
   // a ultima malha vai para a agulha alem de 'ate', que continua tecendo. Endereco de regulagem #09 (BINDOFF) em todas as carreiras.
   // impar = true: numero impar de carreiras (o guia-fio sai no sentido contrario ao que entrou). Devolve [{g, o}].
   const END_TECE = [24, 35, 39, 43, 47, 115], END_TRANSF = [25, 36, 40, 44, 48, 116], END_BINDOFF = 9;
-  function moduloBindOff(W, base, yarn, de, ate, impar) {
+  // fica = true (fim da peca): a ultima agulha so tece (nao tem vizinha para receber a malha)
+  function moduloBindOff(W, base, yarn, de, ate, impar, fica) {
     const passo = ate >= de ? 1 : -1, cod = passo > 0 ? 71 : 61, rows = [], n = Math.abs(ate - de) + 1;
     const linha = (i, v) => { const g = new Uint8Array(W); g[i] = v; const o = base.slice(); o[COL_YARN] = yarn; o[COL_LOOP] = 0; o[32] = 0; o[28] = 0; o[29] = 0;
       END_TECE.forEach(k => { o[k] = END_BINDOFF; }); END_TRANSF.forEach(k => { o[k] = END_BINDOFF; }); rows.push({ g, o }); };
     if ((n % 2 === 1) !== !!impar) linha(de, 1);
-    for (let k = 0, i = de; k < n; k++, i += passo) linha(i, cod);
+    for (let k = 0, i = de; k < n; k++, i += passo) linha(i, fica && k === n - 1 ? 1 : cod);
     return rows;
   }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
@@ -563,6 +565,20 @@ const RAYNEN = (function () {
     // passadas pares para cada guia-fio (W002): o que ficou impar tece mais uma vez a sua ultima carreira
     { const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y && r.lado !== 'T') cnt[y] = (cnt[y] || 0) + 1; });
       Object.keys(cnt).forEach(y => { if (cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
+    // FIM DA PECA COM BAND-OFF (modulo): fecha todas as agulhas em cima, cada lado com o seu guia-fio (endereco #09)
+    if (s.forma.bandoff && s.forma.bandoff.ativo && !pcR && out.length) {
+      const segs = info.divisao != null && !unido ? [[lA, lB, yA, 1], [rA, rB, yB, -1]] : [[L, R, yA, 1]];
+      const ult = out.filter(r => r.lado !== 'T' && r.lado !== 'B').pop(), cB = ult.c;
+      segs.forEach(([a, b, y, dir]) => {
+        if (b - a < 1) return;
+        const ant = out.filter(r => r.lado !== 'T' && r.lado !== 'B' && r.g.slice(a, b + 1).some(v => v)).pop(), t = new Uint8Array(W);
+        if (ant) for (let i = a; i <= b; i++) { const v = ant.g[i]; if (v && (BACK.has(v) || PURL.has(v))) t[i] = 110; }
+        const base = ult.o.slice(); base[COL_END] = 0;
+        if (t.some(v => v)) { const ot = base.slice(); ot[COL_YARN] = 0; ot[32] = 1; ot[28] = 0; ot[29] = 0; out.push({ c: cB, g: t, o: ot, ina: null, lado: 'T' }); }
+        moduloBindOff(W, base, y, dir > 0 ? a : b, dir > 0 ? b : a, false, true).forEach(r => out.push({ c: cB, g: r.g, o: r.o, ina: null, lado: 'B' }));
+      });
+      info.bandoffFim = segs.map(([a, b]) => b - a + 1);
+    }
     if (pcR) info.parcial = { inicio: pcIni + 1, carreiras: pcR, faixas: info.divisao != null && !unido ? [[lA, lB], [rA, rB]] : [[L, R]] };
     return { rows: out, info };
   }

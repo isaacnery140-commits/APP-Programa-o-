@@ -393,6 +393,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <p class="hint" id="rmod-hint" hidden>Módulos da biblioteca do sistema Raynen (Pattern ▸ módulos). Os marcados <b>aproximado</b> foram montados pelo nome do módulo e pela tabela de cores (confira bem no Raynen). Os marcados <b>pronto</b> já têm a grade de códigos (básicos, tranças e aran X montados pela tabela de cores do manual: confira no Raynen); os de <b>jacquard</b> abrem o jacquard do app com o número de cores certo; os <b>pendentes</b> ainda não, porque o Raynen guarda a grade criptografada. Clique num pendente para criar com IA a partir do nome, ou mande um BMP com ele desenhado que eu completo.</p>
             <input id="f-libbusca" type="search" placeholder="Procurar módulo (ex.: piquet, canelado, trança)" aria-label="Procurar módulo">
             <div class="mods" id="mods" role="listbox" aria-label="Módulos de ponto"></div>
+            <div class="fx-onde" id="bo-onde" hidden><span><b>Band-off (correntinha)</b>: onde usar? Uma carreira por agulha, endereço #09 (stitch, roller e speed) automático e na ficha.</span><span class="fx-bt"><button type="button" class="ghost" id="bo-decote">No fundo do decote redondo</button> <button type="button" class="ghost" id="bo-fim">No fim da peça</button></span></div>
             <div class="fx-onde" id="fx-onde"><span id="fx-sel">Ponto escolhido: —</span><span class="fx-bt"><button type="button" class="ghost" id="fx-add">＋ Colocar numa faixa da peça</button></span></div>
           </div>
           <div class="faixas" id="faixas" hidden>
@@ -521,6 +522,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <label for="fp-carr">Carreiras de parcial<input id="fp-carr" type="number" min="2" max="80" step="2" value="12"></label>
             <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
+          <label class="chk" for="fbo-on"><input id="fbo-on" type="checkbox"> Fechar o fim da peça com band-off (correntinha)</label>
           <label class="chk" for="ct-on"><input id="ct-on" type="checkbox"> Fazer acinturado (vestidos)</label>
           <div id="ct-box" hidden>
             <div class="row">
@@ -808,6 +810,13 @@ function renderMods(){
   $('rmod-hint').hidden = libTab!=='raynen'&&libTab!=='todos'; $('tab-meus').setAttribute('aria-selected',String(libTab==='meus')); $('tab-todos').setAttribute('aria-selected',String(libTab==='todos'));
   const grp=t=>{const g=document.createElement('div'); g.className='modgrp'; g.textContent=t; box.appendChild(g);};
   const todos=libTab==='todos';
+  if((libTab==='nossos'||todos)&&(!q||norm('band-off bind-off correntinha arremate fechar').includes(q))){
+    grp('Módulos de acabamento');
+    const bt=modCard('Band-off (correntinha)','',()=>{ $('bo-onde').hidden=false; $('bo-onde').scrollIntoView({behavior:'smooth',block:'nearest'}); },false);
+    const cv=document.createElement('canvas'); miniRapport(cv,[[0,0,0,71],[0,0,71,0],[0,71,0,0],[71,0,0,0]]);
+    const t=document.createElement('span'); t.textContent='Band-off (correntinha)'; const sm=document.createElement('small'); sm.textContent='endereço #09';
+    bt.append(cv,t,sm); box.appendChild(bt);
+  }
   if(libTab==='nossos'||todos){
     [['Dos programas de vocês (testados)',e=>e.real],['Padrões (conferir no Raynen)',e=>!e.real]].forEach(([titulo,f])=>{
       const itens=LIB.map((e,i)=>[e,i]).filter(([e])=>f(e)&&(!q||norm(e.nome+' '+(e.nota||'')).includes(q)));
@@ -887,6 +896,7 @@ function readSpec(){
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
+           bandoff:{ativo:$('fbo-on').checked},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),meioModo:$('fd-mmodo').value,passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
     barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
@@ -1044,7 +1054,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fbo-on','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1083,7 +1093,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   const tp=tipoAtual(), ehBase=tp==='base';
   $('f-larg').disabled=ehBase; $('f-carr').disabled=ehBase; $('opt-base').hidden=!ehBase;
   // com cava/decote: carreiras do corpo = retas abaixo + diminuições + retas acima
-  const formaOn=!ehBase && ($('fp-on').checked||$('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked||$('ct-on').checked);
+  const formaOn=!ehBase && ($('fbo-on').checked||$('fp-on').checked||$('fc-on').checked||$('fd-on').checked||$('fe-on').checked||$('fg-on').checked||$('ct-on').checked);
   $('ct-box').hidden=!$('ct-on').checked;
   $('fe-box').hidden=!$('fe-on').checked; $('fg-box').hidden=!$('fg-on').checked;
   $('fa-box').hidden=!formaOn;
@@ -1582,7 +1592,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -1928,6 +1938,12 @@ $('hist-novo').addEventListener('click',()=>{
 // parcial: mostra o tamanho de cada passo
 function infoParcial(){ if(!$('fp-on').checked) return; const r=Math.max(2,2*Math.floor((+$('fp-carr').value||0)/2)); $('fp-info').textContent=`${r/2} passos: a cada 2 carreiras as agulhas da borda da cava param de tecer, em escada até o pescoço; no fim o fio de descarte tece todas de novo.`; }
 ['fp-on','fp-carr'].forEach(id=>$(id).addEventListener('input',infoParcial)); $('fp-on').addEventListener('change',infoParcial);
+
+// modulo band-off: escolher onde entra
+$('bo-decote').addEventListener('click',()=>{ $('fd-on').checked=true; $('fd-on').dispatchEvent(new Event('change',{bubbles:true})); $('fd-tipo').value='redondo'; $('fd-mmodo').value='corrente'; $('bo-onde').hidden=true; update(); $('fd-box').scrollIntoView({behavior:'smooth',block:'center'}); });
+$('bo-fim').addEventListener('click',()=>{ $('fbo-on').checked=true; $('fp-on').checked=false; $('bo-onde').hidden=true; update(); $('fbo-on').scrollIntoView({behavior:'smooth',block:'center'}); });
+$('fbo-on').addEventListener('change',()=>{ if($('fbo-on').checked&&$('fp-on').checked){ $('fp-on').checked=false; update(); } });
+$('fp-on').addEventListener('change',()=>{ if($('fp-on').checked&&$('fbo-on').checked){ $('fbo-on').checked=false; update(); } });
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
