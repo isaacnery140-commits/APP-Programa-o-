@@ -1196,6 +1196,23 @@ function passosAuto(total, R, primeiro){
   else if(r) out.push(`2-${r}-1`);
   return out.join(', ');
 }
+// preenche o decote com as medidas da peça (tipo, largura e profundidade do decote)
+function decoteDasMedidas(){
+  const ag=Math.max(1,Math.round(+$('md-ag').value||0)), cr=Math.max(1,Math.round(+$('md-cr').value||0)), cm=x=>Math.max(0,+$(x).value||0);
+  if(!(+$('md-ag').value>0&&+$('md-cr').value>0)) return false;
+  const comp=cm('md-comp'), barra=cm('md-barra'), dt=$('md-dtipo').value||'redondo', dl=cm('md-dlarg'), dp=cm('md-dprof'); if(!(dl>0&&dp>0)) return false;
+  const corpo=Math.max(10,Math.round((comp-barra)*cr)), dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
+  $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
+  if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
+  else if(dt==='polo'){   // carcela reta no meio (25009F) e o decote da gola so no alto
+    let pb=Math.max(5,Math.round(1.5*ag)); if(pb%2===0) pb++; $('fd-carc').value=pb;
+    const neck=Math.round(Math.min(7,dp*.5)*cr); $('fd-colar').value=Math.max(10,dRows-neck);
+    $('fd-pas').value=passosAuto(Math.max(1,(dAg-pb)/2),Math.round(neck*.75),true);
+  }
+  else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
+  $('fd-bor').value=2;
+  return corpo;
+}
 function calcularMedidas(){
   const inteiro=id=>{const v=Math.max(1,Math.round(+$(id).value||6));$(id).value=v;return v;};
   const ag=inteiro('md-ag'), cr=inteiro('md-cr'), cm=x=>Math.max(0,+$(x).value||0);
@@ -1209,20 +1226,8 @@ function calcularMedidas(){
   const cavaRows=Math.round(cava*cr), cavaAg=Math.round(cent*ag);
   $('fc-on').checked=cava>0&&cavaAg>0;
   if($('fc-on').checked){ $('fc-ini').value=Math.max(0,corpo-cavaRows); $('fc-pas').value=passosAuto(cavaAg,Math.round(cavaRows*.45),true); $('fc-bor').value=2; }
-  // decote
-  $('fd-on').checked=!!dt&&dl>0&&dp>0;
-  if($('fd-on').checked){
-    const dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
-    $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
-    if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
-    else if(dt==='polo'){   // carcela reta no meio (25009F) e o decote da gola so no alto
-      let pb=Math.max(5,Math.round(1.5*ag)); if(pb%2===0) pb++; $('fd-carc').value=pb;
-      const neck=Math.round(Math.min(7,dp*.5)*cr); $('fd-colar').value=Math.max(10,dRows-neck);
-      $('fd-pas').value=passosAuto(Math.max(1,(dAg-pb)/2),Math.round(neck*.75),true);
-    }
-    else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
-    $('fd-bor').value=2;
-  }
+  // decote: só quando "Fazer decote" está marcado (sem decote o pano segue liso acima da cava)
+  if($('fd-on').checked) decoteDasMedidas();
   // acinturado
   $('ct-on').checked=cint>0&&cint<larg&&hc>2;
   if($('ct-on').checked){
@@ -1244,6 +1249,9 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// marcou "Fazer decote": puxa o decote das medidas da peça e mantém o comprimento total
+$('fd-on').addEventListener('change',()=>{ if(!$('fd-on').checked) return; const corpo=decoteDasMedidas(); if(!corpo) return;
+  update(); const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma); $('fa-acima').value=Math.max(0,corpo-fim); update(); simular(); });
 let ajFoto=null;
 $('rel-aj-img').addEventListener('change',async()=>{ const f=$('rel-aj-img').files[0]; ajFoto=null; $('rel-aj-prev').hidden=true; if(!f) return;
   try{ const url=URL.createObjectURL(f); ajFoto=await imagemCabe(url,1100); URL.revokeObjectURL(url); $('rel-aj-prev').src=ajFoto; $('rel-aj-prev').hidden=false; }catch(e){ $('rel-aj-st').textContent=e.message; } });
@@ -1277,7 +1285,7 @@ function buscaManual(q){
 }
 const CONHECE_APP=`Como o app gera o programa Raynen (BMP 8-bit 1024x2048, de baixo para cima, + arquivo .opt com as linhas de função 201-226):
 - Início das carreiras 1-25 copiado do programa 25009F da fábrica: descarte (guia-fio 7), soltura, início tubular, barra de ribana com laço (economizador, linha 201 coluna 1 = número de voltas).
-- Corpo: guia-fios dos sistemas (padrão 4 e 5 alternando carreira a carreira); endereços de regulagem (linha 207 degree / 209 speed / 210 roll): #08 corpo, #23 transferência, #01-#07 início e barra.
+- Corpo: guia-fios dos sistemas (padrão 4 e 5 alternando carreira a carreira); endereços de regulagem (linha 207 degree / 209 speed / 210 roll): #08 corpo, #23 transferência, #09 band-off (correntinha), #01-#07 início e barra. Band-off: módulo do app (RAYNEN.moduloBindOff), uma carreira por agulha com 71 (fecha p/ direita) ou 61 (p/ esquerda), endereço #09 em todas as carreiras; no decote redondo o guia-fio do lado direito faz a carreira da divisão inteira (lado esquerdo, correntinha, lado direito) e o do lado esquerdo continua na esquerda.
 - Códigos: 1 malha frente, 2 malha trás, 4/5 carregado, 8/9/10 sem conexão, 16 agulha sem ponto (aumento), 17 soltar, 61-67/71-77/81-87/91-97 transferência com deslocamento (diminuições), 100 transferir p/ trás, 110 transferir p/ frente, 28/29 e 48/49 tranças.
 - Cava e decote por diminuição com transferência; no decote a peça divide e cada lado tece com um guia-fio, 2 carreiras de cada lado. Decote polo = carcela de 9 agulhas igual ao 25009F, com 3 carreiras de transferência e deslocamento (linha 208).
 - Cada guia-fio precisa terminar com passadas pares (senão o Raynen avisa W002). Largura ímpar evita W021 na última coluna.
@@ -1550,7 +1558,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31b', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;

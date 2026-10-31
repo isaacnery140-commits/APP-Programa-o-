@@ -783,7 +783,10 @@ const RAYNEN = (function () {
   const passoDiv = s => 2 * ((sistemas(s) || [1]).length);
   // com 2 ou 3 sistemas a divisao cai numa carreira em que o 1o sistema fez passadas impares (esta do lado direito) e os outros pares (lado esquerdo),
   // como no 25009F: assim cada lado do decote comeca com o guia-fio ja do seu lado (sem caminho vazio longo, W028)
-  const splitRow = (s, inicio) => { const q = passoDiv(s); if (q > 2) return Math.max(1, q * Math.floor((inicio - 2) / q) + 1); return q * Math.floor((inicio - 1) / q); };
+  // decote redondo com correntinha: divide numa carreira em que TODOS os guia-fios estao do lado esquerdo;
+  // o guia-fio do lado direito tece a carreira da divisao inteira (lado esquerdo, correntinha no meio, lado direito) e termina na direita
+  const correnteOn = s => { const d = s.forma && s.forma.decote; return !!(d && d.ativo && d.tipo === 'redondo' && d.meioModo !== 'v' && +d.meio > 0 && s.ponto.tipo !== 'jacquard'); };
+  const splitRow = (s, inicio) => { const q = passoDiv(s); if (correnteOn(s)) return Math.max(q, q * Math.floor((inicio - 1) / q)); if (q > 2) return Math.max(1, q * Math.floor((inicio - 2) / q) + 1); return q * Math.floor((inicio - 1) / q); };
 
   // linhas do corpo: [{v:(i)=>codigo, f:indice do guia-fio 1..4}]
   function bodyRows(s, N) {
@@ -1058,6 +1061,19 @@ const RAYNEN = (function () {
     for (let i = a; i < a + PROT; i++) bI[c * W + i] = (i + c) % 2 === 0 ? y1 : y2;
     for (let i = b; i > b - PROT; i--) bI[c * W + i] = (i + c) % 2 === 0 ? y1 : y2;
   }
+  // ---- MODULO BAND-OFF (correntinha): fecha as agulhas de 'de' ate 'ate' (inclusive), uma carreira por agulha ----
+  // cada carreira tece 1 agulha e passa a malha para a vizinha no sentido do fechamento (71 = 1 p/ direita, 61 = 1 p/ esquerda);
+  // a ultima malha vai para a agulha alem de 'ate', que continua tecendo. Endereco de regulagem #09 (BINDOFF) em todas as carreiras.
+  // impar = true: numero impar de carreiras (o guia-fio sai no sentido contrario ao que entrou). Devolve [{g, o}].
+  const END_TECE = [24, 35, 39, 43, 47, 115], END_TRANSF = [25, 36, 40, 44, 48, 116], END_BINDOFF = 9;
+  function moduloBindOff(W, base, yarn, de, ate, impar) {
+    const passo = ate >= de ? 1 : -1, cod = passo > 0 ? 71 : 61, rows = [], n = Math.abs(ate - de) + 1;
+    const linha = (i, v) => { const g = new Uint8Array(W); g[i] = v; const o = base.slice(); o[COL_YARN] = yarn; o[COL_LOOP] = 0; o[32] = 0; o[28] = 0; o[29] = 0;
+      END_TECE.forEach(k => { o[k] = END_BINDOFF; }); END_TRANSF.forEach(k => { o[k] = END_BINDOFF; }); rows.push({ g, o }); };
+    if ((n % 2 === 1) !== !!impar) linha(de, 1);
+    for (let k = 0, i = de; k < n; k++, i += passo) linha(i, cod);
+    return rows;
+  }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
@@ -1071,7 +1087,7 @@ const RAYNEN = (function () {
     const evWd = new Map(evs.cintD), evWa = new Map(evs.cintA), ct = s.forma.cintura || {};
     let L = ex, R = W - 1 - ex - PB;                 // limites da peca inteira (antes da divisao); comeca estreita se tiver aumentos
     const mid = Math.floor(W / 2), meio = dc.ativo && dc.tipo === 'redondo' && dc.meioModo !== 'v' ? +dc.meio : 0;
-    let lA = 0, lB = 0, rA = 0, rB = 0, correntePend = null;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
+    let lA = 0, lB = 0, rA = 0, rB = 0;          // depois da divisao: esquerda [lA,lB], direita [rA,rB]
     const borda = (f, k) => Math.max(+f.borda || 2, k);
     // aplica uma diminuicao numa borda: 'L' (borda esquerda anda p/ direita) ou 'R' (borda direita anda p/ esquerda)
     function dim(row, a, b, lado, k, f) {
@@ -1110,8 +1126,26 @@ const RAYNEN = (function () {
         info.divisao = c + 1;
         lA = L; lB = mid - Math.ceil(meio / 2) - (meio ? 0 : 1) + (W % 2 && !meio ? 1 : 0); rA = lB + 1 + meio; rB = R;
         if (polo) { bs = L + Math.floor((R - L + 1 - PB) / 2) - 1; lB = bs + PB - 1; rA = bs; info.carcela = { inicio: c + 1, agulhas: PB, carreiras: cAlt }; }
-        // decote redondo: as agulhas do meio fecham com correntinha (band-off) logo depois da 1a carreira do lado esquerdo
-        if (meio && !polo && !jq[c]) correntePend = { M0: lB + 1, M1: rA - 1 };
+        // decote redondo: carreira da divisao feita inteira pelo guia-fio do lado direito (que estava na esquerda):
+        // tece o lado esquerdo indo p/ direita, fecha o meio com correntinha (71 = tece e passa a malha 1 agulha p/ direita)
+        // e tece o lado direito indo p/ direita. Os dois guia-fios terminam cada um do seu lado; nenhuma agulha fica presa.
+        if (meio && !polo && !jq[c] && correnteOn(s)) {
+          const row = bG.slice(c * W, c * W + W), gE = new Uint8Array(W), gD = new Uint8Array(W);
+          for (let i = lA; i <= lB; i++) gE[i] = row[i]; for (let i = rA; i <= rB; i++) gD[i] = row[i];
+          protege(gE, lA, lB, c); protege(gD, rA, rB, c);
+          const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = yB; o[COL_LOOP] = 0; o[32] = 0; o[28] = 0; o[29] = 0;
+          const M0 = lB + 1, M1 = rA - 1, k = M1 - M0 + 1;
+          // malhas do meio que estao na frontura de tras (ribana) passam para a frente antes da correntinha (senao ficam presas atras)
+          { const ant = out.length ? out[out.length - 1].g : row, t = new Uint8Array(W);
+            for (let i = M0; i <= M1; i++) { const v = ant[i]; if (v && (BACK.has(v) || PURL.has(v))) t[i] = 110; }
+            if (t.some(v => v)) { const ot = o.slice(); ot[COL_YARN] = 0; ot[32] = 1; out.push({ c, g: t, o: ot, ina: null, lado: 'T' }); } }
+          out.push({ c, g: gE, o: o.slice(), ina: null, lado: 'E' });
+          // modulo band-off com numero impar de carreiras: o lado direito sai indo p/ direita
+          moduloBindOff(W, o, yB, M0, M1, true).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          out.push({ c, g: gD, o: o.slice(), ina: null, lado: 'D' });
+          info.correntinha = { carreira: c + 1, agulhas: k, guiaFio: yB };
+          c++; continue;
+        }
       }
       // polo: depois de 2 blocos (8 carreiras) com a carcela compartilhada, transfere e desloca o lado direito PB agulhas
       if (polo && poloFase === 2) {
@@ -1190,16 +1224,6 @@ const RAYNEN = (function () {
           ina = bI.slice(cc * W, cc * W + W).map((v, i) => row[i] ? (mp && mp.has(v) ? mp.get(v) : v) : 0);
         } else o[COL_YARN] = yarn;
         out.push({ c: cc, g: row, o, ina, lado, sh: lado === 'D' ? desl : 0 });
-        if (correntePend && lado === 'E') {
-          // por agulha: tece 1 agulha com o guia-fio do lado esquerdo, transfere p/ tras, desloca 1 p/ direita e devolve na agulha seguinte;
-          // a ultima malha vai para a 1a agulha do lado direito, que segue tecendo normal (nenhuma agulha fica presa)
-          const { M0, M1 } = correntePend, base = o.slice(); base[COL_LOOP] = 0;
-          // codigo 71 = tece frente e passa a malha 1 agulha para a direita (o Raynen faz as transferencias), como o 平收 desenhado em escada
-          const tece = (i, cod) => { const g = new Uint8Array(W); g[i] = cod; const oo = base.slice(); oo[COL_YARN] = yarn; oo[32] = 0; oo[28] = 0; oo[29] = 0; out.push({ c: cc, g, o: oo, ina: null, lado: 'B' }); };
-          if ((M1 - M0 + 1) % 2) tece(M0, 1);                  // passadas pares: o guia-fio volta ao lado de saida
-          for (let i = M0; i <= M1; i++) tece(i, 71);
-          info.correntinha = { carreira: cc + 1, agulhas: M1 - M0 + 1 }; correntePend = null;
-        }
       }
       c += 2; if (polo && poloFase < 2) poloFase++;
       // polo: quando a carcela dos dois lados termina, as malhas da ribana que ficaram atras voltam para a frente (sem agulha de tras parada: W021)
@@ -1238,6 +1262,9 @@ const RAYNEN = (function () {
         const o = ud.o.slice(); o[COL_YARN] = yB;
         out.push({ c: ud.c, g, o, ina: null, lado: 'F', sh: 0, extra: true }); info.ultimaInteira = true; }
     }
+    // passadas pares para cada guia-fio (W002): o que ficou impar tece mais uma vez a sua ultima carreira
+    { const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y && r.lado !== 'T') cnt[y] = (cnt[y] || 0) + 1; });
+      Object.keys(cnt).forEach(y => { if (cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
     return { rows: out, info };
   }
 
@@ -1468,7 +1495,7 @@ const RAYNEN = (function () {
     for (let y = 0; y < h; y++) { const sy = hh > 0 ? y : h - 1 - y; px.set(src.subarray(sy * stride, sy * stride + w), y * w); }
     return { w, h, px };
   }
-  return { sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
+  return { moduloBindOff, sistemas, extraLado, fimForma, readBmp8, COL_LOOP, COL_YARN, BARRAS, load, check, build, zip, normalize, MOTIF_CODES, KNITS, get palette() { return T && T.palette; }, START };
 })();
 
 
@@ -1955,6 +1982,23 @@ function passosAuto(total, R, primeiro){
   else if(r) out.push(`2-${r}-1`);
   return out.join(', ');
 }
+// preenche o decote com as medidas da peça (tipo, largura e profundidade do decote)
+function decoteDasMedidas(){
+  const ag=Math.max(1,Math.round(+$('md-ag').value||0)), cr=Math.max(1,Math.round(+$('md-cr').value||0)), cm=x=>Math.max(0,+$(x).value||0);
+  if(!(+$('md-ag').value>0&&+$('md-cr').value>0)) return false;
+  const comp=cm('md-comp'), barra=cm('md-barra'), dt=$('md-dtipo').value||'redondo', dl=cm('md-dlarg'), dp=cm('md-dprof'); if(!(dl>0&&dp>0)) return false;
+  const corpo=Math.max(10,Math.round((comp-barra)*cr)), dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
+  $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
+  if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
+  else if(dt==='polo'){   // carcela reta no meio (25009F) e o decote da gola so no alto
+    let pb=Math.max(5,Math.round(1.5*ag)); if(pb%2===0) pb++; $('fd-carc').value=pb;
+    const neck=Math.round(Math.min(7,dp*.5)*cr); $('fd-colar').value=Math.max(10,dRows-neck);
+    $('fd-pas').value=passosAuto(Math.max(1,(dAg-pb)/2),Math.round(neck*.75),true);
+  }
+  else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
+  $('fd-bor').value=2;
+  return corpo;
+}
 function calcularMedidas(){
   const inteiro=id=>{const v=Math.max(1,Math.round(+$(id).value||6));$(id).value=v;return v;};
   const ag=inteiro('md-ag'), cr=inteiro('md-cr'), cm=x=>Math.max(0,+$(x).value||0);
@@ -1968,20 +2012,8 @@ function calcularMedidas(){
   const cavaRows=Math.round(cava*cr), cavaAg=Math.round(cent*ag);
   $('fc-on').checked=cava>0&&cavaAg>0;
   if($('fc-on').checked){ $('fc-ini').value=Math.max(0,corpo-cavaRows); $('fc-pas').value=passosAuto(cavaAg,Math.round(cavaRows*.45),true); $('fc-bor').value=2; }
-  // decote
-  $('fd-on').checked=!!dt&&dl>0&&dp>0;
-  if($('fd-on').checked){
-    const dRows=Math.round(dp*cr), dAg=Math.round(dl*ag);
-    $('fd-tipo').value=dt; $('fd-ini').value=Math.max(0,corpo-dRows);
-    if(dt==='redondo'){ let meio=Math.round(dAg*.4); if(meio<2) meio=2; $('fd-meio').value=meio; $('fd-pas').value=passosAuto((dAg-meio)/2,Math.round(dRows*.7),true); }
-    else if(dt==='polo'){   // carcela reta no meio (25009F) e o decote da gola so no alto
-      let pb=Math.max(5,Math.round(1.5*ag)); if(pb%2===0) pb++; $('fd-carc').value=pb;
-      const neck=Math.round(Math.min(7,dp*.5)*cr); $('fd-colar').value=Math.max(10,dRows-neck);
-      $('fd-pas').value=passosAuto(Math.max(1,(dAg-pb)/2),Math.round(neck*.75),true);
-    }
-    else $('fd-pas').value=passosAuto(dAg/2,Math.max(2,dRows-Math.round(2*cr)),false);
-    $('fd-bor').value=2;
-  }
+  // decote: só quando "Fazer decote" está marcado (sem decote o pano segue liso acima da cava)
+  if($('fd-on').checked) decoteDasMedidas();
   // acinturado
   $('ct-on').checked=cint>0&&cint<larg&&hc>2;
   if($('ct-on').checked){
@@ -2003,6 +2035,9 @@ function calcularMedidas(){
   $('md-st').textContent=`Pronto: ${W} agulhas × ${sp2.carreiras} carreiras de corpo + barra de ${rep} voltas${$('fc-on').checked?`; cava ${$('fc-pas').value}`:''}${$('fd-on').checked?`; decote ${$('fd-pas').value}`:''}.`;
 }
 $('md-calc').addEventListener('click',calcularMedidas);
+// marcou "Fazer decote": puxa o decote das medidas da peça e mantém o comprimento total
+$('fd-on').addEventListener('change',()=>{ if(!$('fd-on').checked) return; const corpo=decoteDasMedidas(); if(!corpo) return;
+  update(); const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma); $('fa-acima').value=Math.max(0,corpo-fim); update(); simular(); });
 let ajFoto=null;
 $('rel-aj-img').addEventListener('change',async()=>{ const f=$('rel-aj-img').files[0]; ajFoto=null; $('rel-aj-prev').hidden=true; if(!f) return;
   try{ const url=URL.createObjectURL(f); ajFoto=await imagemCabe(url,1100); URL.revokeObjectURL(url); $('rel-aj-prev').src=ajFoto; $('rel-aj-prev').hidden=false; }catch(e){ $('rel-aj-st').textContent=e.message; } });
@@ -2036,7 +2071,7 @@ function buscaManual(q){
 }
 const CONHECE_APP=`Como o app gera o programa Raynen (BMP 8-bit 1024x2048, de baixo para cima, + arquivo .opt com as linhas de função 201-226):
 - Início das carreiras 1-25 copiado do programa 25009F da fábrica: descarte (guia-fio 7), soltura, início tubular, barra de ribana com laço (economizador, linha 201 coluna 1 = número de voltas).
-- Corpo: guia-fios dos sistemas (padrão 4 e 5 alternando carreira a carreira); endereços de regulagem (linha 207 degree / 209 speed / 210 roll): #08 corpo, #23 transferência, #01-#07 início e barra.
+- Corpo: guia-fios dos sistemas (padrão 4 e 5 alternando carreira a carreira); endereços de regulagem (linha 207 degree / 209 speed / 210 roll): #08 corpo, #23 transferência, #09 band-off (correntinha), #01-#07 início e barra. Band-off: módulo do app (RAYNEN.moduloBindOff), uma carreira por agulha com 71 (fecha p/ direita) ou 61 (p/ esquerda), endereço #09 em todas as carreiras; no decote redondo o guia-fio do lado direito faz a carreira da divisão inteira (lado esquerdo, correntinha, lado direito) e o do lado esquerdo continua na esquerda.
 - Códigos: 1 malha frente, 2 malha trás, 4/5 carregado, 8/9/10 sem conexão, 16 agulha sem ponto (aumento), 17 soltar, 61-67/71-77/81-87/91-97 transferência com deslocamento (diminuições), 100 transferir p/ trás, 110 transferir p/ frente, 28/29 e 48/49 tranças.
 - Cava e decote por diminuição com transferência; no decote a peça divide e cada lado tece com um guia-fio, 2 carreiras de cada lado. Decote polo = carcela de 9 agulhas igual ao 25009F, com 3 carreiras de transferência e deslocamento (linha 208).
 - Cada guia-fio precisa terminar com passadas pares (senão o Raynen avisa W002). Largura ímpar evita W021 na última coluna.
@@ -2309,7 +2344,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31b', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
