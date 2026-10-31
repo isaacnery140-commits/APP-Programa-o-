@@ -1549,7 +1549,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29l', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31a', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;

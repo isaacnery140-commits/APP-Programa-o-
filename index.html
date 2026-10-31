@@ -807,8 +807,9 @@ const RAYNEN = (function () {
       }
       for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
       if (p.metodo === 'expandido') {
+        const cor = (c, i) => (n >= 2 && (i < 6 || i >= W - 6)) ? ((i + c) % 2) + 1 : colorAt(c, i);
         for (let c = 0; c < N; c++) for (let k = 1; k <= n; k++)
-          rows.push({ v: i => colorAt(c, i) === k ? 8 : ((X0 + i) % 2 === 0 ? 9 : 0), f: k, course: c });
+          rows.push({ v: i => cor(c, i) === k ? 8 : ((X0 + i) % 2 === 0 ? 9 : 0), f: k, course: c });
       } else {
         // compacto (como o 3Q): BMP = malha frente; camada INA = guia-fio de cada ponto; funcao 216 = cores/avesso
         for (let c = 0; c < N; c++) rows.push({ v: () => 1, ina: i => colorAt(c, i), jq: true, course: c, f: 0 });
@@ -1031,6 +1032,31 @@ const RAYNEN = (function () {
     }
     avisos.push({ tipo: 'nota', txt: 'Formas: as diminuições usam transferência com borda (códigos 61-67/71-77 na frente, 81-87/91-97 atrás). Confira na simulação do Raynen antes de produzir.' });
   }
+  // ---- protecao das laterais: as PROT agulhas de cada borda (seguindo a cava/decote, de baixo em cima) so tecem 1/2, sem desenho ----
+  let protOff = false;
+  const PROT = 6, CABO = new Set([28, 29, 38, 39, 48, 49, 58, 59]);
+  function protege(row, a, b, c) {
+    if (protOff || a < 0 || b < a || b - a + 1 < 2 * PROT + 2) return;
+    let mod = false; for (let i = a; i <= b; i++) if (row[i] >= 120 && row[i] <= 127) { mod = true; break; }
+    const faz = i => {
+      const v = row[i];
+      if (mod) { row[i] = ((i + c) % 2 === 0) ? 121 : 120; return; }
+      if (v === 1 || v === 2 || v === 3 || v === 16) return;
+      row[i] = v && (BACK.has(v) || PURL.has(v)) ? 2 : 1;
+    };
+    for (let i = a; i < a + PROT; i++) faz(i);
+    for (let i = b; i > b - PROT; i--) faz(i);
+    if (!mod) {   // tranca cortada pela protecao: a tranca inteira vira malha frente (cruzamento sem par da erro no Raynen)
+      for (let j = a + PROT; j <= b && CABO.has(row[j]); j++) row[j] = 1;
+      for (let j = b - PROT; j >= a && CABO.has(row[j]); j--) row[j] = 1;
+    }
+  }
+  function protegeIna(s, bI, W, c, a, b) {   // jacquard compacto: borda alternando cor 1 e cor 2
+    if (!bI || b - a + 1 < 2 * PROT + 2) return;
+    const y1 = yarnOf(s, 1), y2 = yarnOf(s, 2);
+    for (let i = a; i < a + PROT; i++) bI[c * W + i] = (i + c) % 2 === 0 ? y1 : y2;
+    for (let i = b; i > b - PROT; i--) bI[c * W + i] = (i + c) % 2 === 0 ? y1 : y2;
+  }
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
@@ -1069,6 +1095,7 @@ const RAYNEN = (function () {
     while (c < nb) {
       if (c < split) {
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
+        protege(row, L, R, c); if (jq[c]) protegeIna(s, bI, W, c, L, R);
         if (evA.has(c)) { const k = evA.get(c); [L] = aum(row, L, R, 'L', k, fa); [, R] = aum(row, L + k, R, 'R', k, fa); L = Math.max(0, L); info.aumento.push(c + 1); }
         else if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
         if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
@@ -1118,6 +1145,7 @@ const RAYNEN = (function () {
       }
       if (unido) {   // peca inteira de novo (uma carreira por vez)
         const row = bG.slice(c * W, c * W + W); for (let i = 0; i < W; i++) if (i < L || i > R) row[i] = 0;
+        protege(row, L, R, c);
         if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
         const o = bO.slice(c * WO, (c + 1) * WO); o[COL_YARN] = kU % 2 === 0 ? yB : yA; kU++;
         out.push({ c, g: row, o, ina: null, lado: 'F' }); c++; continue;
@@ -1130,6 +1158,7 @@ const RAYNEN = (function () {
         const [a, b] = lado === 'E' ? [lA, lB] : [rA, rB];
         if (lado === 'D' && desl) { const src = row; row = new Uint8Array(W); for (let i = a; i <= b; i++) row[i] = i - desl >= 0 ? src[i - desl] : 0; }   // a malha andou: mantem o ponto de cada agulha
         for (let i = 0; i < W; i++) if (i < a || i > b) row[i] = 0;
+        protege(row, a, b, cc); if (jq[cc]) protegeIna(s, bI, W, cc, a, b);
         if (polo) {   // carcela: 8/9 dos dois lados nas mesmas agulhas; depois 10,9,8,9... (ribana dupla) e fecha com 2
           const b0 = lado === 'E' ? bs : bs + desl;
           let v;
@@ -1244,6 +1273,7 @@ const RAYNEN = (function () {
     const PB = s0.forma ? carcelaAg(s0.forma.decote) : 0;   // polo: o lado direito anda PB agulhas para a direita
     const s = Object.assign({}, s0, { carreiras: N, largura: W0 + 2 * EX + PB });
     const body = bodyRows(s, N), sisB = sistemas(s);
+    protOff = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'expandido';
     const W = s.largura, isMod = s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'modulo';
     const B0 = s.base || null, S0 = B0 ? B0.rows : START;
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
@@ -1292,9 +1322,17 @@ const RAYNEN = (function () {
       } else o[COL_YARN] = yarnRow(s, br, sisB);
       bO.set(o, k0 * WO);
     });
+    if (!formaAtiva(s) && !(s.ponto.tipo === 'jacquard' && s.ponto.metodo === 'expandido')) for (let k = 0; k < nb; k++) {
+      const row = bG.subarray(k * W, k * W + W); let a = -1, b = -1; for (let i = 0; i < W; i++) if (row[i]) { if (a < 0) a = i; b = i; }
+      protege(row, a, b, k); if (body[k].jq) protegeIna(s, bI, W, k, a, b);
+    }
     // cava / decote (formas) ou o corpo como esta
     const fr = formaAtiva(s) ? shapeRows(s, bG, bO, nb, W, bI, body.map(b => !!b.jq)) : { rows: Array.from({ length: nb }, (_, k) => ({ c: k, g: bG.subarray(k * W, k * W + W), o: bO.subarray(k * WO, (k + 1) * WO) })), info: null };
     bodyOut = fr.rows;
+    // garantia: toda carreira que tece tem guia-fio (so a carreira de transferencia fica sem, como no 25009F)
+    { const ult = {}; bodyOut.forEach(rw => { const o = rw.o, tece = Array.prototype.some.call(rw.g, v => v && v !== 100 && v !== 110 && v !== 16 && v !== 17);
+        if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
+        if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
     bodyOut.forEach((rw, k) => {
       const y = S0 + k;
       grid.set(rw.g, y * WB + X0);
@@ -2257,7 +2295,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-29l', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-10-31a', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
