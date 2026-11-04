@@ -232,6 +232,8 @@ details.more>*:not(summary){margin-bottom:10px}
 @media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not(:disabled){filter:brightness(1.08)}}
 .caixa,.opts,details.more,details.medidas,details.hist,.faixas,.fx-onde{border-width:2px!important;border-style:solid!important}
 .caixa:not(.nome-box),.opts,details.more,details.hist,.faixas{border-color:var(--line-forte,#9aa39e)!important}
+.manga-opc{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:8px 0;font-size:13px}
+.manga-opc[hidden]{display:none}
 </style>
 
 <div class="wrap">
@@ -663,6 +665,13 @@ details.more>*:not(summary){margin-bottom:10px}
           <h2 id="h-prev">Prévia do desenho (programação Raynen Feng Fan)</h2>
           <div class="ptabs" role="tablist" aria-label="Parte da peça" id="ptabs"><button type="button" role="tab" data-p="frente" aria-selected="true">Frente</button><button type="button" role="tab" data-p="costas" aria-selected="false">Costas</button><button type="button" role="tab" data-p="manga" aria-selected="false">Manga</button><button type="button" role="tab" data-p="gola" aria-selected="false">Gola</button></div>
           <label for="pt-ponto" id="pt-ponto-box" hidden style="flex-direction:row;align-items:center;gap:8px;font-size:13px">Ponto desta parte<select id="pt-ponto"><option value="igual">Igual à frente (sugerido)</option><option value="meia">Meia malha</option><option value="links">Malha trás</option><option value="r11">Ribana 1x1</option><option value="r22">Ribana 2x2</option><option value="atual">Ponto escolhido agora na biblioteca</option></select></label>
+          <div class="manga-opc caixa" id="manga-opc" hidden>
+            <span class="tt">Como é a manga?</span>
+            <label for="mg-tipo">Manga<select id="mg-tipo"><option value="auto">Do modelo escolhido</option><option value="curta">Curta</option><option value="longa">Longa</option></select></label>
+            <label class="chk" for="mg-aum"><input id="mg-aum" type="checkbox" checked> Aumentada (abre do punho até a cava)</label>
+            <label class="chk" for="mg-cal"><input id="mg-cal" type="checkbox"> Com calado em cima (cabeça da manga)</label>
+            <span class="hint" id="mg-info"></span>
+          </div>
           <div class="zoom"><label for="f-zoom" style="flex-direction:row;align-items:center;gap:8px">Zoom<input id="f-zoom" type="range" min="1" max="12" value="6"></label></div>
         </div>
         <div class="bed" id="bed"><canvas id="cv" width="10" height="10" aria-label="Prévia da grade de agulhas"></canvas></div>
@@ -1566,7 +1575,7 @@ function fotoPrograma(){
   const v={}; campos().forEach(el=>{ v[el.id]=el.type==='checkbox'||el.type==='radio'?el.checked:el.value; });
   const s=readSpec(), nome=s.nome||'NOVO';
   return {nome, salvo:Date.now(), largura:s.largura, carreiras:s.carreiras, ponto:$('f-tipo').selectedOptions[0]?.textContent||'', modelo:typeof padMod!=='undefined'&&pecaAtual?MODELOS[padMod]?.nome||'':'',
-    campos:v, estado:{partePonto:PARTE_PONTO, parteAtual:PARTE_ATUAL, faixas:FAIXAS, fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
+    campos:v, estado:{mangaOpc:MANGA_OPC, partePonto:PARTE_PONTO, parteAtual:PARTE_ATUAL, faixas:FAIXAS, fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
 }
 const idHist=n=>String(n||'NOVO').toUpperCase().replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,120)||'NOVO';
 async function salvaHistorico(silencio){
@@ -1592,7 +1601,7 @@ function abrePrograma(h){
     if(e.motivo) { setMotif(e.motivo,e.motivoFios||e.motivo.map(()=>1)); motivoReal=!!e.motivoReal; motifNome=e.motifNome||''; }
     if(e.desenho){ desenho=e.desenho; if(typeof fillJPaint==='function') fillJPaint(); drawJq(); }
     if(e.sisN){ sisN=e.sisN; sisMostra(); }
-    FAIXAS=Array.isArray(e.faixas)?e.faixas:[]; renderFaixas(); PARTE_PONTO=e.partePonto||{costas:'igual',manga:'igual'}; PARTE_ATUAL=e.parteAtual||{}; PARTES_CACHE.k='';
+    FAIXAS=Array.isArray(e.faixas)?e.faixas:[]; renderFaixas(); PARTE_PONTO=e.partePonto||{costas:'igual',manga:'igual'}; PARTE_ATUAL=e.parteAtual||{}; MANGA_OPC=e.mangaOpc||{tipo:'auto',aum:true,cal:false}; PARTES_CACHE.k='';
     pecaAtual=e.pecaAtual||null; fotoModelo=e.fotoModelo||null; $('fi-foto').value='';
     mostraPadrao(); renderChips(); update(); golaInfo(); simular();
     st.textContent=`"${h.nome}" aberto. Mude o que precisar e baixe de novo.`;
@@ -1620,7 +1629,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-04d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-04e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2005,28 +2014,40 @@ function specCostas(s){
   }
   return c;
 }
+// manga: curta ou longa, com ou sem aumento, com ou sem calado (cabeca da manga). Padrao: aumentada, sem calado
+let MANGA_OPC={tipo:'auto',aum:true,cal:false};
 function specManga(s){
-  const ip=infoPeca(); if(!ip||ip.manga==='sem') return null;
-  const {ag,cr}=densPeca(), W0=impar(ip.punho*ag), Wm=Math.max(W0,impar(ip.mlarg*ag));
-  const corpo=Math.max(10,Math.round(Math.max(1,ip.mc-ip.mpunho)*cr)), cab=Math.max(6,Math.round(ip.cabeca*cr)), inc=Math.round((Wm-W0)/2);
+  const ip0=infoPeca(); if(!ip0) return null;
+  const tipo=MANGA_OPC.tipo==='auto'?ip0.manga:MANGA_OPC.tipo; if(tipo==='sem') return null;
+  const ip=Object.assign({},ip0);
+  if(tipo!==ip0.manga||ip0.manga==='sem'){   // trocou o tipo: medidas de referencia do tamanho
+    if(tipo==='curta'){ ip.mc=Math.min(ip0.manga==='curta'?ip0.mc:20,22); ip.punho=Math.round(ip0.mlarg*.9*2)/2; ip.mpunho=2; }
+    else { ip.mc=Math.max(40,(ip0.mangaCorpo||43)+2); ip.punho=Math.max(8,Math.round((ip0.braco||28)*.35*2)/2); ip.mpunho=5; }
+  }
+  const {ag,cr}=densPeca(), Wm=impar(ip.mlarg*ag), W0=MANGA_OPC.aum?Math.min(Wm,impar(ip.punho*ag)):Wm;
+  const corpo=Math.max(10,Math.round(Math.max(1,ip.mc-ip.mpunho)*cr)), cab=MANGA_OPC.cal?Math.max(6,Math.round(ip.cabeca*cr)):0, inc=Math.round((Wm-W0)/2);
   const c=pontoParte(JSON.parse(JSON.stringify(s)),'manga'); c.nome=(s.nome+'m').slice(0,40); c.largura=W0; c.carreiras=corpo+cab; c.faixas=[];
   c.ribanaRep=Math.max(1,Math.min(99,Math.round((ip.mpunho*cr-7)/4)));
-  const f=c.forma; f.decote.ativo=false; f.cintura&&(f.cintura.ativo=false); f.aumento2&&(f.aumento2.ativo=false); f.parcial&&(f.parcial.ativo=false);
+  const f=c.forma; f.decote.ativo=false; f.cintura&&(f.cintura.ativo=false); f.aumento2&&(f.aumento2.ativo=false); f.parcial&&(f.parcial.ativo=false); f.bandoff&&(f.bandoff.ativo=false);
   f.aumento={ativo:inc>0,inicio:Math.max(1,Math.round(2*cr)),passos:inc>0?passosAuto(inc,Math.max(4,corpo-Math.round(5*cr)),false):'2-1-1',borda:2};
-  f.cava={ativo:true,inicio:corpo+1,passos:passosAuto(Math.max(2,Math.round(Wm*.33)),Math.max(4,Math.round(cab*.8)),true),borda:2};
+  f.cava=cab?{ativo:true,inicio:corpo+1,passos:passosAuto(Math.max(2,Math.round(Wm*.33)),Math.max(4,Math.round(cab*.8)),true),borda:2}:{ativo:false,inicio:corpo,passos:'2-1-1',borda:2};
+  c.mangaInfo={tipo,aum:inc>0,cal:!!cab,comp:ip.mc};
   return c;
 }
 function partes(){
   if(!last) return {};
-  const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec(),PARTE_PONTO,PARTE_ATUAL]);
+  const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec(),PARTE_PONTO,PARTE_ATUAL,MANGA_OPC]);
   if(PARTES_CACHE.k===chave) return PARTES_CACHE.v;
   const v={}, tenta=sp=>{ try{ if(!sp) return null; const ck=RAYNEN.check(sp); return ck.erros.length?{erro:ck.erros[0]}:RAYNEN.build(sp); }catch(e){ return {erro:e.message}; } };
   v.costas=tenta(specCostas(s)); v.manga=tenta(specManga(s)); const gs=golaInfo(); v.gola=gs?tenta(gs):null;
   PARTES_CACHE={k:chave,v}; return v;
 }
 function PV(){ if(vistaParte==='frente'||!last) return last; const p=partes()[vistaParte]; return p&&!p.erro?p:null; }
-function marcaAbas(){ const p=last?partes():{}; document.querySelectorAll('#ptabs button').forEach(b=>{ const k=b.dataset.p; b.setAttribute('aria-selected',String(k===vistaParte)); b.disabled=k!=='frente'&&!(p[k]&&!p[k].erro); b.title=p[k]&&p[k].erro?p[k].erro:''; }); }
-function mostraPontoParte(){ const k=vistaParte, box=$('pt-ponto-box'); box.hidden=!(k==='costas'||k==='manga'); if(!box.hidden) $('pt-ponto').value=PARTE_PONTO[k]||'igual'; }
+function marcaAbas(){ const p=last?partes():{}; document.querySelectorAll('#ptabs button').forEach(b=>{ const k=b.dataset.p; b.setAttribute('aria-selected',String(k===vistaParte)); b.disabled=k!=='frente'&&!(k==='manga'&&last)&&!(p[k]&&!p[k].erro); b.title=p[k]&&p[k].erro?p[k].erro:''; }); }
+function mostraPontoParte(){ const k=vistaParte, box=$('pt-ponto-box'); box.hidden=!(k==='costas'||k==='manga'); if(!box.hidden) $('pt-ponto').value=PARTE_PONTO[k]||'igual';
+  $('manga-opc').hidden=k!=='manga'; if(k==='manga'){ $('mg-tipo').value=MANGA_OPC.tipo; $('mg-aum').checked=MANGA_OPC.aum; $('mg-cal').checked=MANGA_OPC.cal; infoManga(); } }
+function infoManga(){ const b=last?partes().manga:null; $('mg-info').textContent=b&&!b.erro?`${b.spec.nome}: manga ${b.spec.mangaInfo.tipo}, ${b.spec.largura} agulhas no punho, ${b.rows} carreiras${b.spec.mangaInfo.aum?', com aumento':', reta'}${b.spec.mangaInfo.cal?', com calado':', sem calado'}.`:(b&&b.erro?'Não deu para gerar: '+b.erro:''); }
+['mg-tipo','mg-aum','mg-cal'].forEach(id=>$(id).addEventListener('change',()=>{ MANGA_OPC={tipo:$('mg-tipo').value,aum:$('mg-aum').checked,cal:$('mg-cal').checked}; PARTES_CACHE.k=''; marcaAbas(); draw(); infoManga(); try{ renderFicha(); }catch(e){} }));
 $('ptabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-p]'); if(!b||b.disabled) return; vistaParte=b.dataset.p; marcaAbas(); mostraPontoParte(); draw(); });
 $('pt-ponto').addEventListener('change',()=>{ const k=vistaParte, v=$('pt-ponto').value; PARTE_PONTO[k]=v; if(v==='atual'&&last) PARTE_ATUAL[k]=JSON.parse(JSON.stringify(readSpec().ponto)); PARTES_CACHE.k=''; marcaAbas(); draw(); try{ renderFicha(); }catch(e){} });
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
