@@ -65,6 +65,16 @@ button:disabled{opacity:.5;cursor:default}
 .faixas li .bts button{padding:2px 7px;min-height:0}
 .faixas li.resto{background:transparent;border:1px dashed var(--line)}
 .faixas li small{display:block;color:var(--muted,#667);font-size:11px}
+.caixa{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel)}
+.nome-box{border-color:var(--accent);border-width:2px}
+.opts{border:1px solid var(--line)!important;border-radius:10px;padding:12px 14px!important;background:var(--panel)}
+details.more{border:1px solid var(--line)!important;border-radius:10px;padding:10px 14px!important;background:var(--panel)}
+.ptabs{display:flex;gap:4px;flex-wrap:wrap}
+.ptabs button{padding:5px 12px;min-height:0;border-radius:999px;background:transparent;color:var(--accent);border:1px solid var(--accent);font-weight:600}
+.ptabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.ptabs button:disabled{opacity:.4;cursor:default}
+.pad-t input{width:70px;padding:3px 6px;text-align:right}
+.aviso-sis{font-size:12.5px;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:6px 10px}
 .obrig{border-color:var(--err)!important;box-shadow:0 0 0 2px var(--err-bg)}
 .dens-av{color:var(--err);font-size:13px;font-weight:600;margin:4px 0 0}
 .msg.warn{background:var(--warn-bg);color:var(--warn)}
@@ -232,6 +242,7 @@ details.more>*:not(summary){margin-bottom:10px}
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       <section aria-labelledby="h-novo">
         <h2 id="h-novo">Novo programa</h2>
+        <label for="f-nome" class="caixa nome-box"><span class="lt tt">Nome do programa</span><small class="dica">obrigatório · é o nome do arquivo no Raynen e o que sai na ficha</small><input id="f-nome" value="" placeholder="obrigatório — ex.: 26001" autocomplete="off" required></label>
         <details class="hist" id="hist-box">
           <summary><span class="tt">Histórico de programas</span> <span class="hint" id="hist-count">— abra um programa feito antes, sem preencher tudo de novo</span></summary>
           <div class="hist-bar"><label for="hist-busca" class="sr">Buscar pelo nome</label><input id="hist-busca" type="search" placeholder="Buscar pelo nome do programa" autocomplete="off"></div>
@@ -249,7 +260,7 @@ details.more>*:not(summary){margin-bottom:10px}
         </div>
         <details class="medidas" id="pad-box">
           <summary><span class="tt" id="pad-tt">Medidas padrões (tricô)</span> <span class="hint" id="pad-sub">— clique para abrir e usar o preenchimento rápido</span>
-            <span class="pad-menu"><button type="button" class="dots" id="pad-dots" aria-haspopup="menu" aria-expanded="false" aria-label="Mais opções" title="Mais opções">⋮</button>
+            <span class="pad-menu" hidden><button type="button" class="dots" id="pad-dots" aria-haspopup="menu" aria-expanded="false" aria-label="Mais opções" title="Mais opções">⋮</button>
               <span class="pad-pop" id="pad-pop" role="menu" hidden>
                 <button type="button" role="menuitemradio" data-v="padrao" aria-checked="true">Medidas padrões (tricô)</button>
                 <button type="button" role="menuitemradio" data-v="molde" aria-checked="false">Medidas do meu molde</button>
@@ -270,7 +281,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <div class="actions">
             <label style="flex-direction:row;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="pad-cint" style="width:auto;flex:none"> Acinturada (usa a cintura)</label>
             <button type="button" id="pad-usar">Preencher rápido</button>
-            <button type="button" class="ghost" id="pad-copiar">Copiar para o meu molde</button><span class="status hint" id="pad-st"></span>
+            <button type="button" class="ghost" id="pad-copiar" hidden>Copiar para o meu molde</button><span class="status hint" id="pad-st"></span>
           </div>
           <p class="hint">Corpo: busto, cintura e quadril pela tabela brasileira usada no varejo (PP a XG); ombro a ombro, cava, braço e manga pela tabela internacional de tricô do Craft Yarn Council (PP≈XS, P≈S, M≈M, G≈L, GG≈XL, XG≈2XL). Masculino e infantil (por idade, 2 a 14 anos) seguem as mesmas tabelas. Cada modelo muda comprimento, folga, cava, decote, gola e manga. <b>Preencher rápido</b> leva tudo para as Medidas da peça e a gola, menos agulhas e passadas por cm, que ficam travadas para você preencher à mão. Confira sempre com a sua amostra e o seu molde.</p>
           </div>
@@ -339,12 +350,11 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
           <div class="actions"><button type="button" id="md-calc">Calcular tudo pelas medidas</button><span class="status hint" id="md-st"></span></div>
         </details>
-        <label for="f-nome"><span class="lt tt">Nome do programa</span><input id="f-nome" value="AMOSTRA" autocomplete="off"></label>
-        <div class="row">
+        <div class="row caixa">
           <label for="f-larg"><span class="lt tt">Largura (agulhas)</span><input id="f-larg" type="number" min="10" max="1000" value="51"></label>
           <label for="f-carr"><span class="lt tt">Comprimento (carreiras)</span><input id="f-carr" type="number" min="4" value="80"></label>
         </div>
-        <div class="row r21">
+        <div class="row r21 caixa">
           <label for="f-barra"><span class="lt tt">Tipo de barra</span><select id="f-barra">
             <option value="2x2">Ribana 2x2 (testada)</option>
             <option value="1x1">Ribana 1x1</option>
@@ -355,7 +365,7 @@ details.more>*:not(summary){margin-bottom:10px}
           </select></label>
           <label for="f-rib">Voltas da barra<input id="f-rib" type="number" min="1" max="99" value="12"></label>
         </div>
-        <label for="f-tipo"><span class="lt tt">Tipo de ponto</span><select id="f-tipo">
+        <label for="f-tipo" class="caixa"><span class="lt tt">Tipo de ponto</span><select id="f-tipo">
           <option value="meia">Meia malha</option>
           <option value="links">Malha trás (avesso)</option>
           <option value="quadriculado">Links quadriculado</option>
@@ -589,6 +599,7 @@ details.more>*:not(summary){margin-bottom:10px}
               <span class="sis-bt"><button type="button" class="ghost" id="sis-menos" aria-label="Tirar um sistema">− sistema</button><button type="button" class="ghost" id="sis-mais" aria-label="Pôr mais um sistema">+ sistema</button></span>
             </div>
             <span class="hint" id="sis-info" style="display:none"></span>
+            <span class="aviso-sis" role="note">ⓘ O terceiro sistema da máquina fica para transferir. Se quiser tecer com três sistemas, use “+ sistema”.</span>
           </div>
           <div class="row">
             <label for="f-guia">Guia-fio A<small class="dica">cor 1 do jacquard e pontos com listras</small><input id="f-guia" type="number" min="1" max="16" value="3"></label>
@@ -649,6 +660,7 @@ details.more>*:not(summary){margin-bottom:10px}
       <section aria-labelledby="h-prev">
         <div class="bedbar">
           <h2 id="h-prev">Prévia do desenho (programação Raynen Feng Fan)</h2>
+          <div class="ptabs" role="tablist" aria-label="Parte da peça" id="ptabs"><button type="button" role="tab" data-p="frente" aria-selected="true">Frente</button><button type="button" role="tab" data-p="costas" aria-selected="false">Costas</button><button type="button" role="tab" data-p="manga" aria-selected="false">Manga</button><button type="button" role="tab" data-p="gola" aria-selected="false">Gola</button></div>
           <div class="zoom"><label for="f-zoom" style="flex-direction:row;align-items:center;gap:8px">Zoom<input id="f-zoom" type="range" min="1" max="12" value="6"></label></div>
         </div>
         <div class="bed" id="bed"><canvas id="cv" width="10" height="10" aria-label="Prévia da grade de agulhas"></canvas></div>
@@ -1061,7 +1073,7 @@ const RAYNEN = (function () {
     if (fb.ativo && fb.onde === 'decote' && dc.ativo) { const sd = evs.decote.reduce((a, x) => a + x[1], 0), sa = evs.aum2.reduce((a, x) => a + x[1], 0); if (sa > sd + (dc.tipo === 'redondo' ? Math.floor((+dc.meio || 0) / 2) : 0)) erros.push(`Aumento na borda do decote: ${sa} agulhas por lado, mais do que o decote tirou (${sd}). Os dois lados iam se encontrar.`); }
     const ex = extraLado(s.forma); if (W + 2 * ex > 1000) erros.push(`Com os aumentos a peça chega a ${W + 2 * ex} agulhas (máximo 1000).`);
     if (ex) avisos.push({ tipo: 'nota', txt: `Aumentos: a peça começa com ${W} agulhas e chega a ${W + 2 * ex} (${ex} de cada lado). Aumento por transferência para fora, com borda; a agulha que fica vazia faz um furinho decorativo, como no aumento da ficha de processo.` });
-    if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
+    if (tot >= W + 2 * ex - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W + 2 * ex}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
       { const ss = sistemas(s); if (p.tipo !== 'jacquard' && !(ss && ss.length > 1) && s.fios[0] === (ss ? ss[0] : s.guiaFio)) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do guia-fio do corpo.'); }
@@ -2003,19 +2015,19 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(!chk.avisos.length){const m=document.createElement('div');m.className='msg ok';m.textContent='Sem conflitos com as regras testadas no Raynen.';msgs.appendChild(m);}
   draw(); renderFacts(); renderFicha(); simular();
 }
-function draw(){
+function draw(){ try{ marcaAbas(); }catch(e){} if(vistaParte!=='frente'&&!PV()) vistaParte='frente'; const L=PV();
   const cv=$('cv'), ctx=cv.getContext('2d');
-  if(!last){cv.width=10;cv.height=10;ctx.clearRect(0,0,10,10);$('legend').textContent='';return;}
-  const z=+$('f-zoom').value, W=last.width+2, H=last.rows, pal=RAYNEN.palette, used=new Set();
+  if(!L){cv.width=10;cv.height=10;ctx.clearRect(0,0,10,10);$('legend').textContent='';return;}
+  const z=+$('f-zoom').value, W=L.width+2, H=L.rows, pal=RAYNEN.palette, used=new Set();
   cv.width=W*z; cv.height=H*z;
   const img=ctx.createImageData(W,H);
-  const yarnIdx={}; [last.spec.guiaFio,...last.spec.fios].forEach((g,k)=>{ if(!(g in yarnIdx)) yarnIdx[g]=k; });
+  const yarnIdx={}; [L.spec.guiaFio,...L.spec.fios].forEach((g,k)=>{ if(!(g in yarnIdx)) yarnIdx[g]=k; });
   let inaUsed=new Set();
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){
-    const v=last.grid[y*1024+x], g=last.inaGrid?last.inaGrid[y*1024+x]:0;
+    const v=L.grid[y*1024+x], g=L.inaGrid?L.inaGrid[y*1024+x]:0;
     let c;
     if(g){ c=JCOL[yarnIdx[g]??0]; inaUsed.add(g); }
-    else if((v===120||v===121) && last.spec.ponto.tipo==='jacquard'){ c=JCOL[v-120]; used.add(v); }
+    else if((v===120||v===121) && L.spec.ponto.tipo==='jacquard'){ c=JCOL[v-120]; used.add(v); }
     else { used.add(v); c=pal[v]; }
     const i=((H-1-y)*W+x)*4;
     img.data[i]=parseInt(c.slice(1,3),16); img.data[i+1]=parseInt(c.slice(3,5),16); img.data[i+2]=parseInt(c.slice(5,7),16); img.data[i+3]=255;
@@ -2027,16 +2039,16 @@ function draw(){
   const lg=$('legend'); lg.textContent='';
   [...inaUsed].sort((a,b)=>a-b).forEach(g=>{const s=document.createElement('span');const sw=document.createElement('i');sw.className='sw';sw.style.background=JCOL[yarnIdx[g]??0];const c=document.createElement('b');c.className='code';c.textContent='INA '+g;s.append(sw,c,document.createTextNode(' guia-fio '+g+' (camada de cores)'));lg.appendChild(s);});
   [...used].filter(v=>v).sort((a,b)=>a-b).forEach(v=>{
-    const s=document.createElement('span'); const sw=document.createElement('i'); sw.className='sw'; sw.style.background=((v===120||v===121)&&last.spec.ponto.tipo==='jacquard')?JCOL[v-120]:pal[v];
+    const s=document.createElement('span'); const sw=document.createElement('i'); sw.className='sw'; sw.style.background=((v===120||v===121)&&L.spec.ponto.tipo==='jacquard')?JCOL[v-120]:pal[v];
     const c=document.createElement('b'); c.className='code'; c.textContent=v; const t=document.createTextNode(' '+(NOMES[v]||'código do modelo'));
     s.append(sw,c,t); lg.appendChild(s);
   });
 }
-$('cv').addEventListener('mousemove',e=>{
-  if(!last) return; const z=+$('f-zoom').value, r=$('cv').getBoundingClientRect();
-  const x=Math.floor((e.clientX-r.left)/z), yTop=Math.floor((e.clientY-r.top)/z), y=last.rows-1-yTop;
-  if(x<1||x>last.width||y<0) {$('readout').textContent=''; return;}
-  const v=last.grid[y*1024+x], fase=last.spec.base?(y<last.start?'base':'corpo'):y<14?'início':y<25?'ribana':'corpo', g=last.inaGrid?last.inaGrid[y*1024+x]:0;
+$('cv').addEventListener('mousemove',e=>{ const L=PV();
+  if(!L) return; const z=+$('f-zoom').value, r=$('cv').getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/z), yTop=Math.floor((e.clientY-r.top)/z), y=L.rows-1-yTop;
+  if(x<1||x>L.width||y<0) {$('readout').textContent=''; return;}
+  const v=L.grid[y*1024+x], fase=L.spec.base?(y<L.start?'base':'corpo'):y<14?'início':y<25?'ribana':'corpo', g=L.inaGrid?L.inaGrid[y*1024+x]:0;
   $('readout').textContent=`Carreira ${y+1} (${fase}) · agulha ${x} · código ${v}: ${NOMES[v]||'—'}`+(g?` · INA: guia-fio ${g}`:'');
 });
 function renderFacts(){
@@ -2330,9 +2342,10 @@ function fichaDados(){
   const ecoF=economizadores(o), ecoA=go?economizadores(go,'GOLA'):[];
   const cores=[1,2,3,4].map(k=>$('sm-c'+k).value);
   const guias=papeisGuias(o);
-  return {nome:s.nome, prog:$('fi-prog').value.trim(), maq:`Feng Fan · Raynen`, galga:$('f-maq').selectedOptions[0]?.textContent||'', fio:$('f-fio').selectedOptions[0]?.textContent||'',
+  const pt=partes(), med=b=>b&&!b.erro?`${b.spec.largura} ag. × ${b.rows} carr.`:'', arq=b=>b&&!b.erro?b.spec.nome:'';
+  return {nome:$('f-nome').value.trim()||s.nome, prog:$('fi-prog').value.trim(), maq:`Feng Fan ${$('f-maq').selectedOptions[0]?.textContent||''} · Raynen`, galga:$('f-maq').selectedOptions[0]?.textContent||'', fio:$('f-fio').selectedOptions[0]?.textContent||'',
     data:new Date().toLocaleDateString('pt-BR'), desc, modelo:[ponto,dc,gs?('gola '+gs.tipoGola):''].filter(Boolean).join(' · '),
-    programas:[{p:'F',n:'FRENTE',arq:s.nome,med:`${s.largura} ag. × ${o.rows} carr.`},{p:'C',n:'COSTA',arq:'',med:''},{p:'M',n:'MANGA',arq:'',med:''},{p:'G',n:'GOLA',arq:gs?gs.nome:'',med:go?`${go.width} ag. × ${go.rows} carr.`:''}],
+    programas:[{p:'F',n:'FRENTE',arq:s.nome,med:`${s.largura} ag. × ${o.rows} carr.`},{p:'C',n:'COSTA',arq:arq(pt.costas),med:med(pt.costas)},{p:'M',n:'MANGA',arq:arq(pt.manga),med:med(pt.manga)},{p:'G',n:'GOLA',arq:gs?gs.nome:'',med:go?`${go.width} ag. × ${go.rows} carr.`:''}],
     guias, usados, ecoF, ecoA, cores, sis:RAYNEN.sistemas(s), foto:fotoFicha()};
 }
 const FICHA_CSS=`.fx{font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;background:#fff;max-width:820px;margin:0 auto;padding:18px 22px;font-size:11px;line-height:1.2}
@@ -2473,7 +2486,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-10-31f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-04a', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2607,8 +2620,12 @@ const MODELOS={
  vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
  vlongo:   {nome:'Vestido longo', pubs:['fem'], desc:'até o tornozelo, marcado na cintura', comp:d=>meio(d.costas*3.3), folga:2.5, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4}
 };
-function pecaPadrao(t){
-  const d=PADROES[t], m=MODELOS[padMod]||MODELOS.blusa, inf=padPub==='inf';
+// medidas padroes editaveis: o que a pessoa muda na tabela fica guardado por publico + modelo + tamanho
+let PAD_ED={};
+const padChave=t=>`${padPub}|${padMod}|${t}`;
+function pecaPadrao(t){ const e=PAD_ED[padChave(t)]||{}, k=pecaPadraoBase(t,e.c||{}); return Object.assign(k,e.p||{}); }
+function pecaPadraoBase(t,ec){
+  const d=Object.assign({},PADROES[t],ec), m=MODELOS[padMod]||MODELOS.blusa, inf=padPub==='inf';
   const base=m.quadril?Math.max(d.busto,d.quad):d.busto;
   const larg=meio(base/2+m.folga), barra=m.barra?Math.min(m.barra,d.barra+1):d.barra, comp=meio(m.comp(d));
   const cava=meio(d.cava+2+(m.cavaAdd||0)), cent=Math.max(1.5,meio((larg-d.ombro)/2+(m.centAdd||0)));
@@ -2621,35 +2638,35 @@ function pecaPadrao(t){
   return {larg, comp, barra, cava, cent, dtipo, dl, dp, cint:meio(d.cint/2+2), hcint, gola:m.gola, galt, polo,
     manga:m.manga, mc, mlarg, punho, cabeca:meio(cava*.7), mpunho:barra};
 }
-function linhas(el,rows){ el.innerHTML=rows.filter(Boolean).map(([t,e,v,x])=>`<tr><td>${t}<small>${e}${x?' · '+x:''}</small></td><td>${typeof v==='number'?fmt(v):v}</td></tr>`).join(''); }
+function linhas(el,rows){ el.innerHTML=rows.filter(Boolean).map(([t,e,v,x,key])=>`<tr><td>${t}<small>${e}${x?' · '+x:''}</small></td><td>${key&&typeof v==='number'?`<input type="number" step="0.5" min="0" data-k="${key}" value="${v}" aria-label="${t}">`:typeof v==='number'?fmt(v):v}</td></tr>`).join(''); }
 function mostraPadrao(){
-  const d=PADROES[padSel], k=pecaPadrao(padSel), m=MODELOS[padMod], peito=padPub==='fem'?'Busto':'Peito';
+  const d=Object.assign({},PADROES[padSel],(PAD_ED[padChave(padSel)]||{}).c||{}), k=pecaPadrao(padSel), m=MODELOS[padMod], peito=padPub==='fem'?'Busto':'Peito';
   const ag=Math.max(1,Math.round(+$('md-ag').value||6)), cr=Math.max(1,Math.round(+$('md-cr').value||6)), A=v=>Math.round(v*ag)+' agulhas', C=v=>Math.round(v*cr)+' carreiras';
   [...$('pad-tams').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t===padSel));
   $('pad-desc').textContent=m.nome+': '+m.desc+'.';
   $('pad-cint').checked=!!m.cintura;
   linhas($('pad-corpo'),[
-    [peito,'volta na parte mais cheia do peito',d.busto],['Cintura','volta na parte mais fina',d.cint],['Quadril','volta na parte mais larga',d.quad],
-    ['Ombro a ombro','de uma ponta do ombro à outra, pelas costas',d.ombro],['Profundidade da cava','do ombro até a axila',d.cava],
-    ['Braço','volta na parte mais grossa',d.braco],['Manga','da axila até o pulso',d.manga],['Costas até a cintura','da nuca até a cintura',d.costas]]);
+    [peito,'volta na parte mais cheia do peito',d.busto,'','c.busto'],['Cintura','volta na parte mais fina',d.cint,'','c.cint'],['Quadril','volta na parte mais larga',d.quad,'','c.quad'],
+    ['Ombro a ombro','de uma ponta do ombro à outra, pelas costas',d.ombro,'','c.ombro'],['Profundidade da cava','do ombro até a axila',d.cava,'','c.cava'],
+    ['Braço','volta na parte mais grossa',d.braco,'','c.braco'],['Manga','da axila até o pulso',d.manga,'','c.manga'],['Costas até a cintura','da nuca até a cintura',d.costas,'','c.costas']]);
   linhas($('pad-peca'),[
-    ['Largura da frente',(m.quadril?'metade do quadril':'metade do '+peito.toLowerCase())+' + folga',k.larg,A(k.larg)],['Comprimento total','do ombro até o fim da barra',k.comp,C(k.comp)],['Altura da barra','ribana do começo',k.barra],
-    ['Altura da cava','do começo da cava até o ombro',k.cava],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent],
-    ['Decote','formato',k.dtipo==='polo'?'Polo (carcela)':k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl],['Profundidade do decote','do ombro até o fundo do decote',k.dp],
-    ['Cintura (se acinturada)','largura da frente na cintura',k.cint],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint]]);
+    ['Largura da frente',(m.quadril?'metade do quadril':'metade do '+peito.toLowerCase())+' + folga',k.larg,A(k.larg),'p.larg'],['Comprimento total','do ombro até o fim da barra',k.comp,C(k.comp),'p.comp'],['Altura da barra','ribana do começo',k.barra,'','p.barra'],
+    ['Altura da cava','do começo da cava até o ombro',k.cava,'','p.cava'],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent,'','p.cent'],
+    ['Decote','formato',k.dtipo==='polo'?'Polo (carcela)':k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl,'','p.dl'],['Profundidade do decote','do ombro até o fundo do decote',k.dp,'','p.dp'],
+    ['Cintura (se acinturada)','largura da frente na cintura',k.cint,'','p.cint'],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint,'','p.hcint']]);
   linhas($('pad-manga'),[
     k.manga==='sem'?['Manga','sem manga (regata): a cava leva acabamento','—']:null,
     k.manga!=='sem'?['Tipo de manga','',k.manga==='curta'?'Curta':'Longa']:null,
-    k.manga!=='sem'?['Comprimento da manga','da axila até o fim'+(k.manga==='longa'?' do punho':''),k.mc,C(k.mc)]:null,
-    k.manga!=='sem'?['Largura na cava','de um lado ao outro, na axila',k.mlarg,A(k.mlarg)]:null,
-    k.manga!=='sem'?['Largura na ponta',k.manga==='curta'?'boca da manga':'no punho',k.punho,A(k.punho)]:null,
-    k.manga==='longa'?['Altura do punho','ribana da ponta da manga',k.mpunho]:null,
-    k.manga!=='sem'?['Cabeça da manga','altura da parte que entra na cava',k.cabeca,C(k.cabeca)]:null,
+    k.manga!=='sem'?['Comprimento da manga','da axila até o fim'+(k.manga==='longa'?' do punho':''),k.mc,C(k.mc),'p.mc']:null,
+    k.manga!=='sem'?['Largura na cava','de um lado ao outro, na axila',k.mlarg,A(k.mlarg),'p.mlarg']:null,
+    k.manga!=='sem'?['Largura na ponta',k.manga==='curta'?'boca da manga':'no punho',k.punho,A(k.punho),'p.punho']:null,
+    k.manga==='longa'?['Altura do punho','ribana da ponta da manga',k.mpunho,'','p.mpunho']:null,
+    k.manga!=='sem'?['Cabeça da manga','altura da parte que entra na cava',k.cabeca,C(k.cabeca),'p.cabeca']:null,
     k.polo?['Gola','tira de ribana costurada no decote e na carcela','Polo']:null,
     k.polo?['Altura da gola polo','largura da tira (sem dobra)',k.polo.alt,C(k.polo.alt)]:null,
     k.polo?['Comprimento da gola polo','volta do decote + costas, de ponta a ponta',k.polo.comp,A(k.polo.comp)]:null,
     k.polo?null:['Gola','acabamento do decote',k.gola==='garrafinha'?'Garrafinha':k.gola==='careca'?(k.galt<=1?'Acabamento fino':'Careca'):(k.dtipo==='V'?'Ribana do V':'—')],
-    k.galt?['Altura da gola',k.gola==='garrafinha'?'com a dobra':'ribana pronta',k.galt,C(k.galt)]:null]);
+    k.galt?['Altura da gola',k.gola==='garrafinha'?'com a dobra':'ribana pronta',k.galt,C(k.galt),'p.galt']:null]);
 }
 function montaModelos(){
   const ks=Object.keys(MODELOS).filter(k=>MODELOS[k].pubs.includes(padPub));
@@ -2691,6 +2708,11 @@ $('pad-usar').addEventListener('click',()=>{
   aplicaMedidas(k,`${MODELOS[padMod].nome} ${ROT_PUB[padPub].toLowerCase()} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`);
   $('md-st').textContent+=` Modelo: ${MODELOS[padMod].nome}, ${nomeTam(padSel)}.`;
 });
+
+// tabela de medidas padroes: mudar um numero guarda a edicao e recalcula o resto
+['pad-corpo','pad-peca','pad-manga'].forEach(id=>$(id).addEventListener('change',e=>{ const inp=e.target.closest('input[data-k]'); if(!inp) return;
+  const [g,k]=inp.dataset.k.split('.'), ch=padChave(padSel), ed=PAD_ED[ch]=PAD_ED[ch]||{}; (ed[g]=ed[g]||{})[k]=Math.max(0,+inp.value||0);
+  if(g==='c') delete ed.p; mostraPadrao(); $('pad-st').textContent='Medida alterada. Clique em Preencher rápido para usar.'; }));
 // ---- medidas do seu molde
 const ML=['larg','comp','barra','cava','ombro','dtipo','dlarg','dprof','cint','hcint','gola','galt','mcomp','mlarg','mpunho'];
 function leMolde(){ const o={nome:$('ml-nome').value.trim()}; ML.forEach(k=>{ const el=$('ml-'+k); o[k]=el.tagName==='SELECT'?el.value:(el.value===''?'':+el.value); }); return o; }
@@ -2825,6 +2847,44 @@ $('bo-decote').addEventListener('click',()=>{ $('fd-on').checked=true; $('fd-on'
 $('bo-fim').addEventListener('click',()=>{ $('fbo-on').checked=true; $('fp-on').checked=false; $('bo-onde').hidden=true; update(); $('fbo-on').scrollIntoView({behavior:'smooth',block:'center'}); });
 $('fbo-on').addEventListener('change',()=>{ if($('fbo-on').checked&&$('fp-on').checked){ $('fp-on').checked=false; update(); } });
 $('fp-on').addEventListener('change',()=>{ if($('fp-on').checked&&$('fbo-on').checked){ $('fbo-on').checked=false; update(); } });
+
+// ---- partes da peca: frente (programa principal), costas, manga e gola, cada uma com o seu programa ----
+let vistaParte='frente', PARTES_CACHE={k:'',v:{}};
+const densPeca=()=>({ag:+$('md-ag').value>0?+$('md-ag').value:(+$('sm-ag').value||28)/10, cr:+$('md-cr').value>0?+$('md-cr').value:(+$('sm-cr').value||40)/10});
+const somaPassos=t=>String(t||'').split(',').reduce((a,q)=>{ const m=q.trim().match(/^(\d+)-(\d+)-(\d+)$/); return a+(m?+m[2]*+m[3]:0); },0);
+const impar=n=>{ n=Math.max(3,Math.round(n)); return n%2?n:n+1; };
+function specCostas(s){
+  const c=JSON.parse(JSON.stringify(s)); c.nome=(s.nome+'_COSTA').slice(0,40);
+  const d=c.forma&&c.forma.decote;
+  if(d&&d.ativo){
+    const {cr}=densPeca(), lado=somaPassos(d.passos), dAg=(d.tipo==='redondo'?(+d.meio||0):d.tipo==='polo'?(+d.carcela||9):0)+2*lado;
+    const R=Math.max(4,2*Math.round(2.5*cr/2)), k=Math.max(2,Math.round(dAg*.12)), meio=Math.max(2,dAg-2*k);
+    Object.assign(d,{tipo:'redondo',inicio:Math.max(2,c.carreiras-R+1),meio,passos:passosAuto(k,R-2,false)||'2-1-'+k,colar:0,fecha:false});
+  }
+  return c;
+}
+function specManga(s){
+  const ip=infoPeca(); if(!ip||ip.manga==='sem') return null;
+  const {ag,cr}=densPeca(), W0=impar(ip.punho*ag), Wm=Math.max(W0,impar(ip.mlarg*ag));
+  const corpo=Math.max(10,Math.round(Math.max(1,ip.mc-ip.mpunho)*cr)), cab=Math.max(6,Math.round(ip.cabeca*cr)), inc=Math.round((Wm-W0)/2);
+  const c=JSON.parse(JSON.stringify(s)); c.nome=(s.nome+'_MANGA').slice(0,40); c.largura=W0; c.carreiras=corpo+cab; c.faixas=[];
+  c.ribanaRep=Math.max(1,Math.min(99,Math.round((ip.mpunho*cr-7)/4)));
+  const f=c.forma; f.decote.ativo=false; f.cintura&&(f.cintura.ativo=false); f.aumento2&&(f.aumento2.ativo=false); f.parcial&&(f.parcial.ativo=false);
+  f.aumento={ativo:inc>0,inicio:Math.max(1,Math.round(2*cr)),passos:inc>0?passosAuto(inc,Math.max(4,corpo-Math.round(5*cr)),false):'2-1-1',borda:2};
+  f.cava={ativo:true,inicio:corpo+1,passos:passosAuto(Math.max(2,Math.round(Wm*.33)),Math.max(4,Math.round(cab*.8)),true),borda:2};
+  return c;
+}
+function partes(){
+  if(!last) return {};
+  const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec()]);
+  if(PARTES_CACHE.k===chave) return PARTES_CACHE.v;
+  const v={}, tenta=sp=>{ try{ if(!sp) return null; const ck=RAYNEN.check(sp); return ck.erros.length?{erro:ck.erros[0]}:RAYNEN.build(sp); }catch(e){ return {erro:e.message}; } };
+  v.costas=tenta(specCostas(s)); v.manga=tenta(specManga(s)); const gs=golaInfo(); v.gola=gs?tenta(gs):null;
+  PARTES_CACHE={k:chave,v}; return v;
+}
+function PV(){ if(vistaParte==='frente'||!last) return last; const p=partes()[vistaParte]; return p&&!p.erro?p:null; }
+function marcaAbas(){ const p=last?partes():{}; document.querySelectorAll('#ptabs button').forEach(b=>{ const k=b.dataset.p; b.setAttribute('aria-selected',String(k===vistaParte)); b.disabled=k!=='frente'&&!(p[k]&&!p[k].erro); b.title=p[k]&&p[k].erro?p[k].erro:''; }); }
+$('ptabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-p]'); if(!b||b.disabled) return; vistaParte=b.dataset.p; marcaAbas(); draw(); });
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
@@ -2834,6 +2894,9 @@ function densOk(quieto){
   if(falta.length&&!quieto){ $('med-box').open=true; $(falta[0]).scrollIntoView({behavior:'smooth',block:'center'}); $(falta[0]).focus({preventScroll:true}); }
   return !falta.length;
 }
+function nomeOk(){ const ok=!!$('f-nome').value.trim(); $('f-nome').classList.toggle('obrig',!ok); if(!ok){ $('f-nome').scrollIntoView({behavior:'smooth',block:'center'}); $('f-nome').focus({preventScroll:true}); } return ok; }
+$('f-nome').addEventListener('input',()=>{ if($('f-nome').value.trim()) $('f-nome').classList.remove('obrig'); });
+document.addEventListener('click',e=>{ const bn=e.target.closest('#btn-dl,#btn-hist,#btn-ficha,#aviso-baixa,#rel-baixa'); if(bn&&!nomeOk()){ e.preventDefault(); e.stopImmediatePropagation(); return; } },true);
 document.addEventListener('click',e=>{ const b=e.target.closest('#md-calc,#pad-usar,#btn-dl,#btn-hist,#btn-ficha,#sim-auth,#aviso-baixa,#rel-baixa'); if(b&&!densOk()){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
 $('md-dtipo').addEventListener('change',()=>{ if($('md-dtipo').value==='V'&&(+$('md-dprof').value||0)<12) $('md-dprof').value=20; if($('md-dtipo').value==='redondo'&&(+$('md-dprof').value||0)>12) $('md-dprof').value=8; });
 $('btn-dl').addEventListener('click',async()=>{
@@ -2843,7 +2906,7 @@ $('btn-dl').addEventListener('click',async()=>{
   const n=last.spec.nome, files=[{name:n+'.BMP',data:last.bmp},{name:n+'.opt',data:last.opt}];
   if(last.ina){ files.push({name:n+'.INA',data:last.ina},{name:n+'.JQD',data:last.jqd}); }
   files.push({name:'FICHA_'+n+'.html',data:new TextEncoder().encode(fichaDoc())});
-  const gs=golaInfo(); if(gs){ const gb=RAYNEN.build(gs); files.push({name:gs.nome+'.BMP',data:gb.bmp},{name:gs.nome+'.opt',data:gb.opt}); }
+  const pt=partes(); ['costas','manga','gola'].forEach(k=>{ const b=pt[k]; if(b&&!b.erro){ const nn=b.spec.nome; files.push({name:nn+'.BMP',data:b.bmp},{name:nn+'.opt',data:b.opt}); } });
   const data=RAYNEN.zip(files);
   $('dl-status').textContent='Preparando…';
   if(!downloads){ // fora do Claude (ex.: GitHub Pages): download comum do navegador
@@ -3831,7 +3894,8 @@ document.querySelectorAll('input[name=pfio]').forEach(r=>r.addEventListener('cha
 ['sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',renderChips));
 renderChips();
 $('sm-man').addEventListener('change',()=>simular());
-$('f-maq').addEventListener('change',()=>{ const [a,c]=$('f-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); });
+$('f-maq').addEventListener('change',()=>{ const [a,c]=$('f-maq').value.split(','); $('sm-ag').value=a; $('sm-cr').value=c; simular(); renderFicha(); });
+['f-fio','f-nome'].forEach(id=>$(id).addEventListener('change',()=>renderFicha()));
 $('f-fio').addEventListener('change',()=>simular());
 ['sm-ag','sm-cr','sm-tam','sm-enq','sm-c1','sm-c2','sm-c3','sm-c4'].forEach(id=>$(id).addEventListener('input',simular));
 

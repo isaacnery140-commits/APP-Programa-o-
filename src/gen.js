@@ -310,7 +310,7 @@ const RAYNEN = (function () {
     if (fb.ativo && fb.onde === 'decote' && dc.ativo) { const sd = evs.decote.reduce((a, x) => a + x[1], 0), sa = evs.aum2.reduce((a, x) => a + x[1], 0); if (sa > sd + (dc.tipo === 'redondo' ? Math.floor((+dc.meio || 0) / 2) : 0)) erros.push(`Aumento na borda do decote: ${sa} agulhas por lado, mais do que o decote tirou (${sd}). Os dois lados iam se encontrar.`); }
     const ex = extraLado(s.forma); if (W + 2 * ex > 1000) erros.push(`Com os aumentos a peça chega a ${W + 2 * ex} agulhas (máximo 1000).`);
     if (ex) avisos.push({ tipo: 'nota', txt: `Aumentos: a peça começa com ${W} agulhas e chega a ${W + 2 * ex} (${ex} de cada lado). Aumento por transferência para fora, com borda; a agulha que fica vazia faz um furinho decorativo, como no aumento da ficha de processo.` });
-    if (tot >= W - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W}: não sobra largura. Diminua os passos.`);
+    if (tot >= W + 2 * ex - 4) erros.push(`Cava e decote somam ${tot} agulhas de diminuição numa peça de ${W + 2 * ex}: não sobra largura. Diminua os passos.`);
     if (dc.ativo) {
       if (p.tipo === 'motivo' && Array.isArray(p.fios) && p.fios.some(f => f !== 1)) erros.push('Decote: o ponto usa mais de um guia-fio. Depois da divisão cada lado tece com um guia-fio (A na esquerda, B na direita), então use um ponto de um guia-fio só.');
       { const ss = sistemas(s); if (p.tipo !== 'jacquard' && !(ss && ss.length > 1) && s.fios[0] === (ss ? ss[0] : s.guiaFio)) erros.push('Decote: o lado direito tece com o guia-fio B. Coloque um guia-fio B diferente do guia-fio do corpo.'); }
