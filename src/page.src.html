@@ -54,7 +54,7 @@ button:disabled{opacity:.5;cursor:default}
 .msg.err{background:var(--err-bg);color:var(--err)}
 .cm-eq{display:block;color:var(--accent);font-size:11.5px;font-weight:600;margin-top:2px}
 .fx-onde{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;font-size:13px}
-.faixas{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.faixas{border:2px solid var(--line-forte,#9aa39e);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .faixas ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column-reverse;gap:6px}
 .faixas li{display:grid;grid-template-columns:auto 34px 1fr auto auto;align-items:center;gap:8px;font-size:13px;padding:6px 8px;border-radius:8px;background:var(--panel)}
 .faixas li canvas{width:34px;height:24px;image-rendering:pixelated;border-radius:4px}
@@ -64,10 +64,10 @@ button:disabled{opacity:.5;cursor:default}
 .faixas li .bts button{padding:2px 7px;min-height:0}
 .faixas li.resto{background:transparent;border:1px dashed var(--line)}
 .faixas li small{display:block;color:var(--muted,#667);font-size:11px}
-.caixa{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel)}
+.caixa{border:2px solid var(--line-forte,#9aa39e);border-radius:10px;padding:12px 14px;background:var(--panel)}
 .nome-box{border-color:var(--accent);border-width:2px}
-.opts{border:1px solid var(--line)!important;border-radius:10px;padding:12px 14px!important;background:var(--panel)}
-details.more{border:1px solid var(--line)!important;border-radius:10px;padding:10px 14px!important;background:var(--panel)}
+.opts{border:2px solid var(--line-forte,#9aa39e)!important;border-radius:10px;padding:12px 14px!important;background:var(--panel)}
+details.more{border:2px solid var(--line-forte,#9aa39e)!important;border-radius:10px;padding:10px 14px!important;background:var(--panel)}
 .ptabs{display:flex;gap:4px;flex-wrap:wrap}
 .ptabs button{padding:5px 12px;min-height:0;border-radius:999px;background:transparent;color:var(--accent);border:1px solid var(--accent);font-weight:600}
 .ptabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -230,6 +230,8 @@ details.more[open] summary{margin-bottom:10px}
 details.more>*:not(summary){margin-bottom:10px}
 
 @media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not(:disabled){filter:brightness(1.08)}}
+.caixa,.opts,details.more,details.medidas,details.hist,.faixas,.fx-onde{border-width:2px!important;border-style:solid!important}
+.caixa:not(.nome-box),.opts,details.more,details.hist,.faixas{border-color:var(--line-forte,#9aa39e)!important}
 </style>
 
 <div class="wrap">
@@ -249,7 +251,7 @@ details.more>*:not(summary){margin-bottom:10px}
           <div class="actions"><button type="button" id="hist-novo">＋ Gerar um novo programa</button></div>
           <span class="status hint" id="hist-st"></span>
         </details>
-        <div class="row">
+        <div class="row caixa">
           <label for="f-maq"><span class="lt tt">Finura da máquina</span><select id="f-maq">
             <option value="14,20">3,5G</option><option value="20,30">5G</option><option value="28,40" selected>7G</option>
             <option value="38,56">10G</option><option value="45,66">12G</option><option value="54,80">14G</option></select></label>
@@ -1618,7 +1620,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-04b', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-04c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
