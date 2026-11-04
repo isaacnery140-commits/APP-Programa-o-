@@ -2098,7 +2098,7 @@ function golaSpec(){
   let W=Math.round(per*ag/10); if(W%2===0) W++;
   const rows=Math.max(4,Math.round(alt*cr*1.15/10));           // ribana encolhe: um pouco mais de carreiras
   const corpo=Math.max(2,rows-10); const rib=$('gl-rib').value;
-  return {nome:(($('f-nome').value.trim()||'NOVO')+'_GOLA').replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,40), largura:Math.min(1000,W), carreiras:corpo+(corpo%2), barra:rib, ribanaRep:1,
+  return {nome:(($('f-nome').value.trim()||'NOVO')+'g').replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,40), largura:Math.min(1000,W), carreiras:corpo+(corpo%2), barra:rib, ribanaRep:1,
     guiaFio:parseInt($('f-guia').value,10)||3, fios:[parseInt($('f-gb').value,10)||5,parseInt($('f-gc').value,10)||4,parseInt($('f-gd').value,10)||6],
     ponto:{tipo:'motivo',nome:'Ribana '+rib,motivo:[rib==='2x2'?[1,1,2,2]:[1,2]],fios:[1]}, descarte:8, tipoGola:t, alturaCm:alt, perCm:per};
 }
@@ -2348,7 +2348,7 @@ function fichaDados(){
   const pt=partes(), med=b=>b&&!b.erro?`${b.spec.largura} ag. × ${b.rows} carr.`:'', arq=b=>b&&!b.erro?b.spec.nome:'';
   return {nome:$('f-nome').value.trim()||s.nome, prog:$('fi-prog').value.trim(), maq:`Feng Fan ${$('f-maq').selectedOptions[0]?.textContent||''} · Raynen`, galga:$('f-maq').selectedOptions[0]?.textContent||'', fio:$('f-fio').selectedOptions[0]?.textContent||'',
     data:new Date().toLocaleDateString('pt-BR'), desc, modelo:[ponto,dc,gs?('gola '+gs.tipoGola):''].filter(Boolean).join(' · '),
-    programas:[{p:'F',n:'FRENTE',arq:s.nome,med:`${s.largura} ag. × ${o.rows} carr.`},{p:'C',n:'COSTA',arq:arq(pt.costas),med:med(pt.costas)},{p:'M',n:'MANGA',arq:arq(pt.manga),med:med(pt.manga)},{p:'G',n:'GOLA',arq:gs?gs.nome:'',med:go?`${go.width} ag. × ${go.rows} carr.`:''}],
+    programas:[{p:'F',n:'FRENTE',arq:s.nome+'f',med:`${s.largura} ag. × ${o.rows} carr.`},{p:'C',n:'COSTA',arq:arq(pt.costas),med:med(pt.costas)},{p:'M',n:'MANGA',arq:arq(pt.manga),med:med(pt.manga)},{p:'G',n:'GOLA',arq:gs?gs.nome:'',med:go?`${go.width} ag. × ${go.rows} carr.`:''}],
     guias, usados, ecoF, ecoA, cores, sis:RAYNEN.sistemas(s), foto:fotoFicha()};
 }
 const FICHA_CSS=`.fx{font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;background:#fff;max-width:820px;margin:0 auto;padding:18px 22px;font-size:11px;line-height:1.2}
@@ -2489,7 +2489,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-04c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-04d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2865,7 +2865,7 @@ const densPeca=()=>({ag:+$('md-ag').value>0?+$('md-ag').value:(+$('sm-ag').value
 const somaPassos=t=>String(t||'').split(',').reduce((a,q)=>{ const m=q.trim().match(/^(\d+)-(\d+)-(\d+)$/); return a+(m?+m[2]*+m[3]:0); },0);
 const impar=n=>{ n=Math.max(3,Math.round(n)); return n%2?n:n+1; };
 function specCostas(s){
-  const c=pontoParte(JSON.parse(JSON.stringify(s)),'costas'); c.nome=(s.nome+'_COSTA').slice(0,40);
+  const c=pontoParte(JSON.parse(JSON.stringify(s)),'costas'); c.nome=(s.nome+'c').slice(0,40);
   const d=c.forma&&c.forma.decote;
   if(d&&d.ativo){
     const {cr}=densPeca(), lado=somaPassos(d.passos), dAg=(d.tipo==='redondo'?(+d.meio||0):d.tipo==='polo'?(+d.carcela||9):0)+2*lado;
@@ -2878,7 +2878,7 @@ function specManga(s){
   const ip=infoPeca(); if(!ip||ip.manga==='sem') return null;
   const {ag,cr}=densPeca(), W0=impar(ip.punho*ag), Wm=Math.max(W0,impar(ip.mlarg*ag));
   const corpo=Math.max(10,Math.round(Math.max(1,ip.mc-ip.mpunho)*cr)), cab=Math.max(6,Math.round(ip.cabeca*cr)), inc=Math.round((Wm-W0)/2);
-  const c=pontoParte(JSON.parse(JSON.stringify(s)),'manga'); c.nome=(s.nome+'_MANGA').slice(0,40); c.largura=W0; c.carreiras=corpo+cab; c.faixas=[];
+  const c=pontoParte(JSON.parse(JSON.stringify(s)),'manga'); c.nome=(s.nome+'m').slice(0,40); c.largura=W0; c.carreiras=corpo+cab; c.faixas=[];
   c.ribanaRep=Math.max(1,Math.min(99,Math.round((ip.mpunho*cr-7)/4)));
   const f=c.forma; f.decote.ativo=false; f.cintura&&(f.cintura.ativo=false); f.aumento2&&(f.aumento2.ativo=false); f.parcial&&(f.parcial.ativo=false);
   f.aumento={ativo:inc>0,inicio:Math.max(1,Math.round(2*cr)),passos:inc>0?passosAuto(inc,Math.max(4,corpo-Math.round(5*cr)),false):'2-1-1',borda:2};
@@ -2916,8 +2916,8 @@ $('btn-dl').addEventListener('click',async()=>{
   if(!last) return;
   salvaHistorico(true);
 
-  const n=last.spec.nome, files=[{name:n+'.BMP',data:last.bmp},{name:n+'.opt',data:last.opt}];
-  if(last.ina){ files.push({name:n+'.INA',data:last.ina},{name:n+'.JQD',data:last.jqd}); }
+  const n=last.spec.nome, nf=n+'f', files=[{name:nf+'.BMP',data:last.bmp},{name:nf+'.opt',data:last.opt}];
+  if(last.ina){ files.push({name:nf+'.INA',data:last.ina},{name:nf+'.JQD',data:last.jqd}); }
   files.push({name:'FICHA_'+n+'.html',data:new TextEncoder().encode(fichaDoc())});
   const pt=partes(); ['costas','manga','gola'].forEach(k=>{ const b=pt[k]; if(b&&!b.erro){ const nn=b.spec.nome; files.push({name:nn+'.BMP',data:b.bmp},{name:nn+'.opt',data:b.opt}); } });
   const data=RAYNEN.zip(files);
