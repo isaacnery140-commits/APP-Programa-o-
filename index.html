@@ -666,9 +666,19 @@ details.more>*:not(summary){margin-bottom:10px}
           <h2 id="h-prev">Prévia do desenho (programação Raynen Feng Fan)</h2>
           <div class="ptabs" role="tablist" aria-label="Parte da peça" id="ptabs"><button type="button" role="tab" data-p="frente" aria-selected="true">Frente</button><button type="button" role="tab" data-p="costas" aria-selected="false">Costas</button><button type="button" role="tab" data-p="manga" aria-selected="false">Manga</button><button type="button" role="tab" data-p="gola" aria-selected="false">Gola</button></div>
           <label for="pt-ponto" id="pt-ponto-box" hidden style="flex-direction:row;align-items:center;gap:8px;font-size:13px">Ponto desta parte<select id="pt-ponto"><option value="igual">Igual à frente (sugerido)</option><option value="meia">Meia malha</option><option value="links">Malha trás</option><option value="r11">Ribana 1x1</option><option value="r22">Ribana 2x2</option><option value="atual">Ponto escolhido agora na biblioteca</option></select></label>
+          <div class="manga-opc caixa" id="costas-opc" hidden>
+            <span class="tt">Como são as costas?</span>
+            <label for="cs-dec">Em cima<select id="cs-dec"><option value="reto">Pano reto da cava para cima (sem decote)</option><option value="raso">Decote raso de nuca (2,5 cm)</option><option value="igual">Mesmo decote da frente</option></select></label>
+            <span class="hint" id="cs-info"></span>
+          </div>
+          <div class="manga-opc caixa" id="gola-opc" hidden>
+            <span class="tt">Tem gola?</span>
+            <label for="go-tipo">Gola<select id="go-tipo"><option value="">Sem gola</option><option value="careca">Gola careca (ribana baixa)</option><option value="garrafinha">Gola garrafinha / gola alta</option></select></label>
+            <span class="hint" id="go-info"></span>
+          </div>
           <div class="manga-opc caixa" id="manga-opc" hidden>
             <span class="tt">Como é a manga?</span>
-            <label for="mg-tipo">Manga<select id="mg-tipo"><option value="auto">Do modelo escolhido</option><option value="curta">Curta</option><option value="longa">Longa</option></select></label>
+            <label for="mg-tipo">Manga<select id="mg-tipo"><option value="auto">Do modelo escolhido</option><option value="sem">Sem manga</option><option value="curta">Curta</option><option value="longa">Longa</option></select></label>
             <label class="chk" for="mg-aum"><input id="mg-aum" type="checkbox" checked> Aumentada (abre do punho até a cava)</label>
             <label class="chk" for="mg-cal"><input id="mg-cal" type="checkbox"> Com calado em cima (cabeça da manga)</label>
             <span class="hint" id="mg-info"></span>
@@ -2027,7 +2037,12 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(!chk.avisos.length){const m=document.createElement('div');m.className='msg ok';m.textContent='Sem conflitos com as regras testadas no Raynen.';msgs.appendChild(m);}
   draw(); renderFacts(); renderFicha(); simular();
 }
-function draw(){ try{ marcaAbas(); }catch(e){} if(vistaParte!=='frente'&&!PV()) vistaParte='frente'; const L=PV();
+function draw(){ try{ marcaAbas(); }catch(e){}
+  if(vistaParte!=='frente'&&!PV()){ if(!last){ vistaParte='frente'; } else {   // parte desligada (sem manga, sem gola...): previa vazia com aviso
+    const C=$('cv'), X=C.getContext('2d'); C.width=Math.max(320,last.width+2); C.height=120; X.fillStyle='#121615'; X.fillRect(0,0,C.width,C.height); X.fillStyle='#9aa39e'; X.font='14px system-ui,sans-serif'; X.textAlign='center';
+    const p=partes()[vistaParte]; X.fillText(p&&p.erro?'Não deu para gerar esta parte: '+p.erro:({manga:'Sem manga',gola:'Sem gola',costas:'Sem costas'}[vistaParte]||'Sem esta parte')+' — escolha acima se quiser',C.width/2,64);
+    $('legend').textContent=''; return; } }
+  const L=PV();
   const cv=$('cv'), ctx=cv.getContext('2d');
   if(!L){cv.width=10;cv.height=10;ctx.clearRect(0,0,10,10);$('legend').textContent='';return;}
   const z=+$('f-zoom').value, W=L.width+2, H=L.rows, pal=RAYNEN.palette, used=new Set();
@@ -2444,7 +2459,7 @@ function fotoPrograma(){
   const v={}; campos().forEach(el=>{ v[el.id]=el.type==='checkbox'||el.type==='radio'?el.checked:el.value; });
   const s=readSpec(), nome=s.nome||'NOVO';
   return {nome, salvo:Date.now(), largura:s.largura, carreiras:s.carreiras, ponto:$('f-tipo').selectedOptions[0]?.textContent||'', modelo:typeof padMod!=='undefined'&&pecaAtual?MODELOS[padMod]?.nome||'':'',
-    campos:v, estado:{mangaOpc:MANGA_OPC, partePonto:PARTE_PONTO, parteAtual:PARTE_ATUAL, faixas:FAIXAS, fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
+    campos:v, estado:{costasOpc:COSTAS_OPC, mangaOpc:MANGA_OPC, partePonto:PARTE_PONTO, parteAtual:PARTE_ATUAL, faixas:FAIXAS, fotoModelo, motivo, motivoFios, motivoReal, motifNome, desenho:s.ponto.tipo==='jacquard'?desenho:null, sisN, padPub, padSel, padMod, pecaAtual}};
 }
 const idHist=n=>String(n||'NOVO').toUpperCase().replace(/[^A-Za-z0-9_\-]/g,'_').slice(0,120)||'NOVO';
 async function salvaHistorico(silencio){
@@ -2470,7 +2485,7 @@ function abrePrograma(h){
     if(e.motivo) { setMotif(e.motivo,e.motivoFios||e.motivo.map(()=>1)); motivoReal=!!e.motivoReal; motifNome=e.motifNome||''; }
     if(e.desenho){ desenho=e.desenho; if(typeof fillJPaint==='function') fillJPaint(); drawJq(); }
     if(e.sisN){ sisN=e.sisN; sisMostra(); }
-    FAIXAS=Array.isArray(e.faixas)?e.faixas:[]; renderFaixas(); PARTE_PONTO=e.partePonto||{costas:'igual',manga:'igual'}; PARTE_ATUAL=e.parteAtual||{}; MANGA_OPC=e.mangaOpc||{tipo:'auto',aum:true,cal:false}; PARTES_CACHE.k='';
+    FAIXAS=Array.isArray(e.faixas)?e.faixas:[]; renderFaixas(); PARTE_PONTO=e.partePonto||{costas:'igual',manga:'igual'}; PARTE_ATUAL=e.parteAtual||{}; MANGA_OPC=e.mangaOpc||{tipo:'auto',aum:true,cal:false}; COSTAS_OPC=e.costasOpc||{decote:'reto'}; PARTES_CACHE.k='';
     pecaAtual=e.pecaAtual||null; fotoModelo=e.fotoModelo||null; $('fi-foto').value='';
     mostraPadrao(); renderChips(); update(); golaInfo(); simular();
     st.textContent=`"${h.nome}" aberto. Mude o que precisar e baixe de novo.`;
@@ -2498,7 +2513,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-04e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-09a', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2875,8 +2890,9 @@ const somaPassos=t=>String(t||'').split(',').reduce((a,q)=>{ const m=q.trim().ma
 const impar=n=>{ n=Math.max(3,Math.round(n)); return n%2?n:n+1; };
 function specCostas(s){
   const c=pontoParte(JSON.parse(JSON.stringify(s)),'costas'); c.nome=(s.nome+'c').slice(0,40);
-  const d=c.forma&&c.forma.decote;
-  if(d&&d.ativo){
+  const d=c.forma&&c.forma.decote, op=COSTAS_OPC.decote;
+  if(d&&op==='reto'){ d.ativo=false; }          // padrao: pano reto da cava para cima
+  else if(d&&d.ativo&&op==='raso'){
     const {cr}=densPeca(), lado=somaPassos(d.passos), dAg=(d.tipo==='redondo'?(+d.meio||0):d.tipo==='polo'?(+d.carcela||9):0)+2*lado;
     const R=Math.max(4,2*Math.round(2.5*cr/2)), k=Math.max(2,Math.round(dAg*.12)), meio=Math.max(2,dAg-2*k);
     Object.assign(d,{tipo:'redondo',inicio:Math.max(2,c.carreiras-R+1),meio,passos:passosAuto(k,R-2,false)||'2-1-'+k,colar:0,fecha:false});
@@ -2884,7 +2900,7 @@ function specCostas(s){
   return c;
 }
 // manga: curta ou longa, com ou sem aumento, com ou sem calado (cabeca da manga). Padrao: aumentada, sem calado
-let MANGA_OPC={tipo:'auto',aum:true,cal:false};
+let MANGA_OPC={tipo:'auto',aum:true,cal:false}, COSTAS_OPC={decote:'reto'};
 function specManga(s){
   const ip0=infoPeca(); if(!ip0) return null;
   const tipo=MANGA_OPC.tipo==='auto'?ip0.manga:MANGA_OPC.tipo; if(tipo==='sem') return null;
@@ -2905,18 +2921,25 @@ function specManga(s){
 }
 function partes(){
   if(!last) return {};
-  const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec(),PARTE_PONTO,PARTE_ATUAL,MANGA_OPC]);
+  const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec(),PARTE_PONTO,PARTE_ATUAL,MANGA_OPC,COSTAS_OPC]);
   if(PARTES_CACHE.k===chave) return PARTES_CACHE.v;
   const v={}, tenta=sp=>{ try{ if(!sp) return null; const ck=RAYNEN.check(sp); return ck.erros.length?{erro:ck.erros[0]}:RAYNEN.build(sp); }catch(e){ return {erro:e.message}; } };
   v.costas=tenta(specCostas(s)); v.manga=tenta(specManga(s)); const gs=golaInfo(); v.gola=gs?tenta(gs):null;
   PARTES_CACHE={k:chave,v}; return v;
 }
 function PV(){ if(vistaParte==='frente'||!last) return last; const p=partes()[vistaParte]; return p&&!p.erro?p:null; }
-function marcaAbas(){ const p=last?partes():{}; document.querySelectorAll('#ptabs button').forEach(b=>{ const k=b.dataset.p; b.setAttribute('aria-selected',String(k===vistaParte)); b.disabled=k!=='frente'&&!(k==='manga'&&last)&&!(p[k]&&!p[k].erro); b.title=p[k]&&p[k].erro?p[k].erro:''; }); }
+function marcaAbas(){ const p=last?partes():{}; document.querySelectorAll('#ptabs button').forEach(b=>{ const k=b.dataset.p; b.setAttribute('aria-selected',String(k===vistaParte)); b.disabled=k!=='frente'&&!((k==='manga'||k==='gola'||k==='costas')&&last)&&!(p[k]&&!p[k].erro); b.title=p[k]&&p[k].erro?p[k].erro:''; }); }
 function mostraPontoParte(){ const k=vistaParte, box=$('pt-ponto-box'); box.hidden=!(k==='costas'||k==='manga'); if(!box.hidden) $('pt-ponto').value=PARTE_PONTO[k]||'igual';
-  $('manga-opc').hidden=k!=='manga'; if(k==='manga'){ $('mg-tipo').value=MANGA_OPC.tipo; $('mg-aum').checked=MANGA_OPC.aum; $('mg-cal').checked=MANGA_OPC.cal; infoManga(); } }
+  $('manga-opc').hidden=k!=='manga'; $('costas-opc').hidden=k!=='costas'; $('gola-opc').hidden=k!=='gola';
+  if(k==='costas'){ $('cs-dec').value=COSTAS_OPC.decote; infoCostas(); } if(k==='gola'){ $('go-tipo').value=$('gl-tipo').value; infoGola(); }
+  if(k==='manga'){ $('mg-tipo').value=MANGA_OPC.tipo; $('mg-aum').checked=MANGA_OPC.aum; $('mg-cal').checked=MANGA_OPC.cal; infoManga(); } }
+
+function infoCostas(){ const b=last?partes().costas:null; $('cs-info').textContent=b&&!b.erro?`${b.spec.nome}: ${b.spec.largura} agulhas × ${b.rows} carreiras${b.spec.forma.decote.ativo?', com decote':', reto em cima'}.`:(b&&b.erro?'Não deu para gerar: '+b.erro:''); }
+function infoGola(){ const g=golaInfo(); $('go-info').textContent=g?`${g.nome}: ${g.largura} agulhas, ${g.alturaCm} cm.`:'Sem gola: nenhum programa de gola no .zip.'; }
+$('cs-dec').addEventListener('change',()=>{ COSTAS_OPC={decote:$('cs-dec').value}; PARTES_CACHE.k=''; marcaAbas(); draw(); infoCostas(); try{ renderFicha(); }catch(e){} });
+$('go-tipo').addEventListener('change',()=>{ $('gl-tipo').value=$('go-tipo').value; $('gl-tipo').dispatchEvent(new Event('change',{bubbles:true})); PARTES_CACHE.k=''; setTimeout(()=>{ marcaAbas(); draw(); infoGola(); try{ renderFicha(); }catch(e){} },50); });
 function infoManga(){ const b=last?partes().manga:null; $('mg-info').textContent=b&&!b.erro?`${b.spec.nome}: manga ${b.spec.mangaInfo.tipo}, ${b.spec.largura} agulhas no punho, ${b.rows} carreiras${b.spec.mangaInfo.aum?', com aumento':', reta'}${b.spec.mangaInfo.cal?', com calado':', sem calado'}.`:(b&&b.erro?'Não deu para gerar: '+b.erro:''); }
-['mg-tipo','mg-aum','mg-cal'].forEach(id=>$(id).addEventListener('change',()=>{ MANGA_OPC={tipo:$('mg-tipo').value,aum:$('mg-aum').checked,cal:$('mg-cal').checked}; PARTES_CACHE.k=''; marcaAbas(); draw(); infoManga(); try{ renderFicha(); }catch(e){} }));
+['mg-tipo','mg-aum','mg-cal'].forEach(id=>$(id).addEventListener('change',()=>{ MANGA_OPC={tipo:$('mg-tipo').value,aum:$('mg-aum').checked,cal:$('mg-cal').checked}; PARTES_CACHE.k=''; marcaAbas(); draw(); infoManga(); try{ renderFicha(); }catch(e){} try{ if(simAuth) simular(); }catch(e){} }));
 $('ptabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-p]'); if(!b||b.disabled) return; vistaParte=b.dataset.p; marcaAbas(); mostraPontoParte(); draw(); });
 $('pt-ponto').addEventListener('change',()=>{ const k=vistaParte, v=$('pt-ponto').value; PARTE_PONTO[k]=v; if(v==='atual'&&last) PARTE_ATUAL[k]=JSON.parse(JSON.stringify(readSpec().ponto)); PARTES_CACHE.k=''; marcaAbas(); draw(); try{ renderFicha(); }catch(e){} });
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
@@ -3431,6 +3454,7 @@ function pintaCabeca(D,Wc,Hc,cx,y0,s,C,rx,ry,base,pele){
 }
 // medidas da manga e da gola para a peca completa (do modelo escolhido nas medidas padroes)
 let pecaAtual=null, queixoCm=null;
+function infoPecaSim(){ const ip=infoPeca(); if(typeof MANGA_OPC!=='undefined'&&MANGA_OPC.tipo!=='auto') ip.manga=MANGA_OPC.tipo; return ip; }
 function infoPeca(){
   const k=pecaAtual||(typeof pecaPadrao==='function'?pecaPadrao(padSel):null);
   const d=typeof PADROES!=='undefined'?PADROES[padSel]:null;
@@ -3554,7 +3578,7 @@ function simular(){
   if(!last||!last.sim||!last.sim.cursos.length){ ctx.fillStyle='#5b665f'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem programa para simular.',Wc/2,Hc/2); $('sim-med').textContent=''; return; }
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
   const sim=last.sim, W=sim.cols, H=sim.cursos.length, wcm=W/ag*10, hcm=H/cr*10;
-  const pf=perfilManequim(busto), capa=$('sm-man').value, pessoa=capa.startsWith('pele'), pub=$('sm-pub').value, ip=infoPeca(), cores=hexRgb($('sm-c1').value);
+  const pf=perfilManequim(busto), capa=$('sm-man').value, pessoa=capa.startsWith('pele'), pub=$('sm-pub').value, ip=infoPecaSim(), cores=hexRgb($('sm-c1').value);
   const enq=$('sm-enq').value, perto=enq!=='inteiro';
   const topo=pessoa&&enq!=='detalhe'?Math.round(27*Math.max(.75,pf.e)):8;          // espaco para a cabeca
   const altV=enq==='detalhe'?30:perto?Math.max(30,Math.min(pf.fim,hcm)+6)+(topo-8):Math.max(pf.fim,hcm+6)+(pessoa?24:38)+(topo-8);
@@ -3640,7 +3664,7 @@ function simular(){
   }
   const dcp=last.spec&&last.spec.forma&&last.spec.forma.decote;
   if(dcp&&dcp.ativo&&dcp.tipo==='polo'){
-    const ab=aberturaDecote(), ip2=infoPeca();
+    const ab=aberturaDecote(), ip2=infoPecaSim();
     const yTop=Math.max(2,(last.spec.carreiras-(dcp.inicio-1))*10/cr), yC=Math.max(1.5,(last.spec.carreiras-((+dcp.colar||dcp.inicio)-1))*10/cr);
     if(yTop-yC>3) desenhaBotoes(ctx,cx,y0,s,yC+(yTop-yC)*.35,yC+(yTop-yC)*.75,$('sm-c1').value);
     desenhaGolaPolo(ctx,cx,y0,s,pf,$('sm-c1').value,{ry:yC+.3,carc:(+dcp.carcela||9)*10/ag/2},ip2.galt||7);
@@ -3761,7 +3785,7 @@ function preenche(src,P,manterMeio){ P=Math.max(2,P||8); const c=document.create
 function montar3D(){
   const v=iniciar3D(); if(!v) return false; limpa3D();
   const ag=Math.max(1,+$('sm-ag').value||28), cr=Math.max(1,+$('sm-cr').value||40), busto=+$('sm-tam').value||92;
-  const pf=perfilManequim(busto), capa=$('sm-man').value, pub=$('sm-pub').value, ip=infoPeca(), base=corCapa(capa).map(x=>x/255), enq=$('sm-enq').value;
+  const pf=perfilManequim(busto), capa=$('sm-man').value, pub=$('sm-pub').value, ip=infoPecaSim(), base=corCapa(capa).map(x=>x/255), enq=$('sm-enq').value;
   const ehPele=capa.startsWith('pele'), pele={cor:base,rough:ehPele?.5:(capa==='preto'?.25:.85)}, zf=.74;
   const sst=t=>{ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
   const bustZ=(x,y)=>pf.seio*2.4*Math.exp(-(((Math.abs(x)-pf.B*.5)**2)/(2*4.2**2)+((y-pf.by)**2)/(2*4.4**2)));
