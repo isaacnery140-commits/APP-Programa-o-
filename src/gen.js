@@ -718,7 +718,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W + (s.remonte ? 80 : 0);
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W + (s.remonte ? 120 : 0);
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -773,6 +773,18 @@ const RAYNEN = (function () {
         if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
         if (rw.lado === 'B') return;   // band-off: carreira de soltar fica sem fio de proposito
         if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
+    // com remonte: o guia-fio que tece a ultima carreira de cada lado (corpo; no decote, lado esquerdo e lado direito)
+    // tem que terminar o tecimento na DIREITA, para voltar tecendo no remonte (nunca volta vazio por cima das agulhas sem ponto)
+    if (s.remonte && !isMod) {
+      const tot = {}; for (let k = 0; k < S0; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + (opt[k * WO + COL_LOOP] || 1); }
+      bodyOut.forEach(rw => { const f = rw.o[COL_YARN]; if (f) tot[f] = (tot[f] || 0) + 1; });
+      const ult = {}; bodyOut.forEach((rw, k) => { if (rw.o[COL_YARN] && rw.lado !== 'B') ult[rw.lado || ''] = k; });
+      const extra = [];
+      Object.values(ult).forEach(k => { const rw = bodyOut[k], f = rw.o[COL_YARN];
+        const lisa = !(rw.o[32] || rw.o[28] || rw.o[29] || rw.o[COL_216]) && !Array.prototype.some.call(rw.g, v => v >= 100);
+        if (lisa && tot[f] % 2 === 0) { extra.push(Object.assign({}, rw)); tot[f]++; } });
+      extra.forEach(rw => bodyOut.push(rw));
+    }
     // ECONOMIZADOR AUTOMATICO: blocos de carreiras iguais que se repetem (corpo reto, acima do decote...) viram um bloco so
     // com o numero de voltas na coluna 1 do opt. O periodo sai do proprio ponto, entao a economia muda sozinha com o ponto.
     const inaDe = rw => rw.ina || bI.subarray(rw.c * W, rw.c * W + W);
@@ -836,14 +848,23 @@ const RAYNEN = (function () {
       // guia-fios do corpo e de que lado cada um esta (passadas desde o comeco do programa: impar = direita)
       const tot = {}; for (let k = 0; k < y; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + (opt[k * WO + COL_LOOP] || 1); }
       const corpo = [...new Set(bodyOut.map(r => r.o[COL_YARN]).filter(f => f && f !== sep))];
-      // 1) quem esta na direita: 1 carreira 8/9 e volta para a esquerda
-      // 2) bloco com economizador: 2 carreiras 8/9 por guia-fio (vai e volta), repetido N vezes (coluna 1 do opt = voltas)
+      // 1) guia-fio do corpo que terminou na direita (ex.: lado direito do decote V) volta TECENDO 1 carreira 8/9
+      //    (nunca volta vazio, sem tecer); quem ja esta na esquerda fica parado
+      // 2) o guia-fio de separacao (7) faz o remonte com mais passadas: 2 blocos de 4 carreiras 8/9 com economizador
+      //    (como no 25009F: voltas-1 e voltas), sempre terminando do lado em que comecou o programa
       const dir = corpo.filter(f => tot[f] % 2), eco = Math.max(0, Math.min(99, Math.round(+s.remonteEco || 0)));
-      let t = 0; const linha = (f, voltas) => { grid.fill(0, y * WB, y * WB + WB); for (let i = a; i <= b; i++) grid[y * WB + i] = (i + t) % 2 ? 9 : 8; t++;
+      // area de cada guia-fio do corpo = a da ultima carreira que ele teceu (no decote V cada lado volta so pelo seu lado)
+      const area = {}; bodyOut.forEach(rw => { const f = rw.o[COL_YARN]; if (!f || rw.lado === 'B') return; let p = -1, q = -1; for (let i = 0; i < rw.g.length; i++) if (rw.g[i]) { if (p < 0) p = i; q = i; } if (p >= 0) area[f] = [Math.max(a, X0 + p), Math.min(b, X0 + q)]; });
+      let t = 0; const linha = (f, voltas, za, zb) => { if (za === undefined) { za = a; zb = b; } grid.fill(0, y * WB, y * WB + WB); for (let i = za; i <= zb; i++) grid[y * WB + i] = (i + t) % 2 ? 9 : 8; t++;
         opt.copyWithin(y * WO, r0 * WO, r0 * WO + WO); opt[y * WO + COL_YARN] = f; opt[y * WO + COL_END] = 0; opt[y * WO + COL_LOOP] = voltas > 1 ? voltas : 0;
         END_TECE.forEach(k => { opt[y * WO + k] = 16; });   // endereco #16 (FINAL REMONTE): stitch, roller e speed do remonte
-        passes[f] = (passes[f] || 0) + 1; y++; NR++; };
-      if (a >= 0) { dir.forEach(f => linha(f, 0)); corpo.forEach(f => { linha(f, eco); linha(f, eco); }); }
+        passes[f] = (passes[f] || 0) + (voltas > 1 ? voltas : 1); y++; NR++; };
+      if (a >= 0) {
+        dir.forEach(f => { const z = area[f] && area[f][0] <= area[f][1] ? area[f] : [a, b]; linha(f, 0, z[0], z[1]); });
+        if ((tot[sep] || 0) % 2) linha(sep, 0);   // separacao na direita: primeiro volta tecendo
+        const v1 = Math.max(eco - 1, 0), bloco = v => { for (let j = 0; j < 4; j++) linha(sep, v); };
+        if (eco >= 3) { bloco(v1); bloco(eco); } else if (eco === 2) { bloco(2); bloco(0); } else { bloco(0); bloco(0); }
+      }
       if (NR) { opt[fimAnt * WO + COL_END] = 0; opt[(y - 1) * WO + COL_END] = 1; }
     }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
