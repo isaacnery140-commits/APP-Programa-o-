@@ -242,6 +242,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
 .chips-esc{display:flex;flex-wrap:wrap;gap:6px}
 .chips-esc button{border:2px solid var(--line-forte,#9aa39e);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;min-height:40px;cursor:pointer}
 .chips-esc button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.cava-box,.cl-box{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.cava-box[hidden],.cl-box[hidden]{display:none}
 </style>
 
 <div class="wrap">
@@ -418,6 +420,18 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <div class="fx-onde" id="bo-onde" hidden><span><b>Band-off (correntinha)</b>: onde usar? Uma carreira por agulha, endereço #09 (stitch, roller e speed) automático e na ficha.</span><span class="fx-bt"><button type="button" class="ghost" id="bo-decote">No fundo do decote redondo</button> <button type="button" class="ghost" id="bo-fim">No fim da peça</button></span></div>
             <div class="fx-onde" id="fx-onde"><span id="fx-sel">Ponto escolhido: —</span><span class="fx-bt"><button type="button" class="ghost" id="fx-add">＋ Colocar numa faixa da peça</button></span></div>
           </div>
+          <div class="caixa cl-box" id="cl-box" hidden>
+            <span class="lt tt">Onde o desenho entra</span>
+            <div class="row">
+              <label for="cl-modo">Colocar<select id="cl-modo"><option value="todo">Peça toda (repete o desenho)</option><option value="centro">Uma vez, no centro</option><option value="colunas">Colunas (escolher quantas)</option></select></label>
+              <label for="cl-n" id="cl-n-l">Quantas colunas<input id="cl-n" type="number" min="1" max="40" value="3"></label>
+              <label for="cl-esp" id="cl-esp-l">Espaço entre colunas (agulhas)<input id="cl-esp" type="number" min="0" max="200" value="10"></label>
+              <label for="cl-fundo" id="cl-fundo-l">Fundo em volta<select id="cl-fundo"><option value="1">Meia malha (frente)</option><option value="2">Malha trás</option></select></label>
+              <label for="cl-desl" id="cl-desl-l">Mover p/ o lado (agulhas)<small class="dica">− esquerda · + direita</small><input id="cl-desl" type="number" value="0"></label>
+              <label for="cl-de" id="cl-de-l">Da carreira<input id="cl-de" type="number" min="1" value="1"></label>
+              <label for="cl-ate" id="cl-ate-l">Até a carreira<small class="dica">0 = até em cima</small><input id="cl-ate" type="number" min="0" value="0"></label>
+            </div>
+          </div>
           <div class="faixas" id="faixas" hidden>
             <span class="tt">Pontos da peça (de baixo para cima)</span>
             <ol id="fx-list"></ol>
@@ -511,11 +525,21 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <label for="fe-pas">Passos do aumento<input id="fe-pas" value="8-1-6" autocomplete="off"></label>
             <label for="fe-bor">Borda (agulhas que andam)<input id="fe-bor" type="number" min="1" max="7" value="2"></label>
           </div>
+          <div class="caixa cava-box">
+          <span class="lt tt">Cava</span>
           <label class="chk" for="fc-on"><input id="fc-on" type="checkbox"> Fazer cava (nos dois lados)</label>
-          <div class="row" id="fc-box" hidden>
+          <div id="fc-box" hidden>
+          <div class="row">
             <label for="fc-ini">Carreiras retas abaixo da cava<input id="fc-ini" type="number" min="0" value="59"></label>
             <label for="fc-pas">Passos<input id="fc-pas" value="2-3-1, 2-2-2, 2-1-4" autocomplete="off"></label>
             <label for="fc-bor">Borda (agulhas que andam)<input id="fc-bor" type="number" min="1" max="7" value="2"></label>
+          </div>
+          <div class="row">
+            <label for="fc-var">Variador máximo<small class="dica">quantas agulhas a malha anda numa transferência (máx. 4)</small><input id="fc-var" type="number" min="1" max="4" value="4"></label>
+            <label for="fc-exc">Se a cava fechar mais que o variador<select id="fc-exc"><option value="dividir">Dividir: até 4 agulhas por vez, o resto nas carreiras seguintes</option><option value="bindoff">Band-off: fecha essas agulhas com correntinha (endereço #09)</option></select></label>
+          </div>
+          <p class="hint" id="fc-aviso" hidden></p>
+          </div>
           </div>
           <label class="chk" for="fd-on"><input id="fd-on" type="checkbox"> Fazer decote</label>
           <div id="fd-box" hidden>
@@ -837,7 +861,7 @@ const RAYNEN = (function () {
     });
     const f = n.forma || {};
     n.forma = {
-      cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
+      cava: Object.assign({ maxVar: 4, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
@@ -889,7 +913,7 @@ const RAYNEN = (function () {
       }
       for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
       if (p.metodo === 'expandido') {
-        const cor = (c, i) => (n >= 2 && (i < 6 || i >= W - 6)) ? ((i + c) % 2) + 1 : colorAt(c, i);
+        const cor = (c, i) => (n >= 2 && (i < 8 || i >= W - 8)) ? ((i + c) % 2) + 1 : colorAt(c, i);
         for (let c = 0; c < N; c++) for (let k = 1; k <= n; k++)
           rows.push({ v: i => cor(c, i) === k ? 8 : ((X0 + i) % 2 === 0 ? 9 : 0), f: k, course: c });
       } else {
@@ -908,7 +932,14 @@ const RAYNEN = (function () {
       let v;
       if (p.tipo === 'links') v = () => 2;
       else if (p.tipo === 'quadriculado') v = i => ((Math.floor(i / p.bx) + Math.floor(r / p.by)) % 2 === 0) ? 1 : 2;
-      else if (m) { const row = m[r % m.length]; v = i => row[i % row.length]; }
+      else if (m) { const row = m[r % m.length], cl = p.colocar || {};
+        const ab = cl.modo && cl.modo !== 'todo' ? { de: Math.max(0, (+cl.de || 1) - 1), ate: +cl.ate > 0 ? +cl.ate : Infinity } : null;
+        if (!ab) v = i => row[i % row.length];
+        else {   // desenho so em colunas (centralizado = 1 coluna); fora delas, fundo liso
+          const w = row.length, n = cl.modo === 'centro' ? 1 : Math.max(1, Math.round(+cl.n || 1)), esp = Math.max(0, Math.round(+cl.esp || 0)), fundo = +cl.fundo === 2 ? 2 : 1;
+          const tot = n * w + (n - 1) * esp, x0 = Math.floor(((+s.largura || 0) - tot) / 2) + (+cl.desloca || 0), dentro = r >= ab.de && r < ab.ate;
+          v = (i, Wt) => { if (!dentro) return fundo; const ini = Wt ? Math.floor((Wt - tot) / 2) + (+cl.desloca || 0) : x0, d = i - ini; if (d < 0 || d >= tot) return fundo; const q = d % (w + esp); return q < w ? row[q] : fundo; };
+        } }
       else v = () => 1;
       rows.push({ v, f: fm ? (fm[r % fm.length] || 1) : 1, r });
     }
@@ -1120,7 +1151,7 @@ const RAYNEN = (function () {
   }
   // ---- protecao das laterais: as PROT agulhas de cada borda (seguindo a cava/decote, de baixo em cima) so tecem 1/2, sem desenho ----
   let protOff = false;
-  const PROT = 6, CABO = new Set([28, 29, 38, 39, 48, 49, 58, 59]);
+  const PROT = 8, CABO = new Set([28, 29, 38, 39, 48, 49, 58, 59]);
   function protege(row, a, b, c) {
     if (protOff || a < 0 || b < a || b - a + 1 < 2 * PROT + 2) return;
     let mod = false; for (let i = a; i <= b; i++) if (row[i] >= 120 && row[i] <= 127) { mod = true; break; }
@@ -1212,6 +1243,16 @@ const RAYNEN = (function () {
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
+    // variador (transferencia) da cava no maximo cv.maxVar agulhas; o que passar: divide nas carreiras seguintes ou fecha com band-off
+    const evCB = new Map(), maxVar = Math.max(1, Math.min(7, +cv.maxVar || 4));
+    if (cv.ativo) {
+      const ks = [...evC.keys()].sort((a, b) => a - b);
+      if (cv.excesso === 'bindoff') ks.forEach(r => { const k = evC.get(r); if (k > maxVar && !jq[r]) { evC.delete(r); evCB.set(r, k); } });
+      else { let sobra = 0, r = ks.length ? ks[0] : 0; const fim = ks.length ? ks[ks.length - 1] : 0;
+        for (; r <= fim + 40 && (sobra || r <= fim); r += 2) { const k = (evC.get(r) || 0) + sobra; if (!k) { continue; } const usa = Math.min(maxVar, k); sobra = k - usa; evC.set(r, usa); }
+        // linhas impares que nao cairam no passo de 2
+        ks.forEach(r0 => { if (r0 % 2 !== ks[0] % 2) { const k = evC.get(r0); if (k > maxVar) evC.set(r0, maxVar); } }); }
+    }
     const evD = new Map(evDec(dc));
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
     let unido = false, kU = 0;
@@ -1255,12 +1296,23 @@ const RAYNEN = (function () {
         protege(row, L, R, c); if (jq[c]) protegeIna(s, bI, W, c, L, R);
         if (evA.has(c)) { const k = evA.get(c); [L] = aum(row, L, R, 'L', k, fa); [, R] = aum(row, L + k, R, 'R', k, fa); L = Math.max(0, L); info.aumento.push(c + 1); }
         else if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        const kBO = evA.has(c) ? 0 : (evCB.get(c) || 0);
         if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
         if (evWa.has(c)) { const k = evWa.get(c); [L] = aumC(row, L, R, 'L', k); [, R] = aumC(row, L + k, R, 'R', k); info.cintura.push(c + 1); }
         if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
         if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
-        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
+        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' });
+        if (kBO && R - L + 1 > 2 * kBO + 4) {   // cava com mais agulhas que o variador: fecha com band-off dos dois lados (endereco #09)
+          // cada lado com um guia-fio que ja esta daquele lado (passadas pares = esquerda, impares = direita)
+          const o = bO.slice(c * WO, (c + 1) * WO), y0 = o[COL_YARN], fios = [...new Set(out.map(r => r.o[COL_YARN]).filter(v => v))];
+          const lado = f => out.filter(r => r.o[COL_YARN] === f).length % 2 ? 'D' : 'E';
+          const yE = fios.find(f => lado(f) === 'E') || y0, yD = fios.find(f => f !== yE && lado(f) === 'D') || fios.find(f => lado(f) === 'D') || y0;
+          moduloBindOff(W, o, yE, L, L + kBO - 1, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          moduloBindOff(W, o, yD, R, R - kBO + 1, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          L += kBO; R -= kBO; info.cava.push(c + 1); (info.cavaBindoff = info.cavaBindoff || []).push({ carreira: c + 1, agulhas: kBO });
+        }
+        c++;
         continue;
       }
       if (info.divisao == null) {
@@ -1500,7 +1552,7 @@ const RAYNEN = (function () {
     const crosses = [], passes = {};
     body.forEach((br, k0) => {
       const y = S0 + k0, row = k0 * W - X0, r = br.r;    // row: indice em bG (coluna X0 = 0)
-      for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
+      for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i, W);
       if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null && !br.faixa) s.trancas.forEach((t, k) => {
         const cx = X0 + EX + t.agulha - 1, g = t.grupo;
@@ -1826,11 +1878,11 @@ function loadLib(e){
 function readSpec(){
   const num = id => parseInt($(id).value,10), tipo=tipoAtual();
   const ponto={tipo, bx:num('f-bx'), by:num('f-by'), nome:$('f-ponto').value.trim()};
-  if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; }
+  if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; const cl=colocarSpec(); if(cl) ponto.colocar=cl; }
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')], corpo:sisLista(),
-    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
+    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor'),maxVar:Math.min(4,Math.max(1,num('fc-var')||4)),excesso:$('fc-exc').value},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
@@ -1854,7 +1906,7 @@ function writeSpec(s){
     { const z=s.forma.cintura||{}; $('ct-on').checked=!!z.ativo; if(z.inicio) $('ct-ini').value=z.inicio-1; if(z.dim) $('ct-dim').value=z.dim; if(z.retas!=null) $('ct-ret').value=z.retas; if(z.aum) $('ct-aum').value=z.aum; if(z.modo) $('ct-modo').value=z.modo; if(z.borda) $('ct-bor').value=z.borda; }
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
-    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
+    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda; if(c.maxVar) $('fc-var').value=Math.min(4,c.maxVar); if(c.excesso) $('fc-exc').value=c.excesso;
     $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.meioModo) $('fd-mmodo').value=d.meioModo; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; $('fd-fecha').checked=!!d.fecha; }
   if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
   update();
@@ -1995,7 +2047,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-var','fc-exc','rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -2539,7 +2591,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -3005,6 +3057,16 @@ function lerGrade(W,H,px,L,n){
 }
 $('btn-jtroca').addEventListener('click',()=>{ const w=desenho[0].length,h=desenho.length; setDesenho(Array.from({length:h},()=>new Array(w).fill(1)),'sem desenho'); $('btn-jtroca').hidden=true; $('f-jimg').parentNode.firstChild.textContent='Importar imagem'; $('jq-status').textContent='Imagem tirada. Importe outra quando quiser.'; });
 
+
+function avisoCava(){ const el=$('fc-aviso'); if(!el) return; if(!$('fc-on').checked){ el.hidden=true; return; } const mv=Math.min(4,Math.max(1,+$('fc-var').value||4));
+  const big=($('fc-pas').value||'').split(',').map(t=>t.trim().match(/^(\d+)-(\d+)-(\d+)$/)).filter(Boolean).map(m=>+m[2]).filter(k=>k>mv);
+  el.hidden=!big.length; el.textContent=big.length?($('fc-exc').value==='bindoff'?`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): essas agulhas fecham com band-off nos dois lados.`:`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): vou dividir em transferências de até ${mv} agulhas nas carreiras seguintes.`):''; }
+['fc-on','fc-pas','fc-var','fc-exc'].forEach(id=>{ $(id).addEventListener('input',avisoCava); $(id).addEventListener('change',avisoCava); }); setTimeout(avisoCava,300);
+// ---- onde o desenho entra (pontos da biblioteca / IA / prontos)
+function colocarSpec(){ const m=$('cl-modo').value; if(m==='todo') return null; return {modo:m,n:Math.max(1,+$('cl-n').value||1),esp:Math.max(0,+$('cl-esp').value||0),fundo:+$('cl-fundo').value||1,desloca:+$('cl-desl').value||0,de:Math.max(1,+$('cl-de').value||1),ate:Math.max(0,+$('cl-ate').value||0)}; }
+function mostraColocar(){ const t=$('f-tipo').value, box=$('cl-box'); box.hidden=['meia','links','quadriculado','jacquard','trancas','base'].includes(t)||t.startsWith('base:'); const m=$('cl-modo').value; $('cl-n-l').hidden=m!=='colunas'; $('cl-esp-l').hidden=m!=='colunas'; ['cl-fundo-l','cl-desl-l','cl-de-l','cl-ate-l'].forEach(id=>$(id).hidden=m==='todo'); }
+['cl-modo','cl-n','cl-esp','cl-fundo','cl-desl','cl-de','cl-ate'].forEach(id=>{ $(id).addEventListener('input',()=>{ mostraColocar(); clearTimeout(mostraColocar.t); mostraColocar.t=setTimeout(update,250); }); $(id).addEventListener('change',()=>{ mostraColocar(); update(); }); });
+$('f-tipo').addEventListener('change',()=>setTimeout(mostraColocar,0)); setTimeout(mostraColocar,0);
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));

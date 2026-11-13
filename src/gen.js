@@ -46,7 +46,7 @@ const RAYNEN = (function () {
     });
     const f = n.forma || {};
     n.forma = {
-      cava: Object.assign({ ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
+      cava: Object.assign({ maxVar: 4, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
@@ -98,7 +98,7 @@ const RAYNEN = (function () {
       }
       for (let t = 0; t < 2; t++) rows.push({ v: () => 1, f: 1, trans: true });
       if (p.metodo === 'expandido') {
-        const cor = (c, i) => (n >= 2 && (i < 6 || i >= W - 6)) ? ((i + c) % 2) + 1 : colorAt(c, i);
+        const cor = (c, i) => (n >= 2 && (i < 8 || i >= W - 8)) ? ((i + c) % 2) + 1 : colorAt(c, i);
         for (let c = 0; c < N; c++) for (let k = 1; k <= n; k++)
           rows.push({ v: i => cor(c, i) === k ? 8 : ((X0 + i) % 2 === 0 ? 9 : 0), f: k, course: c });
       } else {
@@ -117,7 +117,14 @@ const RAYNEN = (function () {
       let v;
       if (p.tipo === 'links') v = () => 2;
       else if (p.tipo === 'quadriculado') v = i => ((Math.floor(i / p.bx) + Math.floor(r / p.by)) % 2 === 0) ? 1 : 2;
-      else if (m) { const row = m[r % m.length]; v = i => row[i % row.length]; }
+      else if (m) { const row = m[r % m.length], cl = p.colocar || {};
+        const ab = cl.modo && cl.modo !== 'todo' ? { de: Math.max(0, (+cl.de || 1) - 1), ate: +cl.ate > 0 ? +cl.ate : Infinity } : null;
+        if (!ab) v = i => row[i % row.length];
+        else {   // desenho so em colunas (centralizado = 1 coluna); fora delas, fundo liso
+          const w = row.length, n = cl.modo === 'centro' ? 1 : Math.max(1, Math.round(+cl.n || 1)), esp = Math.max(0, Math.round(+cl.esp || 0)), fundo = +cl.fundo === 2 ? 2 : 1;
+          const tot = n * w + (n - 1) * esp, x0 = Math.floor(((+s.largura || 0) - tot) / 2) + (+cl.desloca || 0), dentro = r >= ab.de && r < ab.ate;
+          v = (i, Wt) => { if (!dentro) return fundo; const ini = Wt ? Math.floor((Wt - tot) / 2) + (+cl.desloca || 0) : x0, d = i - ini; if (d < 0 || d >= tot) return fundo; const q = d % (w + esp); return q < w ? row[q] : fundo; };
+        } }
       else v = () => 1;
       rows.push({ v, f: fm ? (fm[r % fm.length] || 1) : 1, r });
     }
@@ -329,7 +336,7 @@ const RAYNEN = (function () {
   }
   // ---- protecao das laterais: as PROT agulhas de cada borda (seguindo a cava/decote, de baixo em cima) so tecem 1/2, sem desenho ----
   let protOff = false;
-  const PROT = 6, CABO = new Set([28, 29, 38, 39, 48, 49, 58, 59]);
+  const PROT = 8, CABO = new Set([28, 29, 38, 39, 48, 49, 58, 59]);
   function protege(row, a, b, c) {
     if (protOff || a < 0 || b < a || b - a + 1 < 2 * PROT + 2) return;
     let mod = false; for (let i = a; i <= b; i++) if (row[i] >= 120 && row[i] <= 127) { mod = true; break; }
@@ -421,6 +428,16 @@ const RAYNEN = (function () {
   function shapeRows(s, bG, bO, nb, W, bI, jq) {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
+    // variador (transferencia) da cava no maximo cv.maxVar agulhas; o que passar: divide nas carreiras seguintes ou fecha com band-off
+    const evCB = new Map(), maxVar = Math.max(1, Math.min(7, +cv.maxVar || 4));
+    if (cv.ativo) {
+      const ks = [...evC.keys()].sort((a, b) => a - b);
+      if (cv.excesso === 'bindoff') ks.forEach(r => { const k = evC.get(r); if (k > maxVar && !jq[r]) { evC.delete(r); evCB.set(r, k); } });
+      else { let sobra = 0, r = ks.length ? ks[0] : 0; const fim = ks.length ? ks[ks.length - 1] : 0;
+        for (; r <= fim + 40 && (sobra || r <= fim); r += 2) { const k = (evC.get(r) || 0) + sobra; if (!k) { continue; } const usa = Math.min(maxVar, k); sobra = k - usa; evC.set(r, usa); }
+        // linhas impares que nao cairam no passo de 2
+        ks.forEach(r0 => { if (r0 % 2 !== ks[0] % 2) { const k = evC.get(r0); if (k > maxVar) evC.set(r0, maxVar); } }); }
+    }
     const evD = new Map(evDec(dc));
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
     let unido = false, kU = 0;
@@ -464,12 +481,23 @@ const RAYNEN = (function () {
         protege(row, L, R, c); if (jq[c]) protegeIna(s, bI, W, c, L, R);
         if (evA.has(c)) { const k = evA.get(c); [L] = aum(row, L, R, 'L', k, fa); [, R] = aum(row, L + k, R, 'R', k, fa); L = Math.max(0, L); info.aumento.push(c + 1); }
         else if (evC.has(c)) { const k = evC.get(c); [L] = dim(row, L, R, 'L', k, cv); [, R] = dim(row, L - k, R, 'R', k, cv); info.cava.push(c + 1); }
+        const kBO = evA.has(c) ? 0 : (evCB.get(c) || 0);
         if (evWd.has(c)) { const k = evWd.get(c); [L] = dim(row, L, R, 'L', k, ct); [, R] = dim(row, L - k, R, 'R', k, ct); info.cintura.push(c + 1); }
         if (evWa.has(c)) { const k = evWa.get(c); [L] = aumC(row, L, R, 'L', k); [, R] = aumC(row, L + k, R, 'R', k); info.cintura.push(c + 1); }
         if (evB.has(c) && !evA.has(c)) { const k = evB.get(c); [L] = aum(row, L, R, 'L', k, fb); [, R] = aum(row, L + k, R, 'R', k, fb); info.aumento2.push(c + 1); }
         if (c >= pcIni) { const h = pcH('M', Math.floor((R - L + 1) / 2), c); for (let i = L; i < L + h; i++) row[i] = 0; for (let i = R; i > R - h; i--) row[i] = 0; }
         const ina = jq[c] ? bI.slice(c * W, c * W + W).map((v, i) => row[i] ? v : 0) : null;
-        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' }); c++;
+        out.push({ c, g: row, o: bO.slice(c * WO, (c + 1) * WO), ina, lado: '' });
+        if (kBO && R - L + 1 > 2 * kBO + 4) {   // cava com mais agulhas que o variador: fecha com band-off dos dois lados (endereco #09)
+          // cada lado com um guia-fio que ja esta daquele lado (passadas pares = esquerda, impares = direita)
+          const o = bO.slice(c * WO, (c + 1) * WO), y0 = o[COL_YARN], fios = [...new Set(out.map(r => r.o[COL_YARN]).filter(v => v))];
+          const lado = f => out.filter(r => r.o[COL_YARN] === f).length % 2 ? 'D' : 'E';
+          const yE = fios.find(f => lado(f) === 'E') || y0, yD = fios.find(f => f !== yE && lado(f) === 'D') || fios.find(f => lado(f) === 'D') || y0;
+          moduloBindOff(W, o, yE, L, L + kBO - 1, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          moduloBindOff(W, o, yD, R, R - kBO + 1, false).forEach(r => out.push({ c, g: r.g, o: r.o, ina: null, lado: 'B' }));
+          L += kBO; R -= kBO; info.cava.push(c + 1); (info.cavaBindoff = info.cavaBindoff || []).push({ carreira: c + 1, agulhas: kBO });
+        }
+        c++;
         continue;
       }
       if (info.divisao == null) {
@@ -709,7 +737,7 @@ const RAYNEN = (function () {
     const crosses = [], passes = {};
     body.forEach((br, k0) => {
       const y = S0 + k0, row = k0 * W - X0, r = br.r;    // row: indice em bG (coluna X0 = 0)
-      for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i);
+      for (let i = 0; i < W; i++) bG[row + X0 + i] = br.v(i, W);
       if (br.jq) for (let i = 0; i < W; i++) bI[row + X0 + i] = yarnOf(s, br.ina(i));
       if (r != null && !br.faixa) s.trancas.forEach((t, k) => {
         const cx = X0 + EX + t.agulha - 1, g = t.grupo;

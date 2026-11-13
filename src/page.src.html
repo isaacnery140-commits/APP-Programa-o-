@@ -241,6 +241,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
 .chips-esc{display:flex;flex-wrap:wrap;gap:6px}
 .chips-esc button{border:2px solid var(--line-forte,#9aa39e);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;min-height:40px;cursor:pointer}
 .chips-esc button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.cava-box,.cl-box{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.cava-box[hidden],.cl-box[hidden]{display:none}
 </style>
 
 <div class="wrap">
@@ -417,6 +419,18 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <div class="fx-onde" id="bo-onde" hidden><span><b>Band-off (correntinha)</b>: onde usar? Uma carreira por agulha, endereço #09 (stitch, roller e speed) automático e na ficha.</span><span class="fx-bt"><button type="button" class="ghost" id="bo-decote">No fundo do decote redondo</button> <button type="button" class="ghost" id="bo-fim">No fim da peça</button></span></div>
             <div class="fx-onde" id="fx-onde"><span id="fx-sel">Ponto escolhido: —</span><span class="fx-bt"><button type="button" class="ghost" id="fx-add">＋ Colocar numa faixa da peça</button></span></div>
           </div>
+          <div class="caixa cl-box" id="cl-box" hidden>
+            <span class="lt tt">Onde o desenho entra</span>
+            <div class="row">
+              <label for="cl-modo">Colocar<select id="cl-modo"><option value="todo">Peça toda (repete o desenho)</option><option value="centro">Uma vez, no centro</option><option value="colunas">Colunas (escolher quantas)</option></select></label>
+              <label for="cl-n" id="cl-n-l">Quantas colunas<input id="cl-n" type="number" min="1" max="40" value="3"></label>
+              <label for="cl-esp" id="cl-esp-l">Espaço entre colunas (agulhas)<input id="cl-esp" type="number" min="0" max="200" value="10"></label>
+              <label for="cl-fundo" id="cl-fundo-l">Fundo em volta<select id="cl-fundo"><option value="1">Meia malha (frente)</option><option value="2">Malha trás</option></select></label>
+              <label for="cl-desl" id="cl-desl-l">Mover p/ o lado (agulhas)<small class="dica">− esquerda · + direita</small><input id="cl-desl" type="number" value="0"></label>
+              <label for="cl-de" id="cl-de-l">Da carreira<input id="cl-de" type="number" min="1" value="1"></label>
+              <label for="cl-ate" id="cl-ate-l">Até a carreira<small class="dica">0 = até em cima</small><input id="cl-ate" type="number" min="0" value="0"></label>
+            </div>
+          </div>
           <div class="faixas" id="faixas" hidden>
             <span class="tt">Pontos da peça (de baixo para cima)</span>
             <ol id="fx-list"></ol>
@@ -510,11 +524,21 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <label for="fe-pas">Passos do aumento<input id="fe-pas" value="8-1-6" autocomplete="off"></label>
             <label for="fe-bor">Borda (agulhas que andam)<input id="fe-bor" type="number" min="1" max="7" value="2"></label>
           </div>
+          <div class="caixa cava-box">
+          <span class="lt tt">Cava</span>
           <label class="chk" for="fc-on"><input id="fc-on" type="checkbox"> Fazer cava (nos dois lados)</label>
-          <div class="row" id="fc-box" hidden>
+          <div id="fc-box" hidden>
+          <div class="row">
             <label for="fc-ini">Carreiras retas abaixo da cava<input id="fc-ini" type="number" min="0" value="59"></label>
             <label for="fc-pas">Passos<input id="fc-pas" value="2-3-1, 2-2-2, 2-1-4" autocomplete="off"></label>
             <label for="fc-bor">Borda (agulhas que andam)<input id="fc-bor" type="number" min="1" max="7" value="2"></label>
+          </div>
+          <div class="row">
+            <label for="fc-var">Variador máximo<small class="dica">quantas agulhas a malha anda numa transferência (máx. 4)</small><input id="fc-var" type="number" min="1" max="4" value="4"></label>
+            <label for="fc-exc">Se a cava fechar mais que o variador<select id="fc-exc"><option value="dividir">Dividir: até 4 agulhas por vez, o resto nas carreiras seguintes</option><option value="bindoff">Band-off: fecha essas agulhas com correntinha (endereço #09)</option></select></label>
+          </div>
+          <p class="hint" id="fc-aviso" hidden></p>
+          </div>
           </div>
           <label class="chk" for="fd-on"><input id="fd-on" type="checkbox"> Fazer decote</label>
           <div id="fd-box" hidden>
@@ -940,11 +964,11 @@ function loadLib(e){
 function readSpec(){
   const num = id => parseInt($(id).value,10), tipo=tipoAtual();
   const ponto={tipo, bx:num('f-bx'), by:num('f-by'), nome:$('f-ponto').value.trim()};
-  if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; }
+  if(tipo==='motivo'){ ponto.motivo=motivo.map(r=>r.slice()); ponto.fios=motivoFios.slice(); ponto.real=motivoReal; const cl=colocarSpec(); if(cl) ponto.colocar=cl; }
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')], corpo:sisLista(),
-    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor')},
+    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor'),maxVar:Math.min(4,Math.max(1,num('fc-var')||4)),excesso:$('fc-exc').value},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
@@ -968,7 +992,7 @@ function writeSpec(s){
     { const z=s.forma.cintura||{}; $('ct-on').checked=!!z.ativo; if(z.inicio) $('ct-ini').value=z.inicio-1; if(z.dim) $('ct-dim').value=z.dim; if(z.retas!=null) $('ct-ret').value=z.retas; if(z.aum) $('ct-aum').value=z.aum; if(z.modo) $('ct-modo').value=z.modo; if(z.borda) $('ct-bor').value=z.borda; }
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
-    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda;
+    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda; if(c.maxVar) $('fc-var').value=Math.min(4,c.maxVar); if(c.excesso) $('fc-exc').value=c.excesso;
     $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.meioModo) $('fd-mmodo').value=d.meioModo; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; $('fd-fecha').checked=!!d.fecha; }
   if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
   update();
@@ -1109,7 +1133,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['fc-var','fc-exc','rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1653,7 +1677,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2119,6 +2143,16 @@ function lerGrade(W,H,px,L,n){
 }
 $('btn-jtroca').addEventListener('click',()=>{ const w=desenho[0].length,h=desenho.length; setDesenho(Array.from({length:h},()=>new Array(w).fill(1)),'sem desenho'); $('btn-jtroca').hidden=true; $('f-jimg').parentNode.firstChild.textContent='Importar imagem'; $('jq-status').textContent='Imagem tirada. Importe outra quando quiser.'; });
 
+
+function avisoCava(){ const el=$('fc-aviso'); if(!el) return; if(!$('fc-on').checked){ el.hidden=true; return; } const mv=Math.min(4,Math.max(1,+$('fc-var').value||4));
+  const big=($('fc-pas').value||'').split(',').map(t=>t.trim().match(/^(\d+)-(\d+)-(\d+)$/)).filter(Boolean).map(m=>+m[2]).filter(k=>k>mv);
+  el.hidden=!big.length; el.textContent=big.length?($('fc-exc').value==='bindoff'?`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): essas agulhas fecham com band-off nos dois lados.`:`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): vou dividir em transferências de até ${mv} agulhas nas carreiras seguintes.`):''; }
+['fc-on','fc-pas','fc-var','fc-exc'].forEach(id=>{ $(id).addEventListener('input',avisoCava); $(id).addEventListener('change',avisoCava); }); setTimeout(avisoCava,300);
+// ---- onde o desenho entra (pontos da biblioteca / IA / prontos)
+function colocarSpec(){ const m=$('cl-modo').value; if(m==='todo') return null; return {modo:m,n:Math.max(1,+$('cl-n').value||1),esp:Math.max(0,+$('cl-esp').value||0),fundo:+$('cl-fundo').value||1,desloca:+$('cl-desl').value||0,de:Math.max(1,+$('cl-de').value||1),ate:Math.max(0,+$('cl-ate').value||0)}; }
+function mostraColocar(){ const t=$('f-tipo').value, box=$('cl-box'); box.hidden=['meia','links','quadriculado','jacquard','trancas','base'].includes(t)||t.startsWith('base:'); const m=$('cl-modo').value; $('cl-n-l').hidden=m!=='colunas'; $('cl-esp-l').hidden=m!=='colunas'; ['cl-fundo-l','cl-desl-l','cl-de-l','cl-ate-l'].forEach(id=>$(id).hidden=m==='todo'); }
+['cl-modo','cl-n','cl-esp','cl-fundo','cl-desl','cl-de','cl-ate'].forEach(id=>{ $(id).addEventListener('input',()=>{ mostraColocar(); clearTimeout(mostraColocar.t); mostraColocar.t=setTimeout(update,250); }); $(id).addEventListener('change',()=>{ mostraColocar(); update(); }); });
+$('f-tipo').addEventListener('change',()=>setTimeout(mostraColocar,0)); setTimeout(mostraColocar,0);
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
