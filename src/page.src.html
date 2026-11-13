@@ -234,6 +234,13 @@ details.more>*:not(summary){margin-bottom:10px}
 .caixa:not(.nome-box),.opts,details.more,details.hist,.faixas{border-color:var(--line-forte,#9aa39e)!important}
 .manga-opc{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:8px 0;font-size:13px}
 .manga-opc[hidden]{display:none}
+h1,h2,.tt,.lt,.cable-head>span:first-child,summary,.chat-head .tt,.row.caixa>label{text-transform:uppercase;letter-spacing:.02em}
+.pad-grid b,.cable>b{text-transform:uppercase}
+summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>label small,.row.caixa>label input,.lt+small{text-transform:none;letter-spacing:0}
+.painel-esc{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+.chips-esc{display:flex;flex-wrap:wrap;gap:6px}
+.chips-esc button{border:2px solid var(--line-forte,#9aa39e);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;min-height:40px;cursor:pointer}
+.chips-esc button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
 </style>
 
 <div class="wrap">
@@ -270,7 +277,9 @@ details.more>*:not(summary){margin-bottom:10px}
               </span></span>
             <span class="alerta" role="note">⚠ Medidas de peça pronta. Cuidado: os fios podem encolher.</span></summary>
           <div id="pad-padrao">
-          <div class="row">
+          <div class="painel-esc"><span class="lt tt">Público</span><div class="chips-esc" id="pad-pub-chips" role="group" aria-label="Público"></div></div>
+          <div class="painel-esc"><span class="lt tt">Modelo da peça</span><div class="chips-esc" id="pad-mod-chips" role="group" aria-label="Modelo da peça"></div></div>
+          <div class="row" hidden>
             <label for="pad-pub">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label>
             <label for="pad-mod">Modelo da peça<select id="pad-mod"></select></label>
           </div>
@@ -433,18 +442,17 @@ details.more>*:not(summary){margin-bottom:10px}
           </div>
           <div class="cable j" id="jq-box">
             <div class="cable-head"><span>Jacquard</span><span class="hint" id="jq-size"></span></div>
-            <p class="hint" id="jq-src"></p>
+            <p class="hint" id="jq-src" hidden></p>
             <div class="row">
               <label for="f-cores">Cores<select id="f-cores"><option value="2">2 cores</option><option value="3">3 cores</option><option value="4">4 cores</option></select></label>
               <label for="f-jmodo">Desenho<select id="f-jmodo"><option value="repetir">Repetir na peça toda</option><option value="centro">Uma vez, centralizado</option></select></label>
               <label for="f-jpaint">Pintar com<select id="f-jpaint"></select></label>
             </div>
             <div class="row">
-              <label for="f-jmet">Formato no Raynen<select id="f-jmet"><option value="modulo">Módulo 120/121, igual ao 45018FG (2 cores)</option><option value="compacto">Compacto: camada INA + função 216</option><option value="expandido">Expandido: uma passada por cor no BMP</option></select></label>
+              <label for="f-jmet">Formato no Raynen<select id="f-jmet"><option value="modulo">Módulo 120/121, igual ao 45018FG (só 2 cores)</option><option value="compacto">Compacto: camada INA + função 216</option><option value="expandido">Expandido: uma passada por cor no BMP</option></select></label>
               <label for="f-javesso" id="lbl-javesso">Avesso (216, 2ª coluna)<input id="f-javesso" type="number" min="1" max="26" value="1"></label>
             </div>
-            <p class="hint" id="jq-yarns"></p>
-            <p class="hint">Desenho padrão: logo A casa do Malharista. Com 2 cores a logo sai toda na cor 2; com 3 cores (formato compacto) o “A casa do” e a linha de cima saem na cor 3 (dourado).</p>
+            <p class="hint" id="jq-yarns" hidden></p>
             <label for="f-jdesc">Descreva o desenho<textarea id="f-jdesc" style="min-height:56px" placeholder="Ex.: uma rosa com folhas, estilo silhueta  ·  ou: escrever BRASIL"></textarea></label>
             <label for="f-jlimpar" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jlimpar" type="checkbox" checked style="width:auto">Limpar pontos soltos (1 agulha isolada)</label>
             <label for="f-jfino" style="flex-direction:row;align-items:center;gap:8px"><input id="f-jfino" type="checkbox" checked style="width:auto">Preservar traços finos ao importar imagem</label>
@@ -461,7 +469,7 @@ details.more>*:not(summary){margin-bottom:10px}
             <div class="actions">
               <button id="btn-jq" type="button">Criar desenho com IA</button>
               <label for="f-jimg" class="ghost" style="flex-direction:row;align-items:center;gap:6px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:8px 12px;cursor:pointer">Importar imagem<input id="f-jimg" type="file" accept="image/*" style="display:none"></label>
-              <button id="btn-jex" type="button" class="ghost">Logo A casa do Malharista</button>
+              <button id="btn-jtroca" type="button" class="ghost" hidden>Tirar a imagem</button>
             </div>
             <div class="row">
               <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
@@ -470,7 +478,6 @@ details.more>*:not(summary){margin-bottom:10px}
             </div>
             <span id="jq-status" class="status hint"></span>
             <div class="bed" style="max-height:340px;padding:8px"><canvas id="jcv" width="10" height="10" aria-label="Editor do desenho do jacquard: clique para pintar com a cor escolhida"></canvas></div>
-            <p class="hint">No formato módulo (padrão) o desenho fica com os códigos 120/121 e a definição do módulo vai acima da linha de fim, igual ao 45018FG: dá para editar o desenho e o módulo no Raynen. No formato compacto cada carreira do desenho é uma carreira no Raynen, com as cores na camada INA: dá para editar o desenho lá. O Raynen cria as passadas de cada cor ao compilar. As cores na grade são só para visualizar: o que vale é o guia-fio de cada cor.</p>
           </div>
             <div class="chat" id="chat-ponto">
             <div class="chat-head"><span class="tt">Conversar para desenvolver o ponto</span><button type="button" class="ghost" id="chat-limpa">Limpar conversa</button></div>
@@ -1043,10 +1050,10 @@ function resizeJq(){
   desenho=Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=>(desenho[y]&&desenho[y][x])||1)); drawJq(); update();
 }
 $('f-jw').addEventListener('change',resizeJq); $('f-jh').addEventListener('change',resizeJq);
-$('f-cores').addEventListener('change',()=>{ fillJPaint(); drawJq(); update(); });
+$('f-cores').addEventListener('change',()=>{ if(+$('f-cores').value>2&&$('f-jmet').value==='modulo'){ $('f-jmet').value='compacto'; $('jq-status').textContent='3 ou mais cores: mudei o formato para Compacto (camada INA). O módulo 120/121 só aceita 2 cores.'; } fillJPaint(); drawJq(); update(); });
 ['f-guia','f-gb','f-gc','f-gd'].forEach(id=>$(id).addEventListener('input',fillJPaint));
 $('f-jmodo').addEventListener('change',update); $('f-jmet').addEventListener('change',update); $('f-javesso').addEventListener('input',update);
-$('btn-jex').addEventListener('click',()=>{ setDesenho(JQ_EX.rows.map(r=>[...r].map(Number)),JQ_EX.fonte); ajustaPecaAoDesenho(); });
+if($('btn-jex')) $('btn-jex').addEventListener('click',()=>{ setDesenho(JQ_EX.rows.map(r=>[...r].map(Number)),JQ_EX.fonte); ajustaPecaAoDesenho(); });
 function ajustaPecaAoDesenho(){ const w=desenho[0].length,h=desenho.length; let msg=[];
   if((parseInt($('f-larg').value,10)||0)<w+6){ $('f-larg').value=w+11; msg.push(`largura ${w+11} agulhas`); }
   if((parseInt($('f-carr').value,10)||0)<h+20){ $('f-carr').value=h+40; msg.push(`${h+40} carreiras`); }
@@ -1086,9 +1093,12 @@ $('f-jimg').addEventListener('change',async e=>{
     const bmp=await createImageBitmap(f), n=jqColors(), ratio=parseFloat($('f-jratio').value)||1.4, Wp=parseInt($('f-larg').value,10)||100;
     const centro=$('f-jmodo').value==='centro';
     const w=Math.min(400,Math.max(8, centro ? Wp-6 : (parseInt($('f-jw').value,10)||72)));
-    let d=await imagemParaGrade(bmp,w,ratio,n,$('f-jfino').checked);
+    let d=await graficoParaGrade(bmp,n);
+    if(d){ setDesenho(d,`gráfico "${f.name}": ${d[0].length} × ${d.length} quadradinhos, 1 quadradinho = 1 ponto`); $('btn-jtroca').hidden=false; $('f-jimg').parentNode.firstChild.textContent='Trocar imagem'; $('f-jmodo').value='centro'; ajustaPecaAoDesenho(); $('jq-status').textContent=`Gráfico lido quadradinho por quadradinho: ${d[0].length} agulhas × ${d.length} carreiras (1 quadradinho = 1 ponto).`; e.target.value=''; return; }
+    d=await imagemParaGrade(bmp,w,ratio,n,$('f-jfino').checked);
     if($('f-jlimpar').checked) d=limparSoltos(d);
     setDesenho(d,`imagem "${f.name}" com ${n} cores, ${w} agulhas de largura (margem recortada)`);
+    $('btn-jtroca').hidden=false; $('f-jimg').parentNode.firstChild.textContent='Trocar imagem';
     const h=d.length; $('jq-status').textContent=`Imagem convertida: ${w} agulhas × ${h} carreiras.`+(h>(parseInt($('f-carr').value,10)||0)?` O corpo tem menos carreiras que o desenho: aumente "Carreiras do corpo" para pelo menos ${h+10}.`:'')+' Para letras mais nítidas, aumente a largura da peça.';
   }catch(err){ $('jq-status').textContent='Não consegui ler essa imagem. Tente um PNG ou JPG com fundo liso.'; }
   e.target.value='';
@@ -1507,7 +1517,7 @@ function fichaDados(){
     programas:[{p:'F',n:'FRENTE',arq:s.nome+'f',med:`${s.largura} ag. × ${o.rows} carr.`},{p:'C',n:'COSTA',arq:arq(pt.costas),med:med(pt.costas)},{p:'M',n:'MANGA',arq:arq(pt.manga),med:med(pt.manga)},{p:'G',n:'GOLA',arq:gs?gs.nome:'',med:go?`${go.width} ag. × ${go.rows} carr.`:''}],
     guias, usados, ecoF, ecoA, cores, sis:RAYNEN.sistemas(s), foto:fotoFicha()};
 }
-const FICHA_CSS=`.fx{font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;background:#fff;max-width:820px;margin:0 auto;padding:18px 22px;font-size:11px;line-height:1.2}
+const FICHA_CSS=`.fx h3,.fx th{text-transform:uppercase}.fx{font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;background:#fff;max-width:820px;margin:0 auto;padding:18px 22px;font-size:11px;line-height:1.2}
 .fx *{box-sizing:border-box}.fx h3{margin:9px 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:#2e3192;padding:5px 8px;border-radius:4px}
 .fx .cab{display:grid;grid-template-columns:170px 1fr 92px;gap:14px;align-items:center;border-bottom:3px solid #2e3192;padding-bottom:10px}
 .fx .cab img{width:170px}.fx .foto{width:92px;height:110px;border:1px solid #bbb;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#999;font-size:9px;overflow:hidden;background:#fafafa}.fx .foto img{width:100%;height:100%;object-fit:cover}.fx .id{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px}
@@ -1645,7 +1655,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13a', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13b', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2074,6 +2084,45 @@ function infoManga(){ const b=last?partes().manga:null; $('mg-info').textContent
 ['mg-tipo','mg-aum','mg-cal'].forEach(id=>$(id).addEventListener('change',()=>{ MANGA_OPC={tipo:$('mg-tipo').value,aum:$('mg-aum').checked,cal:$('mg-cal').checked}; PARTES_CACHE.k=''; marcaAbas(); draw(); infoManga(); try{ renderFicha(); }catch(e){} try{ if(simAuth) simular(); }catch(e){} }));
 $('ptabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-p]'); if(!b||b.disabled) return; vistaParte=b.dataset.p; marcaAbas(); mostraPontoParte(); draw(); });
 $('pt-ponto').addEventListener('change',()=>{ const k=vistaParte, v=$('pt-ponto').value; PARTE_PONTO[k]=v; if(v==='atual'&&last) PARTE_ATUAL[k]=JSON.parse(JSON.stringify(readSpec().ponto)); PARTES_CACHE.k=''; marcaAbas(); draw(); try{ renderFicha(); }catch(e){} });
+// grafico de pontos quadriculado (papel de trico/ponto cruz): acha a grade e le 1 quadradinho = 1 ponto
+async function graficoParaGrade(bmp,n){
+  const sc=Math.min(1,2400/Math.max(bmp.width,bmp.height)), W=Math.round(bmp.width*sc), H=Math.round(bmp.height*sc);
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.drawImage(bmp,0,0,W,H);
+  const px=x.getImageData(0,0,W,H).data, L=new Float32Array(W*H); for(let i=0;i<W*H;i++) L[i]=px[i*4]*.3+px[i*4+1]*.59+px[i*4+2]*.11;
+  return lerGrade(W,H,px,L,n);
+}
+function lerGrade(W,H,px,L,n){
+  // perfil: em cada coluna (ou linha) da imagem, fracao de pixels que sao "linha fina" (mais escuros que os dois lados)
+  const perfil=(len,other,get)=>{ const p=new Float32Array(len); for(let a=2;a<len-2;a++){ let k=0; for(let b=0;b<other;b++){ const v=get(a,b), l=Math.max(get(a-1,b),get(a-2,b)), r=Math.max(get(a+1,b),get(a+2,b)); if(l-v>14&&r-v>14) k++; } p[a]=k/other; } return p; };
+  const pc=perfil(W,H,(a,b)=>L[b*W+a]), pr=perfil(H,W,(a,b)=>L[a*W+b]);
+  const linhas=p=>{ let mx=0; for(const v of p) if(v>mx) mx=v; if(mx<.05) return null; const thr=mx*.3, pk=[];
+    for(let a=1;a<p.length-1;a++) if(p[a]>=thr&&p[a]>=p[a-1]&&p[a]>=p[a+1]){ if(pk.length&&a-pk[pk.length-1]<3){ if(p[a]>p[pk[pk.length-1]]) pk[pk.length-1]=a; } else pk.push(a); }
+    const ds=pk.slice(1).map((v,i)=>v-pk[i]).filter(d=>d>=3).sort((a,b)=>a-b); if(ds.length<6) return null; const T=ds[ds.length>>1];
+    let melhor=[],cur=[pk[0]]; for(let i=1;i<pk.length;i++){ const d=pk[i]-cur[cur.length-1]; if(Math.abs(d-T)<=Math.max(1.5,T*.3)) cur.push(pk[i]); else if(d<T*.7) continue; else if(Math.abs(d-2*T)<=Math.max(2,T*.35)){ cur.push(Math.round((pk[i]+cur[cur.length-1])/2)); cur.push(pk[i]); } else { if(cur.length>melhor.length) melhor=cur; cur=[pk[i]]; } }
+    if(cur.length>melhor.length) melhor=cur; return melhor.length>=7?{l:melhor,T}:null; };
+  const gx=linhas(pc), gy=linhas(pr); if(!gx||!gy) return null;
+  if(Math.abs(gx.T-gy.T)>Math.max(3,Math.max(gx.T,gy.T)*.45)) return null;
+  const cel=[]; for(let j=0;j<gy.l.length-1;j++){ const row=[]; for(let i=0;i<gx.l.length-1;i++){ const x0=gx.l[i],x1=gx.l[i+1],y0=gy.l[j],y1=gy.l[j+1], mx=Math.max(1,Math.round((x1-x0)*.2)), my=Math.max(1,Math.round((y1-y0)*.2));
+      let r=0,g=0,b=0,k=0,esc=0; for(let y=y0+my;y<=y1-my;y++) for(let xx=x0+mx;xx<=x1-mx;xx++){ const q=(y*W+xx)*4; r+=px[q]; g+=px[q+1]; b+=px[q+2]; k++; if(L[y*W+xx]<110) esc++; }
+      if(!k) k=1; row.push({c:[r/k,g/k,b/k],esc:esc/k}); } cel.push(row); }
+  const tod=cel.flat(), lum=q=>q.c[0]*.3+q.c[1]*.59+q.c[2]*.11, ord=tod.slice().sort((a,b)=>lum(b)-lum(a)), bg=ord[Math.floor(ord.length*.1)].c;
+  const dif=q=>Math.hypot(q.c[0]-bg[0],q.c[1]-bg[1],q.c[2]-bg[2]), eh=q=>dif(q)>60||q.esc>.4, fg=tod.filter(eh);
+  if(!fg.length) return null;
+  const k=Math.max(1,n-1), fs=fg.slice().sort((a,b)=>lum(a)-lum(b)); let C=Array.from({length:k},(_,j)=>fs[Math.floor((j+.5)/k*fs.length)].c.slice());
+  for(let it=0;it<8;it++){ const S=C.map(()=>[0,0,0,0]); fg.forEach(q=>{ let bi=0,bd=1e9; C.forEach((cc,j)=>{ const d=(q.c[0]-cc[0])**2+(q.c[1]-cc[1])**2+(q.c[2]-cc[2])**2; if(d<bd){bd=d;bi=j;} }); const t=S[bi]; t[0]+=q.c[0]; t[1]+=q.c[1]; t[2]+=q.c[2]; t[3]++; }); C=C.map((cc,j)=>S[j][3]?[S[j][0]/S[j][3],S[j][1]/S[j][3],S[j][2]/S[j][3]]:cc); }
+  const cor=q=>{ if(!eh(q)) return 1; let bi=0,bd=1e9; C.forEach((cc,j)=>{ const d=(q.c[0]-cc[0])**2+(q.c[1]-cc[1])**2+(q.c[2]-cc[2])**2; if(d<bd){bd=d;bi=j;} }); return bi+2; };
+  let d=cel.map(r=>r.map(cor));
+  const vazL=r=>r.every(v=>v===1); while(d.length>1&&vazL(d[0])) d.shift(); while(d.length>1&&vazL(d[d.length-1])) d.pop();
+  const vazC=i=>d.every(r=>r[i]===1); let a=0,b=d[0].length-1; while(a<b&&vazC(a)) a++; while(b>a&&vazC(b)) b--; d=d.map(r=>r.slice(a,b+1));
+  return d.reverse();
+}
+$('btn-jtroca').addEventListener('click',()=>{ const w=desenho[0].length,h=desenho.length; setDesenho(Array.from({length:h},()=>new Array(w).fill(1)),'sem desenho'); $('btn-jtroca').hidden=true; $('f-jimg').parentNode.firstChild.textContent='Importar imagem'; $('jq-status').textContent='Imagem tirada. Importe outra quando quiser.'; });
+
+// medidas padroes: publico e modelo em painel de botoes (os selects continuam por baixo)
+function chipsDe(selId,boxId){ const sel=$(selId), box=$(boxId); if(!sel||!box) return; const monta=()=>{ box.textContent=''; [...sel.options].forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.textContent=o.textContent; b.setAttribute('aria-pressed',String(o.value===sel.value)); b.addEventListener('click',()=>{ sel.value=o.value; sel.dispatchEvent(new Event('change',{bubbles:true})); monta(); }); box.appendChild(b); }); };
+  monta(); sel.addEventListener('change',monta); new MutationObserver(monta).observe(sel,{childList:true}); }
+chipsDe('pad-pub','pad-pub-chips'); chipsDe('pad-mod','pad-mod-chips');
+$('pad-pub').addEventListener('change',()=>setTimeout(()=>{ const b=$('pad-mod-chips'); if(b) [...b.children].forEach((x,i)=>x.setAttribute('aria-pressed',String($('pad-mod').options[i]&&$('pad-mod').options[i].value===$('pad-mod').value))); },0));
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
