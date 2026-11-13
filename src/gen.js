@@ -46,7 +46,7 @@ const RAYNEN = (function () {
     });
     const f = n.forma || {};
     n.forma = {
-      cava: Object.assign({ maxVar: 4, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
+      cava: Object.assign({ maxVar: 3, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
@@ -429,7 +429,7 @@ const RAYNEN = (function () {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     // variador (transferencia) da cava no maximo cv.maxVar agulhas; o que passar: divide nas carreiras seguintes ou fecha com band-off
-    const evCB = new Map(), maxVar = Math.max(1, Math.min(7, +cv.maxVar || 4));
+    const evCB = new Map(), maxVar = Math.max(1, Math.min(3, +cv.maxVar || 3));
     if (cv.ativo) {
       const ks = [...evC.keys()].sort((a, b) => a - b);
       if (cv.excesso === 'bindoff') ks.forEach(r => { const k = evC.get(r); if (k > maxVar && !jq[r]) { evC.delete(r); evCB.set(r, k); } });
@@ -439,6 +439,10 @@ const RAYNEN = (function () {
         ks.forEach(r0 => { if (r0 % 2 !== ks[0] % 2) { const k = evC.get(r0); if (k > maxVar) evC.set(r0, maxVar); } }); }
     }
     const evD = new Map(evDec(dc));
+    // decote: variador no maximo 3 agulhas por transferencia; o que passar vai para as carreiras seguintes
+    { const ks = [...evD.keys()].sort((a, b) => a - b); let sobra = 0; const fim = ks.length ? ks[ks.length - 1] : 0;
+      for (let r = ks.length ? ks[0] : 0; ks.length && r <= fim + 60 && (sobra || r <= fim); r += 2) { const k = (evD.get(r) || 0) + sobra; if (!k) continue; const usa = Math.min(3, k); sobra = k - usa; evD.set(r, usa); }
+      ks.forEach(r0 => { if (ks.length && r0 % 2 !== ks[0] % 2 && evD.get(r0) > 3) evD.set(r0, 3); }); }
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
     let unido = false, kU = 0;
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0, poloFecha = false;
