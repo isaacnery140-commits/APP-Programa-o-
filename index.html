@@ -1458,7 +1458,7 @@ const RAYNEN = (function () {
       const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y) cnt[y] = (cnt[y] || 0) + 1; });
       const ult = out.filter(r => r.lado === 'F').pop();
       [yB, yA].forEach(y => { if (ult && cnt[y] % 2) { const o = ult.o.slice(); o[COL_YARN] = y; out.push({ c: ult.c, g: ult.g.slice(), o, ina: null, lado: 'F' }); } });
-    } else if (multi && info.divisao != null) {
+    } else if (multi && info.divisao != null && !s.remonte) {   // com remonte o guia-fio da direita NUNCA atravessa o decote: ele volta no remonte
       const ud = out.filter(r => r.lado === 'D').pop(), ue = out.filter(r => r.lado === 'E').pop();
       if (ud) { const g = new Uint8Array(W), d = (polo && desl) ? desl : 0;
         if (ue) for (let i = 0; i < W; i++) if (ue.g[i]) g[i] = ue.g[i];
@@ -1468,7 +1468,8 @@ const RAYNEN = (function () {
     }
     // passadas pares para cada guia-fio (W002): o que ficou impar tece mais uma vez a sua ultima carreira
     { const cnt = {}; out.forEach(r => { const y = r.o[COL_YARN]; if (y && r.lado !== 'T') cnt[y] = (cnt[y] || 0) + 1; });
-      Object.keys(cnt).forEach(y => { if (cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
+      const udR = s.remonte ? out.filter(r => r.lado === 'D').pop() : null, yDR = udR ? udR.o[COL_YARN] : 0;   // o da direita termina na direita (ver build)
+      Object.keys(cnt).forEach(y => { if (+y !== yDR && cnt[y] % 2) { const ult = out.filter(r => r.o[COL_YARN] === +y && r.lado !== 'B' && r.lado !== 'T').pop(); if (ult) out.push(Object.assign({}, ult, { g: ult.g.slice(), o: ult.o.slice(), extra: true })); } }); }
     // FIM DA PECA COM BAND-OFF (modulo): fecha todas as agulhas em cima, cada lado com o seu guia-fio (endereco #09)
     if (s.forma.bandoff && s.forma.bandoff.ativo && !pcR && out.length) {
       const segs = info.divisao != null && !unido ? [[lA, lB, yA, 1], [rA, rB, yB, -1]] : [[L, R, yA, 1]];
@@ -1593,17 +1594,16 @@ const RAYNEN = (function () {
         if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
         if (rw.lado === 'B') return;   // band-off: carreira de soltar fica sem fio de proposito
         if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
-    // com remonte: o guia-fio que tece a ultima carreira de cada lado (corpo; no decote, lado esquerdo e lado direito)
-    // tem que terminar o tecimento na DIREITA, para voltar tecendo no remonte (nunca volta vazio por cima das agulhas sem ponto)
+    // com remonte, no decote: o guia-fio do lado DIREITO termina o tecimento na direita (ponta do pano) e volta para a
+    // esquerda tecendo no remonte; o do lado esquerdo termina na esquerda e ja sai para o fim do programa.
+    // Nenhum guia-fio atravessa o decote (quadradinhos vazios) para ir de um lado ao outro.
     if (s.remonte && !isMod) {
       const tot = {}; for (let k = 0; k < S0; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + (opt[k * WO + COL_LOOP] || 1); }
       bodyOut.forEach(rw => { const f = rw.o[COL_YARN]; if (f) tot[f] = (tot[f] || 0) + 1; });
-      const ult = {}; bodyOut.forEach((rw, k) => { if (rw.o[COL_YARN] && rw.lado !== 'B') ult[rw.lado || ''] = k; });
-      const extra = [];
-      Object.values(ult).forEach(k => { const rw = bodyOut[k], f = rw.o[COL_YARN];
-        const lisa = !(rw.o[32] || rw.o[28] || rw.o[29] || rw.o[COL_216]) && !Array.prototype.some.call(rw.g, v => v >= 100);
-        if (lisa && tot[f] % 2 === 0) { extra.push(Object.assign({}, rw)); tot[f]++; } });
-      extra.forEach(rw => bodyOut.push(rw));
+      const lisa = rw => !(rw.o[32] || rw.o[28] || rw.o[29] || rw.o[COL_216]) && !Array.prototype.some.call(rw.g, v => v >= 100);
+      const uD = bodyOut.filter(r => r.lado === 'D' && r.o[COL_YARN] && lisa(r)).pop(), uE = bodyOut.filter(r => r.lado === 'E' && r.o[COL_YARN] && lisa(r)).pop();
+      if (uD && tot[uD.o[COL_YARN]] % 2 === 0) bodyOut.push(Object.assign({}, uD, { extra: true }));   // termina na direita
+      if (uE && uE.o[COL_YARN] !== (uD && uD.o[COL_YARN]) && tot[uE.o[COL_YARN]] % 2) bodyOut.push(Object.assign({}, uE, { extra: true }));   // termina na esquerda
     }
     // ECONOMIZADOR AUTOMATICO: blocos de carreiras iguais que se repetem (corpo reto, acima do decote...) viram um bloco so
     // com o numero de voltas na coluna 1 do opt. O periodo sai do proprio ponto, entao a economia muda sozinha com o ponto.
@@ -1680,7 +1680,7 @@ const RAYNEN = (function () {
         END_TECE.forEach(k => { opt[y * WO + k] = 16; });   // endereco #16 (FINAL REMONTE): stitch, roller e speed do remonte
         passes[f] = (passes[f] || 0) + (voltas > 1 ? voltas : 1); y++; NR++; };
       if (a >= 0) {
-        dir.forEach(f => { const z = area[f] && area[f][0] <= area[f][1] ? area[f] : [a, b]; linha(f, 0, z[0], z[1]); });
+        dir.forEach(f => linha(f, 0));   // da direita ate o comeco do programa (esquerda), tecendo
         if ((tot[sep] || 0) % 2) linha(sep, 0);   // separacao na direita: primeiro volta tecendo
         const v1 = Math.max(eco - 1, 0), bloco = v => { for (let j = 0; j < 4; j++) linha(sep, v); };
         if (eco >= 3) { bloco(v1); bloco(eco); } else if (eco === 2) { bloco(2); bloco(0); } else { bloco(0); bloco(0); }
@@ -2658,7 +2658,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13n', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13o', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
