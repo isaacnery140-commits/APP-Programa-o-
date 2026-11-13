@@ -1653,7 +1653,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13e', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -1774,6 +1774,7 @@ const nomeTam=t=>padPub==='inf'?t+' anos':t;
 const meio=v=>Math.round(v*2)/2, fmt=v=>String(v).replace('.',',')+' cm';
 // modelos: comprimento (do ombro ao fim da barra), folga em cada metade, cava, decote, gola e manga
 const MODELOS={
+ painel:   {nome:'Painel para teste', pubs:['fem','masc','inf'], desc:'só um pano reto (barra + corpo), sem cava, decote, manga e gola, para testar os pontos', painel:true, comp:()=>20, folga:0, gola:'', manga:'sem'},
  cropped:  {nome:'Mini blusa (cropped)', pubs:['fem'], desc:'curtinha, termina acima da cintura; justa, manga longa ou curta à escolha', comp:d=>d.costas-4, folga:1, gola:'careca', manga:'longa'},
  blusinha: {nome:'Blusinha', pubs:['fem'], desc:'termina na cintura; justa, gola careca', comp:d=>d.costas+3, folga:1.5, gola:'careca', manga:'longa'},
  blusa:    {nome:'Blusa (no quadril)', pubs:['fem','masc','inf'], desc:'comprimento no quadril, folga normal, gola careca', comp:d=>d.comp, folga:2, gola:'careca', manga:'longa'},
@@ -1785,7 +1786,6 @@ const MODELOS={
  garrafinha:{nome:'Garrafinha (gola alta)', pubs:['fem','masc','inf'], desc:'decote redondo menor com gola alta dobrada', comp:d=>d.comp, folga:2, dlAdd:-2, dpAdd:-2, gola:'garrafinha', manga:'longa'},
  vcurto:   {nome:'Vestido curto', pubs:['fem','inf'], desc:'acima do joelho, marcado na cintura', comp:d=>meio(d.costas*2.05), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
  vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
- painel:   {nome:'Painel para teste', pubs:['fem','masc','inf'], desc:'só um pano reto (barra + corpo), sem cava, decote, manga e gola, para testar os pontos', painel:true, comp:()=>20, folga:0, gola:'', manga:'sem'},
  vlongo:   {nome:'Vestido longo', pubs:['fem'], desc:'até o tornozelo, marcado na cintura', comp:d=>meio(d.costas*3.3), folga:2.5, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4}
 };
 // medidas padroes editaveis: o que a pessoa muda na tabela fica guardado por publico + modelo + tamanho
