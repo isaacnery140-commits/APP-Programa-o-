@@ -792,26 +792,24 @@ const RAYNEN = (function () {
         opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
       }
     }
-    // REMONTE NO FIM: guia-fios de tecer voltam ao lado de saida, fio de separacao tece e solta a peca,
-    // e as agulhas sao remontadas (mesmas carreiras do inicio do programa) para comecar o proximo pano
+    // REMONTE NO FIM (sem separacao): carreiras de cor 8/9 alternadas, tecidas pelos guia-fios do corpo,
+    // que remontam as agulhas do proximo pano e trazem de volta os guia-fios que estao do lado direito
     let NR = 0;
     if (s.remonte && !isMod) {
       let y = S0 + bodyOut.length + ND;
-      const fimAnt = y - 1;
-      // 1) guia-fio de tecer com passadas impares: mais uma carreira (igual a ultima dele) para voltar ao lado de saida
-      const sep = +s.fioDescarte || 7, ult = S0 + bodyOut.length - 1;
-      Object.keys(passes).map(Number).filter(f => f && f !== sep && passes[f] % 2).forEach(f => {
-        let src = ult; for (let k = ult; k >= S0; k--) if (opt[k * WO + COL_YARN] === f) { src = k; break; }
-        grid.copyWithin(y * WB, src * WB, src * WB + WB); opt.copyWithin(y * WO, src * WO, src * WO + WO); opt[y * WO + COL_END] = 0; passes[f]++; y++; NR++;
+      const fimAnt = y - 1, sep = +s.fioDescarte || 7;
+      // largura do remonte = a do inicio do programa (1a carreira de cor 8/9)
+      let r0 = 0; for (let k = 0; k < S0; k++) { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (v === 8 || v === 9) { tem = true; break; } } if (tem) { r0 = k; break; } }
+      let a = -1, b = -1; for (let i = 0; i < WB; i++) if (grid[r0 * WB + i]) { if (a < 0) a = i; b = i; }
+      // guia-fios do corpo e de que lado cada um esta (passadas desde o comeco do programa: impar = direita)
+      const tot = {}; for (let k = 0; k < y; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + 1; }
+      const corpo = [...new Set(bodyOut.map(r => r.o[COL_YARN]).filter(f => f && f !== sep))];
+      const seq = []; corpo.forEach(f => { const n = tot[f] % 2 ? 1 : 2; for (let t = 0; t < n; t++) seq.push(f); });
+      seq.sort((p, q) => (tot[q] % 2) - (tot[p] % 2));        // primeiro quem esta na direita (volta para a esquerda)
+      if (a >= 0) seq.forEach((f, t) => {
+        grid.fill(0, y * WB, y * WB + WB); for (let i = a; i <= b; i++) grid[y * WB + i] = (i + t) % 2 ? 9 : 8;
+        opt.copyWithin(y * WO, r0 * WO, r0 * WO + WO); opt[y * WO + COL_YARN] = f; opt[y * WO + COL_END] = 0; passes[f] = (passes[f] || 0) + 1; y++; NR++;
       });
-      // 2) separacao + soltar + remonte: copia o inicio do programa ate antes da barra (codigos 1/2)
-      let kFim = 0; for (let k = 0; k < S0; k++) { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (v === 1 || v === 2) { tem = true; break; } } if (tem) break; kFim = k + 1; }
-      // so as carreiras de cor 8 e 9 (tira as de cor 10 para cima: 10, 17, transferencias...)
-      const so89 = k => { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (!v) continue; if (v !== 8 && v !== 9) return false; tem = true; } return tem; };
-      const usados = {}, ultK = {};
-      for (let k = 0; k < kFim; k++) { if (!so89(k)) continue; grid.copyWithin(y * WB, k * WB, k * WB + WB); opt.copyWithin(y * WO, k * WO, k * WO + WO); opt[y * WO + COL_END] = 0; const f = opt[y * WO + COL_YARN]; if (f) { passes[f] = (passes[f] || 0) + 1; usados[f] = (usados[f] || 0) + 1; ultK[f] = y; } y++; NR++; }
-      // passadas pares para cada guia-fio do remonte: repete a ultima carreira 8/9 dele
-      Object.keys(usados).map(Number).filter(f => usados[f] % 2).forEach(f => { const src = ultK[f]; grid.copyWithin(y * WB, src * WB, src * WB + WB); opt.copyWithin(y * WO, src * WO, src * WO + WO); opt[y * WO + COL_END] = 0; passes[f]++; y++; NR++; });
       if (NR) { opt[fimAnt * WO + COL_END] = 0; opt[(y - 1) * WO + COL_END] = 1; }
     }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;

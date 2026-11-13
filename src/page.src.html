@@ -569,7 +569,7 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
           <label class="chk" for="fbo-on"><input id="fbo-on" type="checkbox"> Fechar o fim da peça com band-off (correntinha)</label>
-          <label class="chk" for="rm-on"><input id="rm-on" type="checkbox"> Remonte no fim: guia-fios de tecer voltam, fio de separação solta a peça e remonta as agulhas para o próximo pano</label>
+          <label class="chk" for="rm-on"><input id="rm-on" type="checkbox"> Remonte no fim: carreiras 8/9 remontam as agulhas e trazem de volta os guia-fios que estão do lado direito (sem separação)</label>
           <div class="row" id="bo-tipo-box" hidden>
             <label for="fbo-tipo">Jeito de fechar o band-off<small class="dica">os 8 jeitos do manual do Raynen (Handstitch mode); vale para o fundo do decote e o fim da peça</small><select id="fbo-tipo">
               <option value="s1">1. Single needles (1) — 1 em 1, frente/trás alternando</option>
@@ -1680,7 +1680,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13i', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13j', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
