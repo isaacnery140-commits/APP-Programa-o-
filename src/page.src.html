@@ -277,9 +277,7 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
               </span></span>
             <span class="alerta" role="note">⚠ Medidas de peça pronta. Cuidado: os fios podem encolher.</span></summary>
           <div id="pad-padrao">
-          <div class="painel-esc"><span class="lt tt">Público</span><div class="chips-esc" id="pad-pub-chips" role="group" aria-label="Público"></div></div>
-          <div class="painel-esc"><span class="lt tt">Modelo da peça</span><div class="chips-esc" id="pad-mod-chips" role="group" aria-label="Modelo da peça"></div></div>
-          <div class="row" hidden>
+          <div class="row">
             <label for="pad-pub">Público<select id="pad-pub"><option value="fem" selected>Feminino</option><option value="masc">Masculino</option><option value="inf">Infantil</option></select></label>
             <label for="pad-mod">Modelo da peça<select id="pad-mod"></select></label>
           </div>
@@ -1655,7 +1653,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13d', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -1787,6 +1785,7 @@ const MODELOS={
  garrafinha:{nome:'Garrafinha (gola alta)', pubs:['fem','masc','inf'], desc:'decote redondo menor com gola alta dobrada', comp:d=>d.comp, folga:2, dlAdd:-2, dpAdd:-2, gola:'garrafinha', manga:'longa'},
  vcurto:   {nome:'Vestido curto', pubs:['fem','inf'], desc:'acima do joelho, marcado na cintura', comp:d=>meio(d.costas*2.05), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
  vmidi:    {nome:'Vestido midi', pubs:['fem','inf'], desc:'até o meio da canela, marcado na cintura', comp:d=>meio(d.costas*2.65), folga:2, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4},
+ painel:   {nome:'Painel para teste', pubs:['fem','masc','inf'], desc:'só um pano reto (barra + corpo), sem cava, decote, manga e gola, para testar os pontos', painel:true, comp:()=>20, folga:0, gola:'', manga:'sem'},
  vlongo:   {nome:'Vestido longo', pubs:['fem'], desc:'até o tornozelo, marcado na cintura', comp:d=>meio(d.costas*3.3), folga:2.5, quadril:true, cintura:true, gola:'careca', manga:'longa', barra:4}
 };
 // medidas padroes editaveis: o que a pessoa muda na tabela fica guardado por publico + modelo + tamanho
@@ -1795,6 +1794,7 @@ const padChave=t=>`${padPub}|${padMod}|${t}`;
 function pecaPadrao(t){ const e=PAD_ED[padChave(t)]||{}, k=pecaPadraoBase(t,e.c||{}); return Object.assign(k,e.p||{}); }
 function pecaPadraoBase(t,ec){
   const d=Object.assign({},PADROES[t],ec), m=MODELOS[padMod]||MODELOS.blusa, inf=padPub==='inf';
+  if(m.painel) return {painel:true, larg:20, comp:20, barra:3, cava:0, cent:0, dtipo:'', dl:0, dp:0, cint:0, hcint:15, gola:'', galt:0, polo:null, manga:'sem', mc:0, mlarg:0, punho:0, cabeca:0, mpunho:3};
   const base=m.quadril?Math.max(d.busto,d.quad):d.busto;
   const larg=meio(base/2+m.folga), barra=m.barra?Math.min(m.barra,d.barra+1):d.barra, comp=meio(m.comp(d));
   const cava=meio(d.cava+2+(m.cavaAdd||0)), cent=Math.max(1.5,meio((larg-d.ombro)/2+(m.centAdd||0)));
@@ -1821,7 +1821,7 @@ function mostraPadrao(){
   linhas($('pad-peca'),[
     ['Largura da frente',(m.quadril?'metade do quadril':'metade do '+peito.toLowerCase())+' + folga',k.larg,A(k.larg),'p.larg'],['Comprimento total','do ombro até o fim da barra',k.comp,C(k.comp),'p.comp'],['Altura da barra','ribana do começo',k.barra,'','p.barra'],
     ['Altura da cava','do começo da cava até o ombro',k.cava,'','p.cava'],['Cava entra de cada lado','até chegar na largura dos ombros',k.cent,'','p.cent'],
-    ['Decote','formato',k.dtipo==='polo'?'Polo (carcela)':k.dtipo==='V'?'V':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl,'','p.dl'],['Profundidade do decote','do ombro até o fundo do decote',k.dp,'','p.dp'],
+    ['Decote','formato',k.dtipo==='polo'?'Polo (carcela)':k.dtipo==='V'?'V':k.painel?'—':'Redondo'],['Largura do decote','abertura de um lado ao outro',k.dl,'','p.dl'],['Profundidade do decote','do ombro até o fundo do decote',k.dp,'','p.dp'],
     ['Cintura (se acinturada)','largura da frente na cintura',k.cint,'','p.cint'],['Altura da cintura','do fim da barra até a parte mais fina',k.hcint,'','p.hcint']]);
   linhas($('pad-manga'),[
     k.manga==='sem'?['Manga','sem manga (regata): a cava leva acabamento','—']:null,
@@ -1873,6 +1873,7 @@ function aplicaMedidas(k, aviso){
 }
 $('pad-usar').addEventListener('click',()=>{
   const k=Object.assign({},pecaPadrao(padSel)); if(!$('pad-cint').checked) k.cint=0;
+  if(k.painel){ ['fd-on','fp-on','fbo-on','ct-on','rm-on'].forEach(id=>{ if($(id)) $(id).checked=false; }); FAIXAS=[]; try{ renderFaixas(); }catch(e){} }
   pecaAtual=k; $('sm-pub').value=padPub; $('sm-tam').value=String(PADROES[padSel].busto);
   aplicaMedidas(k,`${MODELOS[padMod].nome} ${ROT_PUB[padPub].toLowerCase()} ${nomeTam(padSel)} preenchido nas Medidas da peça (agulhas e passadas por cm ficaram como você colocou).`);
   $('md-st').textContent+=` Modelo: ${MODELOS[padMod].nome}, ${nomeTam(padSel)}.`;
@@ -2066,7 +2067,7 @@ function partes(){
   const s=last.spec, chave=JSON.stringify([s,infoPeca(),densPeca(),golaSpec&&golaSpec(),PARTE_PONTO,PARTE_ATUAL,MANGA_OPC,COSTAS_OPC]);
   if(PARTES_CACHE.k===chave) return PARTES_CACHE.v;
   const v={}, tenta=sp=>{ try{ if(!sp) return null; const ck=RAYNEN.check(sp); return ck.erros.length?{erro:ck.erros[0]}:RAYNEN.build(sp); }catch(e){ return {erro:e.message}; } };
-  v.costas=tenta(specCostas(s)); v.manga=tenta(specManga(s)); const gs=golaInfo(); v.gola=gs?tenta(gs):null;
+  if(pecaAtual&&pecaAtual.painel){ v.costas=null; v.manga=null; v.gola=null; } else { v.costas=tenta(specCostas(s)); v.manga=tenta(specManga(s)); const gs=golaInfo(); v.gola=gs?tenta(gs):null; }
   PARTES_CACHE={k:chave,v}; return v;
 }
 function PV(){ if(vistaParte==='frente'||!last) return last; const p=partes()[vistaParte]; return p&&!p.erro?p:null; }
@@ -2118,11 +2119,6 @@ function lerGrade(W,H,px,L,n){
 }
 $('btn-jtroca').addEventListener('click',()=>{ const w=desenho[0].length,h=desenho.length; setDesenho(Array.from({length:h},()=>new Array(w).fill(1)),'sem desenho'); $('btn-jtroca').hidden=true; $('f-jimg').parentNode.firstChild.textContent='Importar imagem'; $('jq-status').textContent='Imagem tirada. Importe outra quando quiser.'; });
 
-// medidas padroes: publico e modelo em painel de botoes (os selects continuam por baixo)
-function chipsDe(selId,boxId){ const sel=$(selId), box=$(boxId); if(!sel||!box) return; const monta=()=>{ box.textContent=''; [...sel.options].forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.textContent=o.textContent; b.setAttribute('aria-pressed',String(o.value===sel.value)); b.addEventListener('click',()=>{ sel.value=o.value; sel.dispatchEvent(new Event('change',{bubbles:true})); monta(); }); box.appendChild(b); }); };
-  monta(); sel.addEventListener('change',monta); new MutationObserver(monta).observe(sel,{childList:true}); }
-chipsDe('pad-pub','pad-pub-chips'); chipsDe('pad-mod','pad-mod-chips');
-$('pad-pub').addEventListener('change',()=>setTimeout(()=>{ const b=$('pad-mod-chips'); if(b) [...b.children].forEach((x,i)=>x.setAttribute('aria-pressed',String($('pad-mod').options[i]&&$('pad-mod').options[i].value===$('pad-mod').value))); },0));
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
