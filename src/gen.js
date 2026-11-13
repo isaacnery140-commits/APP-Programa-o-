@@ -686,7 +686,7 @@ const RAYNEN = (function () {
     // corpo calculado primeiro em memoria (para poder aplicar cava/decote), depois copiado para o BMP
     const nb = body.length, bG = new Uint8Array(nb * W), bO = new Uint8Array(nb * WO), bI = new Uint8Array(nb * W);
     let bodyOut = null;   // definido depois do laco do corpo
-    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W;
+    const rowsMax = S0 + 2 * nb + 4 + (isMod ? 29 : 0) + Math.max(0, +s.descarte || 0) + 12 + 3 * W + (s.remonte ? 80 : 0);
     const grid = new Uint8Array(rowsMax * WB);            // linha 0 = carreira 1 (BMP de baixo para cima)
     const opt = new Uint8Array(rowsMax * WO);
     if (B0) {
@@ -760,6 +760,23 @@ const RAYNEN = (function () {
         opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
       }
     }
+    // REMONTE NO FIM: guia-fios de tecer voltam ao lado de saida, fio de separacao tece e solta a peca,
+    // e as agulhas sao remontadas (mesmas carreiras do inicio do programa) para comecar o proximo pano
+    let NR = 0;
+    if (s.remonte && !isMod) {
+      let y = S0 + bodyOut.length + ND;
+      const fimAnt = y - 1;
+      // 1) guia-fio de tecer com passadas impares: mais uma carreira (igual a ultima dele) para voltar ao lado de saida
+      const sep = +s.fioDescarte || 7, ult = S0 + bodyOut.length - 1;
+      Object.keys(passes).map(Number).filter(f => f && f !== sep && passes[f] % 2).forEach(f => {
+        let src = ult; for (let k = ult; k >= S0; k--) if (opt[k * WO + COL_YARN] === f) { src = k; break; }
+        grid.copyWithin(y * WB, src * WB, src * WB + WB); opt.copyWithin(y * WO, src * WO, src * WO + WO); opt[y * WO + COL_END] = 0; passes[f]++; y++; NR++;
+      });
+      // 2) separacao + soltar + remonte: copia o inicio do programa ate antes da barra (codigos 1/2)
+      let kFim = 0; for (let k = 0; k < S0; k++) { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (v === 1 || v === 2) { tem = true; break; } } if (tem) break; kFim = k + 1; }
+      for (let k = 0; k < kFim; k++) { grid.copyWithin(y * WB, k * WB, k * WB + WB); opt.copyWithin(y * WO, k * WO, k * WO + WO); opt[y * WO + COL_END] = 0; const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + 1; y++; NR++; }
+      if (NR) { opt[fimAnt * WO + COL_END] = 0; opt[(y - 1) * WO + COL_END] = 1; }
+    }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
     // simulacao: inicio/barra + corpo agrupado por curso
     const simRows = [];
@@ -783,7 +800,7 @@ const RAYNEN = (function () {
       simRows.push({ key, g: rw.sh ? rw.g.subarray(rw.sh, rw.sh + W - PB) : rw.g.subarray(0, W - PB), yarn: rw.o[COL_YARN], cor });
     });
     const sim = simData(s, W - PB, simRows);
-    const rows = S0 + bodyOut.length + ND + (isMod ? 29 : 0);
+    const rows = S0 + bodyOut.length + ND + NR + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
