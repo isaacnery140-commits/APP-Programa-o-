@@ -243,6 +243,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
 .chips-esc button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
 .cava-box,.cl-box{display:flex;flex-direction:column;gap:8px;margin:8px 0}
 .cava-box[hidden],.cl-box[hidden]{display:none}
+.cava-sec{margin-bottom:14px}
+.cava-sec[hidden]{display:none}
 </style>
 
 <div class="wrap">
@@ -511,21 +513,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
           </div>
         </div>
 
-        <div class="opts" id="formas">
-          <div class="opts-head"><span class="lt tt">Cava, decote e acinturado (forma da peça)</span></div>
-          <div class="row" id="fx-box">
-            <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
-            <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
-          </div>
-          <p class="hint" id="fx-hint" style="display:none"></p>
-          <label class="chk" for="fe-on" hidden><input id="fe-on" type="checkbox"> Aumento escalonado na largura, antes da cava (nos dois lados)</label>
-          <div class="row" id="fe-box" hidden>
-            <label for="fe-ini">Carreiras retas abaixo dos aumentos<input id="fe-ini" type="number" min="0" value="19"></label>
-            <label for="fe-pas">Passos do aumento<input id="fe-pas" value="8-1-6" autocomplete="off"></label>
-            <label for="fe-bor">Borda (agulhas que andam)<input id="fe-bor" type="number" min="1" max="7" value="2"></label>
-          </div>
-          <div class="caixa cava-box">
-          <span class="lt tt">Cava</span>
+        <div class="opts cava-sec" id="cava-sec">
+          <div class="opts-head"><span class="lt tt">Cava</span></div>
           <label class="chk" for="fc-on"><input id="fc-on" type="checkbox"> Fazer cava (nos dois lados)</label>
           <div id="fc-box" hidden>
           <div class="row">
@@ -539,6 +528,20 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
           </div>
           <p class="hint" id="fc-aviso" hidden></p>
           </div>
+          <div class="row" id="fx-box">
+            <label for="fx-antes">Aumentar carreiras antes da cava<input id="fx-antes" type="number" min="0" value="0"></label>
+            <label for="fx-depois">Aumentar carreiras depois do decote<input id="fx-depois" type="number" min="0" value="0"></label>
+          </div>
+        </div>
+
+        <div class="opts" id="formas">
+          <div class="opts-head"><span class="lt tt">Decote, acinturado e acabamentos (forma da peça)</span></div>
+          <p class="hint" id="fx-hint" style="display:none"></p>
+          <label class="chk" for="fe-on" hidden><input id="fe-on" type="checkbox"> Aumento escalonado na largura, antes da cava (nos dois lados)</label>
+          <div class="row" id="fe-box" hidden>
+            <label for="fe-ini">Carreiras retas abaixo dos aumentos<input id="fe-ini" type="number" min="0" value="19"></label>
+            <label for="fe-pas">Passos do aumento<input id="fe-pas" value="8-1-6" autocomplete="off"></label>
+            <label for="fe-bor">Borda (agulhas que andam)<input id="fe-bor" type="number" min="1" max="7" value="2"></label>
           </div>
           <label class="chk" for="fd-on"><input id="fd-on" type="checkbox"> Fazer decote</label>
           <div id="fd-box" hidden>
@@ -1180,7 +1183,7 @@ function update(){ setTimeout(()=>{ try{ mostraCm(); }catch(e){} },0);
   if(formaOn){ const sp=readSpec(), fim=RAYNEN.fimForma(sp.forma), ac=Math.max(0,parseInt($('fa-acima').value,10)||0), xa=Math.max(0,parseInt($('fx-antes').value,10)||0), xd=$('fg-on').checked?0:Math.max(0,parseInt($('fx-depois').value,10)||0), tot=fim+xd+ac;
     if(fim>0){ $('f-carr').value=tot; $('fa-tot').textContent=`Corpo = ${fim} carreiras até a última mudança de forma${xa?` (já com +${xa} antes da cava)`:''}${xd?` + ${xd} a mais depois do decote`:''} + ${ac} retas acima = ${tot} carreiras (Comprimento ajustado sozinho).`; } }
   $('f-carr').disabled = ehBase || formaOn;
-  $('formas').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('bo-tipo-box').hidden=!($('fbo-on').checked||($('fd-on').checked&&$('fd-tipo').value==='redondo'&&$('fd-mmodo').value!=='v')); $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
+  $('formas').hidden=ehBase; $('cava-sec').hidden=ehBase; $('fc-box').hidden=!$('fc-on').checked; $('fp-box').hidden=!$('fp-on').checked; $('bo-tipo-box').hidden=!($('fbo-on').checked||($('fd-on').checked&&$('fd-tipo').value==='redondo'&&$('fd-mmodo').value!=='v')); $('fd-box').hidden=!$('fd-on').checked; $('lbl-fdmodo').hidden=$('fd-tipo').value!=='redondo'; $('lbl-fdmeio').hidden=$('fd-tipo').value!=='redondo'||$('fd-mmodo').value==='v'; $('fd-polo').hidden=$('fd-tipo').value!=='polo';
   $('lbl-javesso').hidden = $('f-jmet').value!=='compacto';
   document.querySelectorAll('.q').forEach(el=>el.hidden=tp!=='quadriculado');
   const t5=$('f-tipo').value;
@@ -1677,7 +1680,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13f', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13g', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -2153,6 +2156,10 @@ function colocarSpec(){ const m=$('cl-modo').value; if(m==='todo') return null; 
 function mostraColocar(){ const t=$('f-tipo').value, box=$('cl-box'); box.hidden=['meia','links','quadriculado','jacquard','trancas','base'].includes(t)||t.startsWith('base:'); const m=$('cl-modo').value; $('cl-n-l').hidden=m!=='colunas'; $('cl-esp-l').hidden=m!=='colunas'; ['cl-fundo-l','cl-desl-l','cl-de-l','cl-ate-l'].forEach(id=>$(id).hidden=m==='todo'); }
 ['cl-modo','cl-n','cl-esp','cl-fundo','cl-desl','cl-de','cl-ate'].forEach(id=>{ $(id).addEventListener('input',()=>{ mostraColocar(); clearTimeout(mostraColocar.t); mostraColocar.t=setTimeout(update,250); }); $(id).addEventListener('change',()=>{ mostraColocar(); update(); }); });
 $('f-tipo').addEventListener('change',()=>setTimeout(mostraColocar,0)); setTimeout(mostraColocar,0);
+
+// decote V: remonte no fim sempre ligado
+function remonteAutoV(){ if($('fd-on').checked&&$('fd-tipo').value==='V'&&!$('rm-on').checked){ $('rm-on').checked=true; update(); } }
+['fd-on','fd-tipo'].forEach(id=>$(id).addEventListener('change',()=>setTimeout(remonteAutoV,0)));
 // agulhas e passadas por cm são obrigatórias: nada segue sem elas
 function densOk(quieto){
   const falta=['md-ag','md-cr'].filter(id=>!(+$(id).value>0));
