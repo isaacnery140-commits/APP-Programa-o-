@@ -806,7 +806,12 @@ const RAYNEN = (function () {
       });
       // 2) separacao + soltar + remonte: copia o inicio do programa ate antes da barra (codigos 1/2)
       let kFim = 0; for (let k = 0; k < S0; k++) { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (v === 1 || v === 2) { tem = true; break; } } if (tem) break; kFim = k + 1; }
-      for (let k = 0; k < kFim; k++) { grid.copyWithin(y * WB, k * WB, k * WB + WB); opt.copyWithin(y * WO, k * WO, k * WO + WO); opt[y * WO + COL_END] = 0; const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + 1; y++; NR++; }
+      // so as carreiras de cor 8 e 9 (tira as de cor 10 para cima: 10, 17, transferencias...)
+      const so89 = k => { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (!v) continue; if (v !== 8 && v !== 9) return false; tem = true; } return tem; };
+      const usados = {}, ultK = {};
+      for (let k = 0; k < kFim; k++) { if (!so89(k)) continue; grid.copyWithin(y * WB, k * WB, k * WB + WB); opt.copyWithin(y * WO, k * WO, k * WO + WO); opt[y * WO + COL_END] = 0; const f = opt[y * WO + COL_YARN]; if (f) { passes[f] = (passes[f] || 0) + 1; usados[f] = (usados[f] || 0) + 1; ultK[f] = y; } y++; NR++; }
+      // passadas pares para cada guia-fio do remonte: repete a ultima carreira 8/9 dele
+      Object.keys(usados).map(Number).filter(f => usados[f] % 2).forEach(f => { const src = ultK[f]; grid.copyWithin(y * WB, src * WB, src * WB + WB); opt.copyWithin(y * WO, src * WO, src * WO + WO); opt[y * WO + COL_END] = 0; passes[f]++; y++; NR++; });
       if (NR) { opt[fimAnt * WO + COL_END] = 0; opt[(y - 1) * WO + COL_END] = 1; }
     }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
