@@ -569,6 +569,7 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <p class="hint" id="fp-info" style="align-self:end"></p>
           </div>
           <label class="chk" for="fbo-on"><input id="fbo-on" type="checkbox"> Fechar o fim da peça com band-off (correntinha)</label>
+          <label class="chk" for="eco-on"><input id="eco-on" type="checkbox" checked> Economizador automático no corpo e acima do decote (o app acha sozinho as carreiras que se repetem em cada ponto)</label>
           <label class="chk" for="rm-on"><input id="rm-on" type="checkbox"> Remonte no fim: carreiras 8/9 remontam as agulhas e trazem de volta os guia-fios que estão do lado direito (sem separação)</label>
           <div class="row" id="rm-box" hidden><label for="rm-eco">Economizador do remonte (voltas)<small class="dica">quantas vezes o bloco de carreiras 8/9 se repete</small><input id="rm-eco" type="number" min="0" max="99" value="6"></label></div>
           <div class="row" id="bo-tipo-box" hidden>
@@ -979,10 +980,10 @@ function readSpec(){
            bandoff:{ativo:$('fbo-on').checked,tipo:$('fbo-tipo').value},
            cintura:{ativo:$('ct-on').checked,inicio:num('ct-ini')+1,dim:$('ct-dim').value,retas:num('ct-ret'),aum:$('ct-aum').value,modo:$('ct-modo').value,borda:num('ct-bor')},
            decote:(()=>{ const ini=num('fd-ini')+1+Math.max(0,num('fx-antes')||0), col=Math.max(10,num('fd-colar')||66); const fecha=$('fd-tipo').value==='polo'&&$('fd-fecha').checked; return {ativo:$('fd-on').checked,tipo:$('fd-tipo').value,inicio:ini,meio:num('fd-meio'),meioModo:$('fd-mmodo').value,passos:$('fd-pas').value,borda:num('fd-bor'),carcela:num('fd-carc')||9,colar:fecha?0:ini+col,calt:Math.max(4,col-8),fecha}; })()},
-    remonte:$('rm-on').checked, remonteEco:+$('rm-eco').value||0, barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
+    economizador:$('eco-on').checked, remonte:$('rm-on').checked, remonteEco:+$('rm-eco').value||0, barra:$('f-barra').value.startsWith('base:')?'2x2':$('f-barra').value, base:baseAtual(), ponto, faixas:faixasSpec(tipo), trancas:$('f-tipo').value==='trancas'?gerarTrancas(num('f-larg')):[]};
 }
 function writeSpec(s){
-  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
+  $('f-nome').value=s.nome; $('f-larg').value=s.largura; $('f-carr').value=s.carreiras; $('f-rib').value=s.ribanaRep; $('eco-on').checked=s.economizador!==false; $('f-guia').value=s.guiaFio; if(s.barra && !($('f-barra').value.startsWith('base:') && s.barra==='2x2')) $('f-barra').value=s.barra;
   if(Array.isArray(s.fios)){ $('f-gb').value=s.fios[0]||5; $('f-gc').value=s.fios[1]||4; $('f-gd').value=s.fios[2]||6; }
   if(Array.isArray(s.corpo)&&s.corpo.length){ sisN=Math.min(3,s.corpo.length); s.corpo.slice(0,3).forEach((g,i)=>{ $('f-s'+(i+1)).value=g; }); sisMostra(); }
   $('f-ponto').value = s.ponto.tipo==='motivo' ? (s.ponto.nome||'Ponto personalizado') : (LABEL[s.ponto.tipo]||'Meia malha');
@@ -1137,7 +1138,7 @@ function gerarTrancas(W){
 }
 function renderCables(){}
 $('f-barra').addEventListener('change',aplicaBase);
-['rm-eco','fc-var','fc-exc','rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
+['eco-on','rm-eco','fc-var','fc-exc','rm-on','fbo-on','fbo-tipo','fp-on','fp-carr','fc-on','fc-ini','fc-pas','fc-bor','fd-on','fd-tipo','fd-ini','fd-meio','fd-mmodo','fd-pas','fd-bor','fd-carc','fd-colar','fd-fecha','fa-acima','fx-antes','fx-depois','ct-on','ct-ini','ct-dim','ct-ret','ct-aum','ct-modo','ct-bor','fe-on','fe-ini','fe-pas','fe-bor','fg-on','fg-dep','fg-pas','fg-bor','fg-onde'].forEach(id=>$(id).addEventListener('input',update));
 ['fc-on','fd-on','fd-tipo','fe-on','fg-on','fg-onde','ct-on','ct-modo'].forEach(id=>$(id).addEventListener('change',()=>{ formaJacquard(); update(); }));
 $('f-jmet').addEventListener('change',()=>{ if($('f-jmet').value!=='compacto' && tipoAtual()==='jacquard' && ($('fc-on').checked||$('fd-on').checked)) $('jq-status').textContent='Cava/decote no jacquard só funcionam no formato Compacto.'; });
 function formaJacquard(){
@@ -1681,7 +1682,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13l', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13m', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;

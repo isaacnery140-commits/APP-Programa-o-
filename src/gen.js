@@ -773,21 +773,53 @@ const RAYNEN = (function () {
         if (o[COL_YARN]) { ult[rw.lado || ''] = o[COL_YARN]; ult.x = o[COL_YARN]; return; }
         if (rw.lado === 'B') return;   // band-off: carreira de soltar fica sem fio de proposito
         if (tece && !o[COL_216] && !rw.ina && !(body[rw.c] && body[rw.c].jq)) { const y = ult[rw.lado || ''] || ult.x || yarnRow(s, body[rw.c] || { f: 1 }, sisB) || s.guiaFio; const oo = o.slice(); oo[COL_YARN] = y; rw.o = oo; } }); }
-    bodyOut.forEach((rw, k) => {
+    // ECONOMIZADOR AUTOMATICO: blocos de carreiras iguais que se repetem (corpo reto, acima do decote...) viram um bloco so
+    // com o numero de voltas na coluna 1 do opt. O periodo sai do proprio ponto, entao a economia muda sozinha com o ponto.
+    const inaDe = rw => rw.ina || bI.subarray(rw.c * W, rw.c * W + W);
+    const ecoOk = rw => rw.lado !== 'B' && !(rw.o[32] || rw.o[28] || rw.o[29] || rw.o[COL_216] || (body[rw.c] && (body[rw.c].jq || body[rw.c].mod)) || crosses.includes(rw.c) || Array.prototype.some.call(rw.g, v => v >= 100));
+    const igual = (p, q) => { if (p === q) return true; const A = p.g, B = q.g; if (A.length !== B.length || (p.sh || 0) !== (q.sh || 0)) return false;
+      for (let i = 0; i < A.length; i++) if (A[i] !== B[i]) return false;
+      for (let i = 0; i < WO; i++) if (i !== COL_END && p.o[i] !== q.o[i]) return false;
+      if (hasIna) { const a = inaDe(p), b = inaDe(q); for (let i = 0; i < W; i++) if (a[i] !== b[i]) return false; }
+      return true; };
+    const saida = [];   // {rw, L}
+    { const n = bodyOut.length, ok = bodyOut.map(ecoOk), usar = s.economizador !== false;
+      let i = 0, ultL = 0;
+      while (i < n) {
+        let best = null;
+        if (usar && i < n - 1) for (let P = 2; P <= 24; P += 2) {
+          if (i + 3 * P > n - 1) break;   // a ultima carreira (fim) fica de fora
+          let okB = true; const f = {};
+          for (let j = 0; j < P; j++) { const r = bodyOut[i + j]; if (!ok[i + j]) { okB = false; break; } const y = r.o[COL_YARN]; if (y) f[y] = (f[y] || 0) + 1; }
+          if (!okB || Object.values(f).some(c => c % 2)) continue;   // cada guia-fio volta para o mesmo lado a cada volta
+          let k = 1; while (k < 99 && i + (k + 1) * P <= n - 1) { let m = true; for (let j = 0; j < P && m; j++) m = ok[i + k * P + j] && igual(bodyOut[i + j], bodyOut[i + k * P + j]); if (!m) break; k++; }
+          if (k >= 3 && (!best || k * P > best.k * best.P)) best = { P, k };
+        }
+        if (best) {
+          if (best.k === ultL) { for (let j = 0; j < best.P; j++) saida.push({ rw: bodyOut[i + j], L: 0 }); i += best.P; best.k--; }   // separa de um bloco vizinho com as mesmas voltas
+          if (best.k >= 2) { for (let j = 0; j < best.P; j++) saida.push({ rw: bodyOut[i + j], L: best.k }); i += best.k * best.P; ultL = best.k; continue; }
+        }
+        saida.push({ rw: bodyOut[i], L: 0 }); i++; ultL = 0;
+      } }
+    const NB = saida.length;
+    { const pos = new Map(); saida.forEach((e, k) => { if (!pos.has(e.rw.c)) pos.set(e.rw.c, k); }); crosses.forEach((c, k) => { crosses[k] = pos.has(c) ? pos.get(c) : c; }); }
+    saida.forEach(({ rw, L }, k) => {
       const y = S0 + k;
       grid.set(rw.g, y * WB + X0);
-      const o = rw.o.slice(); o[COL_END] = k === bodyOut.length - 1 ? 1 : 0;
+      const o = rw.o.slice(); o[COL_END] = k === NB - 1 ? 1 : 0; o[COL_LOOP] = L;
       opt.set(o, y * WO);
-      if (hasIna) ina.set(rw.ina || bI.subarray(rw.c * W, rw.c * W + W), y * WB + X0);
+      if (hasIna) ina.set(inaDe(rw), y * WB + X0);
+    });
+    bodyOut.forEach((rw, k) => {
       if (body[rw.c] && body[rw.c].jq) for (let k = 1; k <= s.ponto.cores; k++) { const gy = rw.lado === 'D' ? yarnOf(s, k + 2) : yarnOf(s, k); passes[gy] = (passes[gy] || 0) + 1; }
-      if (o[COL_YARN]) passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
+      if (rw.o[COL_YARN]) passes[rw.o[COL_YARN]] = (passes[rw.o[COL_YARN]] || 0) + 1;
     });
     // fio de descarte no fim (gola/acessorio para cerzir): carreiras de meia malha com o guia-fio de descarte
     const pinf = fr.info && fr.info.parcial, ND = Math.max(0, +s.descarte || 0, pinf ? 10 : 0);
     if (ND) {
-      opt[(S0 + bodyOut.length - 1) * WO + COL_END] = 0;
+      opt[(S0 + NB - 1) * WO + COL_END] = 0;
       for (let k = 0; k < ND; k++) {
-        const y = S0 + bodyOut.length + k, o = tmpl.slice(); o[COL_YARN] = +s.fioDescarte || 7; o[COL_END] = k === ND - 1 ? 1 : 0;
+        const y = S0 + NB + k, o = tmpl.slice(); o[COL_YARN] = +s.fioDescarte || 7; o[COL_END] = k === ND - 1 ? 1 : 0;
         if (pinf) pinf.faixas.forEach(([a, b]) => { for (let i = a; i <= b; i++) grid[y * WB + X0 + i] = 1; }); else for (let i = 0; i < W; i++) grid[y * WB + X0 + i] = 1;
         opt.set(o, y * WO); passes[o[COL_YARN]] = (passes[o[COL_YARN]] || 0) + 1;
       }
@@ -796,13 +828,13 @@ const RAYNEN = (function () {
     // que remontam as agulhas do proximo pano e trazem de volta os guia-fios que estao do lado direito
     let NR = 0;
     if (s.remonte && !isMod) {
-      let y = S0 + bodyOut.length + ND;
+      let y = S0 + NB + ND;
       const fimAnt = y - 1, sep = +s.fioDescarte || 7;
       // largura do remonte = a do inicio do programa (1a carreira de cor 8/9)
       let r0 = 0; for (let k = 0; k < S0; k++) { let tem = false; for (let i = 0; i < WB; i++) { const v = grid[k * WB + i]; if (v === 8 || v === 9) { tem = true; break; } } if (tem) { r0 = k; break; } }
       let a = -1, b = -1; for (let i = 0; i < WB; i++) if (grid[r0 * WB + i]) { if (a < 0) a = i; b = i; }
       // guia-fios do corpo e de que lado cada um esta (passadas desde o comeco do programa: impar = direita)
-      const tot = {}; for (let k = 0; k < y; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + 1; }
+      const tot = {}; for (let k = 0; k < y; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + (opt[k * WO + COL_LOOP] || 1); }
       const corpo = [...new Set(bodyOut.map(r => r.o[COL_YARN]).filter(f => f && f !== sep))];
       // 1) quem esta na direita: 1 carreira 8/9 e volta para a esquerda
       // 2) bloco com economizador: 2 carreiras 8/9 por guia-fio (vai e volta), repetido N vezes (coluna 1 do opt = voltas)
@@ -837,11 +869,11 @@ const RAYNEN = (function () {
       simRows.push({ key, g: rw.sh ? rw.g.subarray(rw.sh, rw.sh + W - PB) : rw.g.subarray(0, W - PB), yarn: rw.o[COL_YARN], cor });
     });
     const sim = simData(s, W - PB, simRows);
-    const rows = S0 + bodyOut.length + ND + NR + (isMod ? 29 : 0);
+    const rows = S0 + NB + ND + NR + (isMod ? 29 : 0);
     let modDef = null;
     if (isMod) {
       // definicao do modulo (copiada da estrutura do 45018FG): 14 linhas vazias acima da linha de fim
-      const d0 = S0 + bodyOut.length + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
+      const d0 = S0 + NB + 13, x0 = X0 + Math.max(2, Math.floor(W * 0.45));
       const A = [[10, 8, 16, 9], [8, 10, 16, 9], [8, 10, 9, 16], [10, 8, 9, 16]];
       const B = [[16, 9, 10, 8], [9, 16, 8, 10], [9, 16, 8, 10], [16, 9, 10, 8]];
       const put = (y, vals) => vals.forEach((v, j) => { grid[y * WB + x0 + j] = v; });
@@ -864,7 +896,7 @@ const RAYNEN = (function () {
     if (hasIna) { inaf = new Uint8Array(OFF + WB * H); inaf.set(T.bmpHeader); inaf.set(ina.subarray(0, Math.min(rows, H) * WB), OFF); jqdf = new Uint8Array(OFF + WB * H); jqdf.set(T.bmpHeader); }
     if (B0) for (let y = 0; y < S0; y++) { const f = opt[y * WO + COL_YARN]; if (f) passes[f] = (passes[f] || 0) + (opt[y * WO + COL_LOOP] || 1); }
     else passes[3] = (passes[3] || 0) + 14 + 4 * (s.ribanaRep - 1);
-    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: bodyOut.length, start: S0, forma: fr.info, sim };
+    return { spec: s, modDef, bmp, opt: optf, ina: inaf, jqd: jqdf, inaGrid: hasIna ? ina : null, grid, rows, width: W, crosses, passes, passadas: passes[s.guiaFio], bodyRows: NB, start: S0, forma: fr.info, sim };
   }
 
   // programa inteiro da base, como o programador salvou (largura e carreiras da base)
