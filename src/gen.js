@@ -804,12 +804,14 @@ const RAYNEN = (function () {
       // guia-fios do corpo e de que lado cada um esta (passadas desde o comeco do programa: impar = direita)
       const tot = {}; for (let k = 0; k < y; k++) { const f = opt[k * WO + COL_YARN]; if (f) tot[f] = (tot[f] || 0) + 1; }
       const corpo = [...new Set(bodyOut.map(r => r.o[COL_YARN]).filter(f => f && f !== sep))];
-      const seq = []; corpo.forEach(f => { const n = tot[f] % 2 ? 1 : 2; for (let t = 0; t < n; t++) seq.push(f); });
-      seq.sort((p, q) => (tot[q] % 2) - (tot[p] % 2));        // primeiro quem esta na direita (volta para a esquerda)
-      if (a >= 0) seq.forEach((f, t) => {
-        grid.fill(0, y * WB, y * WB + WB); for (let i = a; i <= b; i++) grid[y * WB + i] = (i + t) % 2 ? 9 : 8;
-        opt.copyWithin(y * WO, r0 * WO, r0 * WO + WO); opt[y * WO + COL_YARN] = f; opt[y * WO + COL_END] = 0; passes[f] = (passes[f] || 0) + 1; y++; NR++;
-      });
+      // 1) quem esta na direita: 1 carreira 8/9 e volta para a esquerda
+      // 2) bloco com economizador: 2 carreiras 8/9 por guia-fio (vai e volta), repetido N vezes (coluna 1 do opt = voltas)
+      const dir = corpo.filter(f => tot[f] % 2), eco = Math.max(0, Math.min(99, Math.round(+s.remonteEco || 0)));
+      let t = 0; const linha = (f, voltas) => { grid.fill(0, y * WB, y * WB + WB); for (let i = a; i <= b; i++) grid[y * WB + i] = (i + t) % 2 ? 9 : 8; t++;
+        opt.copyWithin(y * WO, r0 * WO, r0 * WO + WO); opt[y * WO + COL_YARN] = f; opt[y * WO + COL_END] = 0; opt[y * WO + COL_LOOP] = voltas > 1 ? voltas : 0;
+        END_TECE.forEach(k => { opt[y * WO + k] = 16; });   // endereco #16 (FINAL REMONTE): stitch, roller e speed do remonte
+        passes[f] = (passes[f] || 0) + 1; y++; NR++; };
+      if (a >= 0) { dir.forEach(f => linha(f, 0)); corpo.forEach(f => { linha(f, eco); linha(f, eco); }); }
       if (NR) { opt[fimAnt * WO + COL_END] = 0; opt[(y - 1) * WO + COL_END] = 1; }
     }
     for (let k = 0; k < crosses.length; k++) crosses[k] = S0 + crosses[k] + 1;
