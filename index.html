@@ -524,8 +524,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
             <label for="fc-bor">Borda (agulhas que andam)<input id="fc-bor" type="number" min="1" max="7" value="2"></label>
           </div>
           <div class="row">
-            <label for="fc-var">Variador máximo<small class="dica">quantas agulhas a malha anda numa transferência (máx. 4)</small><input id="fc-var" type="number" min="1" max="4" value="4"></label>
-            <label for="fc-exc">Se a cava fechar mais que o variador<select id="fc-exc"><option value="dividir">Dividir: até 4 agulhas por vez, o resto nas carreiras seguintes</option><option value="bindoff">Band-off: fecha essas agulhas com correntinha (endereço #09)</option></select></label>
+            <label for="fc-var">Variador máximo<small class="dica">quantas agulhas a malha anda numa transferência (máx. 3)</small><input id="fc-var" type="number" min="1" max="3" value="3"></label>
+            <label for="fc-exc">Se a cava fechar mais que o variador<select id="fc-exc"><option value="dividir">Dividir: até 3 agulhas por vez, o resto nas carreiras seguintes</option><option value="bindoff">Band-off: fecha essas agulhas com correntinha (endereço #09)</option></select></label>
           </div>
           <p class="hint" id="fc-aviso" hidden></p>
           </div>
@@ -864,7 +864,7 @@ const RAYNEN = (function () {
     });
     const f = n.forma || {};
     n.forma = {
-      cava: Object.assign({ maxVar: 4, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
+      cava: Object.assign({ maxVar: 3, excesso: 'dividir', ativo: false, inicio: 60, passos: '2-1-6', borda: 2 }, f.cava || {}),
       decote: Object.assign({ ativo: false, tipo: 'V', inicio: 80, meio: 0, passos: '2-1-10', borda: 2, carcela: 9, calt: 60, colar: 0 }, f.decote || {}),
       aumento: Object.assign({ ativo: false, inicio: 20, passos: '6-1-5', borda: 2 }, f.aumento || {}),
       aumento2: Object.assign({ ativo: false, depois: 4, passos: '2-1-4', borda: 2, onde: 'externa' }, f.aumento2 || {}),
@@ -1247,7 +1247,7 @@ const RAYNEN = (function () {
     const cv = s.forma.cava, dc = s.forma.decote, out = [];
     const evC = cv.ativo ? new Map(agenda(cv.inicio - 1, parsePassos(cv.passos).filter(x => !x.erro))) : new Map();
     // variador (transferencia) da cava no maximo cv.maxVar agulhas; o que passar: divide nas carreiras seguintes ou fecha com band-off
-    const evCB = new Map(), maxVar = Math.max(1, Math.min(7, +cv.maxVar || 4));
+    const evCB = new Map(), maxVar = Math.max(1, Math.min(3, +cv.maxVar || 3));
     if (cv.ativo) {
       const ks = [...evC.keys()].sort((a, b) => a - b);
       if (cv.excesso === 'bindoff') ks.forEach(r => { const k = evC.get(r); if (k > maxVar && !jq[r]) { evC.delete(r); evCB.set(r, k); } });
@@ -1257,6 +1257,10 @@ const RAYNEN = (function () {
         ks.forEach(r0 => { if (r0 % 2 !== ks[0] % 2) { const k = evC.get(r0); if (k > maxVar) evC.set(r0, maxVar); } }); }
     }
     const evD = new Map(evDec(dc));
+    // decote: variador no maximo 3 agulhas por transferencia; o que passar vai para as carreiras seguintes
+    { const ks = [...evD.keys()].sort((a, b) => a - b); let sobra = 0; const fim = ks.length ? ks[ks.length - 1] : 0;
+      for (let r = ks.length ? ks[0] : 0; ks.length && r <= fim + 60 && (sobra || r <= fim); r += 2) { const k = (evD.get(r) || 0) + sobra; if (!k) continue; const usa = Math.min(3, k); sobra = k - usa; evD.set(r, usa); }
+      ks.forEach(r0 => { if (ks.length && r0 % 2 !== ks[0] % 2 && evD.get(r0) > 3) evD.set(r0, 3); }); }
     const polo = ehPolo(dc), PB = carcelaAg(dc), cAlt = Math.max(2, Math.round(+dc.calt || 60)), fechaPano = polo && !!dc.fecha;
     let unido = false, kU = 0;
     let poloFase = 0, poloK = { E: 0, D: 0 }, bs = 0, desl = 0, poloFecha = false;
@@ -1885,7 +1889,7 @@ function readSpec(){
   if(tipo==='jacquard'){ ponto.cores=num('f-cores'); ponto.modo=$('f-jmodo').value; ponto.metodo=$('f-jmet').value; ponto.avesso=num('f-javesso'); ponto.desenho=desenho.map(r=>r.map(v=>Math.min(v||1,ponto.cores||2))); ponto.fundo=1; }
   return {nome:$('f-nome').value.trim()||'NOVO', largura:num('f-larg'), carreiras:num('f-carr'), ribanaRep:num('f-rib'), guiaFio:num('f-guia'),
     fios:[num('f-gb'),num('f-gc'),num('f-gd')], corpo:sisLista(),
-    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor'),maxVar:Math.min(4,Math.max(1,num('fc-var')||4)),excesso:$('fc-exc').value},
+    forma:{cava:{ativo:$('fc-on').checked,inicio:num('fc-ini')+1+Math.max(0,num('fx-antes')||0),passos:$('fc-pas').value,borda:num('fc-bor'),maxVar:Math.min(3,Math.max(1,num('fc-var')||3)),excesso:$('fc-exc').value},
            aumento:{ativo:$('fe-on').checked,inicio:num('fe-ini')+1,passos:$('fe-pas').value,borda:num('fe-bor')},
            aumento2:{ativo:$('fg-on').checked,depois:num('fg-dep')+Math.max(0,num('fx-depois')||0),passos:$('fg-pas').value,borda:num('fg-bor'),onde:$('fg-onde').value},
            parcial:{ativo:$('fp-on').checked,carreiras:num('fp-carr')},
@@ -1909,7 +1913,7 @@ function writeSpec(s){
     { const z=s.forma.cintura||{}; $('ct-on').checked=!!z.ativo; if(z.inicio) $('ct-ini').value=z.inicio-1; if(z.dim) $('ct-dim').value=z.dim; if(z.retas!=null) $('ct-ret').value=z.retas; if(z.aum) $('ct-aum').value=z.aum; if(z.modo) $('ct-modo').value=z.modo; if(z.borda) $('ct-bor').value=z.borda; }
     $('fe-on').checked=!!a.ativo; if(a.inicio) $('fe-ini').value=a.inicio-1; if(a.passos) $('fe-pas').value=a.passos; if(a.borda) $('fe-bor').value=a.borda;
     $('fg-on').checked=!!a2.ativo; if(a2.depois!=null) $('fg-dep').value=a2.depois; if(a2.passos) $('fg-pas').value=a2.passos; if(a2.borda) $('fg-bor').value=a2.borda; if(a2.onde) $('fg-onde').value=a2.onde;
-    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda; if(c.maxVar) $('fc-var').value=Math.min(4,c.maxVar); if(c.excesso) $('fc-exc').value=c.excesso;
+    $('fc-on').checked=!!c.ativo; if(c.inicio) $('fc-ini').value=c.inicio-1; if(c.passos) $('fc-pas').value=c.passos; if(c.borda) $('fc-bor').value=c.borda; if(c.maxVar) $('fc-var').value=Math.min(3,c.maxVar); if(c.excesso) $('fc-exc').value=c.excesso;
     $('fd-on').checked=!!d.ativo; if(d.tipo) $('fd-tipo').value=d.tipo; if(d.inicio) $('fd-ini').value=d.inicio-1; if(d.meio) $('fd-meio').value=d.meio; if(d.meioModo) $('fd-mmodo').value=d.meioModo; if(d.passos) $('fd-pas').value=d.passos; if(d.borda) $('fd-bor').value=d.borda; if(d.carcela) $('fd-carc').value=d.carcela; if(d.colar&&d.inicio) $('fd-colar').value=d.colar-d.inicio; $('fd-fecha').checked=!!d.fecha; }
   if(Array.isArray(s.trancas)&&s.trancas.length&&s.ponto.tipo==='meia'){ const t=s.trancas[0]; $('f-tipo').value='trancas'; $('tr-n').value=s.trancas.length; $('tr-g').value=String(Math.min(7,Math.max(1,+t.grupo||2))); $('tr-int').value=t.intervalo||6; $('tr-lat').value=t.lateral??2; $('tr-sent').value=s.trancas.some(x=>x.sentido!==t.sentido)?'alt':(t.sentido||'esq'); }
   update();
@@ -2594,7 +2598,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13g', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13h', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
@@ -3061,7 +3065,7 @@ function lerGrade(W,H,px,L,n){
 $('btn-jtroca').addEventListener('click',()=>{ const w=desenho[0].length,h=desenho.length; setDesenho(Array.from({length:h},()=>new Array(w).fill(1)),'sem desenho'); $('btn-jtroca').hidden=true; $('f-jimg').parentNode.firstChild.textContent='Importar imagem'; $('jq-status').textContent='Imagem tirada. Importe outra quando quiser.'; });
 
 
-function avisoCava(){ const el=$('fc-aviso'); if(!el) return; if(!$('fc-on').checked){ el.hidden=true; return; } const mv=Math.min(4,Math.max(1,+$('fc-var').value||4));
+function avisoCava(){ const el=$('fc-aviso'); if(!el) return; if(!$('fc-on').checked){ el.hidden=true; return; } const mv=Math.min(3,Math.max(1,+$('fc-var').value||3));
   const big=($('fc-pas').value||'').split(',').map(t=>t.trim().match(/^(\d+)-(\d+)-(\d+)$/)).filter(Boolean).map(m=>+m[2]).filter(k=>k>mv);
   el.hidden=!big.length; el.textContent=big.length?($('fc-exc').value==='bindoff'?`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): essas agulhas fecham com band-off nos dois lados.`:`Passos com ${big.join(', ')} agulhas passam do variador (${mv}): vou dividir em transferências de até ${mv} agulhas nas carreiras seguintes.`):''; }
 ['fc-on','fc-pas','fc-var','fc-exc'].forEach(id=>{ $(id).addEventListener('input',avisoCava); $(id).addEventListener('change',avisoCava); }); setTimeout(avisoCava,300);
