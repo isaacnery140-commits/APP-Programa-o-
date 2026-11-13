@@ -472,8 +472,8 @@ summary .alerta,summary .hint,summary small,.row.caixa>label select,.row.caixa>l
               <button id="btn-jtroca" type="button" class="ghost" hidden>Tirar a imagem</button>
             </div>
             <div class="row">
-              <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="72"></label>
-              <label for="f-jh">Desenho: carreiras<input id="f-jh" type="number" min="2" max="400" value="68"></label>
+              <label for="f-jw">Desenho: agulhas<input id="f-jw" type="number" min="2" max="400" value="40"></label>
+              <label for="f-jh">Desenho: carreiras<input id="f-jh" type="number" min="2" max="400" value="40"></label>
               <label for="f-jratio">Proporção (carr./ag.) da imagem<input id="f-jratio" type="number" step="0.1" min="0.5" max="3" value="1.4"></label>
             </div>
             <span id="jq-status" class="status hint"></span>
@@ -829,7 +829,7 @@ let cables = [];
 let last = null;
 let motivo = [[1,5],[1,1]], motivoFios = [1,1], motivoReal = false;   // rapport (carreira 1 primeiro) e guia-fio por carreira
 let motifNome = '';
-let desenho = JQ_EX.rows.map(r=>[...r].map(Number)), jqFonte = JQ_EX.fonte;
+let desenho = Array.from({length:40},()=>new Array(40).fill(1)), jqFonte = 'sem desenho';   // padrao: em branco (importe uma imagem, escreva um texto ou desenhe)
 const BUILTIN = {'meia malha':'meia','jersey':'meia','malha tras':'links','avesso':'links','links':'links','links quadriculado':'quadriculado','quadriculado':'quadriculado','xadrez':'quadriculado','jacquard':'jacquard'};
 const LABEL = {base:'Ponto da base',meia:'Meia malha',links:'Malha trás',quadriculado:'Links quadriculado',jacquard:'Jacquard'};
 const norm = t => (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
@@ -1655,7 +1655,7 @@ function trocaAuth(v){ simAuth=v; $('sim-auth').setAttribute('aria-pressed',Stri
 $('sim-auth').addEventListener('click',()=>trocaAuth(!simAuth));
 
 // ---- avisos: problema resolvido e programa atualizado
-const APP_VERSAO='2026-11-13b', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
+const APP_VERSAO='2026-11-13c', APP_NOVIDADES='nova ficha de produção para imprimir (guia-fios, endereços de regulagem e economizadores), histórico de programas, o Relatar problema resolve sozinho (inclusive avisos da compilação do Raynen) a carcela da polo sem W021/W041 e o decote sem W028';
 function relVistos(){ try{ return JSON.parse(localStorage.getItem('rel_vistos')||'[]'); }catch(e){ return []; } }
 function relMarcaVistos(ids){ try{ const v=new Set(relVistos()); ids.forEach(i=>v.add(i)); localStorage.setItem('rel_vistos',JSON.stringify([...v].slice(-300))); }catch(e){} }
 let avisoAcao=null;
